@@ -1,0 +1,60 @@
+{
+  "dataset": "liar",
+  "generated_at": "2026-09-02T22:59:56+00:00",
+  "status": "measured",
+  "files": {
+    "count": 5,
+    "bytes": 4026080,
+    "gb": 0.0037
+  },
+  "licence": "research-only (Wang, ACL 2017 \u2014 cite the paper) \u2014 UNVERIFIED",
+  "redistributable": false,
+  "access": {
+    "method": "direct",
+    "url": "www.cs.ucsb.edu/~william/data/liar_dataset.zip",
+    "repo_type": null
+  },
+  "expected": null,
+  "mismatches": [],
+  "rows": 12791,
+  "by_split": {
+    "train": 10240,
+    "val": 1284,
+    "test": 1267
+  },
+  "labels": {
+    "half-true": 2627,
+    "false": 2507,
+    "mostly-true": 2454,
+    "barely-true": 2103,
+    "true": 2053,
+    "pants-fire": 1047
+  },
+  "modality": {
+    "records": 12791,
+    "text_only": 12791,
+    "image_only": 0,
+    "both": 0,
+    "neither": 0,
+    "fractions": {
+      "text_only": 1.0,
+      "image_only": 0.0,
+      "both": 0.0,
+      "neither": 0.0
+    }
+  },
+  "dates": {
+    "field": null,
+    "items": 0,
+    "with_explicit_date": 0,
+    "with_url_derived_date": 0,
+    "explicit_coverage": 0.0,
+    "url_derived_coverage": 0.0,
+    "any_coverage": 0.0,
+    "range": null
+  },
+  "notes": [
+    "headerless TSV; label is column 1, statement column 2",
+    "text-only corpus: no image field exists"
+  ]
+}

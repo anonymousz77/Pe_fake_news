@@ -1,0 +1,28 @@
+# Pe_Fake_News_Dec — runtime dependencies
+#
+# Pins below were captured from `pip freeze` in the project venv
+# (.venv, CPython 3.11.9) on 2026-09-01. This lists direct dependencies only;
+# transitive packages are resolved by pip. Regenerate a full lock with
+# `pip freeze > requirements.lock.txt` if you need byte-exact reproduction.
+
+# --- register, config, paths ---
+PyYAML==6.0.3
+python-dotenv==1.2.3
+
+# --- acquisition ---
+requests==2.34.2
+tqdm==4.70.0
+huggingface_hub==1.29.0
+kaggle==2.2.4
+gdown==6.1.0
+py7zr==1.1.3
+beautifulsoup4==4.15.0
+
+# --- processing ---
+numpy==2.4.6
+pandas==3.0.5
+pillow==12.3.0
+
+# --- validation / diagnostics ---
+jsonschema==4.26.0
+psutil==7.2.2

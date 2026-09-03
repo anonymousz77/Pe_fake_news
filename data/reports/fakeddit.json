@@ -1,0 +1,85 @@
+{
+  "dataset": "fakeddit",
+  "generated_at": "2026-09-02T22:59:54+00:00",
+  "status": "measured",
+  "files": {
+    "count": 142436,
+    "bytes": 16183911280,
+    "gb": 15.0724
+  },
+  "licence": "research-only \u2014 UNVERIFIED",
+  "redistributable": false,
+  "access": {
+    "method": "gdrive",
+    "url": "drive.google.com/drive/folders/1jU7qgDqU1je9Y0PMKJ_f31yXRo5uWGFm",
+    "repo_type": null
+  },
+  "expected": null,
+  "mismatches": [],
+  "rows": 623342,
+  "by_split": {
+    "train": 564000,
+    "validate": 59342
+  },
+  "labels": {
+    "0": 245401,
+    "4": 185667,
+    "2": 118498,
+    "1": 37002,
+    "5": 23752,
+    "3": 13022
+  },
+  "modality": {
+    "records": 623342,
+    "text_only": 480908,
+    "image_only": 0,
+    "both": 142434,
+    "neither": 0,
+    "fractions": {
+      "text_only": 0.7715,
+      "image_only": 0.0,
+      "both": 0.2285,
+      "neither": 0.0
+    }
+  },
+  "dates": {
+    "field": "created_utc",
+    "items": 623342,
+    "with_explicit_date": 623342,
+    "with_url_derived_date": 0,
+    "explicit_coverage": 1.0,
+    "url_derived_coverage": 0.0,
+    "any_coverage": 1.0,
+    "range": {
+      "min": "2008-06-01",
+      "max": "2019-11-15"
+    }
+  },
+  "columns": [
+    "author",
+    "clean_title",
+    "created_utc",
+    "domain",
+    "hasImage",
+    "id",
+    "image_url",
+    "linked_submission_id",
+    "num_comments",
+    "score",
+    "subreddit",
+    "title",
+    "upvote_ratio",
+    "2_way_label",
+    "3_way_label",
+    "6_way_label"
+  ],
+  "images": {
+    "declared_hasImage": 623342,
+    "fetched_on_disk": 142434,
+    "note": "images are a seeded 150,000-row sample, not the full set: 'text_only' means the row was not sampled, NOT that Reddit had no image"
+  },
+  "notes": [
+    "created_utc is a unix timestamp, converted to UTC dates",
+    "modality reflects images ON DISK; declared_hasImage is what the TSV claims Reddit held, a different quantity"
+  ]
+}

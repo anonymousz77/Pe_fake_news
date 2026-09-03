@@ -1,0 +1,63 @@
+{
+  "dataset": "factify2",
+  "label_field": "Category",
+  "attempted": 85000,
+  "succeeded": 77973,
+  "failed": 7027,
+  "recovery_rate": 0.9173,
+  "recovery_rate_per_class": {
+    "Insufficient_Multimodal": 0.999,
+    "Insufficient_Text": 0.9962,
+    "Refute": 0.6301,
+    "Support_Multimodal": 0.9942,
+    "Support_Text": 0.9671
+  },
+  "per_class_attempted": {
+    "Insufficient_Multimodal": 17000,
+    "Insufficient_Text": 17000,
+    "Refute": 17000,
+    "Support_Multimodal": 17000,
+    "Support_Text": 17000
+  },
+  "per_class_succeeded": {
+    "Insufficient_Multimodal": 16983,
+    "Insufficient_Text": 16936,
+    "Refute": 10711,
+    "Support_Multimodal": 16902,
+    "Support_Text": 16441
+  },
+  "recovered_by_source": {
+    "origin": 77973
+  },
+  "failure_reasons": {
+    "connectionerror": 75,
+    "connecttimeout": 3,
+    "empty_body": 7,
+    "host_circuit_open": 6310,
+    "http_400": 28,
+    "http_402": 3,
+    "http_403": 249,
+    "http_404": 234,
+    "http_406": 29,
+    "http_410": 1,
+    "http_412": 1,
+    "http_415": 1,
+    "http_418": 1,
+    "http_429": 1,
+    "http_500": 3,
+    "http_502": 15,
+    "http_503": 3,
+    "http_520": 1,
+    "http_521": 1,
+    "http_522": 1,
+    "http_525": 1,
+    "http_530": 1,
+    "readtimeout": 21,
+    "sslerror": 37
+  },
+  "seed": null,
+  "concurrency": 4,
+  "started_at": "2026-09-02T01:08:32+00:00",
+  "finished_at": "2026-09-02T01:09:07+00:00",
+  "notes": "retry pass: attempted 7052, recovered 25. Rates below are cumulative over all 85000 items."
+}

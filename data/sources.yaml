@@ -1,0 +1,342 @@
+# Pe_Fake_News_Dec — dataset register
+#
+# Single source of truth for every corpus the project may ingest.
+# Consumed by scripts/manifest.py and validated by tests/test_sources.py.
+#
+# Contract (enforced by tests/test_sources.py):
+#   * the register holds exactly the twelve named datasets — the test asserts
+#     the exact name SET, not just the count
+#   * every entry MUST declare `forbidden_patterns` (may be an empty list)
+#   * `include_patterns` is OPTIONAL; absent means "take everything". For the
+#     leak guard an absent include counts as "*", so an entry with no
+#     include_patterns may not declare any forbidden_patterns
+#   * `include_patterns` and `forbidden_patterns` must not overlap in either
+#     direction, including the literal directory-prefix case
+#   * sum(est_gb) over entries with `enabled: true` must be <= budget_gb
+#
+# Field notes:
+#   method          how to fetch: hf | git | direct | kaggle
+#   url             schemeless; `method` implies the scheme/client
+#   repo_type       only meaningful for method: hf; null otherwise
+#   redistributable false is the conservative default — flip to true only with
+#                   a licence confirmed by hand in docs/provenance.md
+#   expected        row counts to check on ingest; null where not yet known
+#   licence         "UNVERIFIED" means nobody has read the terms yet
+#
+# All glob patterns are relative to the dataset's raw_dir() and MUST be quoted
+# in YAML — a bare leading `*` is parsed as an alias, not a string. Likewise a
+# bare `true` used as a mapping KEY parses as a boolean, so a class label that
+# spells out "true" is quoted to survive as a string.
+
+version: 1
+budget_gb: 120
+
+datasets:
+  - name: mocheg
+    method: zenodo
+    url: zenodo.org/records/6653772
+    # The GitHub repos (PLUM-Lab/Mocheg and the VT-NLP mirror) are CODE ONLY —
+    # a git fetch of them matched none of this entry's data patterns. The data
+    # is on Zenodo; the repo is fetched as an aux source for the tweet-id
+    # hydration script.
+    aux_method: git
+    aux_url: github.com/PLUM-Lab/Mocheg
+    repo_type: null
+    licence: CC-BY-4.0
+    redistributable: false
+    expected: null
+    est_gb: 1.8997
+    enabled: true
+    forbidden_patterns: []
+    notes: >-
+      Claims with paired text and image evidence plus ruling explanations; all
+      three splits are labelled. COUNT DISCREPANCY, UNRESOLVED: Zenodo reports
+      21,184 claims / 43,148 text evidence / 15,373 image evidence, while the
+      SIGIR paper reports 15,601 / 33,880 / 12,112. Two different versions may
+      exist. Count what actually lands and record BOTH figures in
+      docs/counts_ledger.md rather than picking one. MEASURED: the Zenodo
+      record holds 2 files totalling 0.53 GB, and the tarball is named
+      mocheg_v1_without_image.tar.gz — i.e. it is v1 and carries NO images, so
+      the image evidence must come from somewhere else. licence CC-BY-4.0 read
+      from the Zenodo record API, not assumed.
+      MEASURED 1.8997 GB on disk 2026-09-02; initial estimate 16.0 GB, superseded by measurement.
+
+  - name: factify2
+    method: gdrive
+    # aiisc.ai/defactify2/ is the shared-task LANDING PAGE, not a fetchable
+    # endpoint; gdown read "defactify2" as a Drive folder id and 404'd.
+    url: drive.google.com/drive/folders/13JwnIBzDfe8a5E1anPkt7J90r4NBIYES
+    repo_type: null
+    licence: "research-only; registration required — UNVERIFIED"
+    redistributable: false
+    expected: null
+    est_gb: 9.7603
+    enabled: true
+    # These select from the Drive FOLDER listing, verified by listing it:
+    # factify2.zip, factify2test.zip, README.md. Archive members are extracted
+    # in full (these patterns match no member, so extraction falls through to
+    # everything). Passwords live in scripts/fetch.py FACTIFY_PASSWORDS.
+    include_patterns:
+      - "factify2.zip"       # train + val
+      - "factify2test.zip"   # unlabelled test; nothing to leak
+    forbidden_patterns: []
+    notes: >-
+      Multimodal entailment. Images are NOT in the archives — they are fetched
+      from URLs in the CSVs by hydrate.py. test_unlabeled.csv is an ordinary shared-task
+      artifact: it carries NO labels, so there is nothing to leak, and it is
+      the file you predict on if the benchmark is ever run. It is deliberately
+      NOT forbidden — forbidding it would abort a 20 GB fetch over a false
+      positive, and false positives are how safety machinery ends up switched
+      off. It is also not in include_patterns, so it is simply not fetched.
+      MEASURED 9.7603 GB on disk 2026-09-02; initial estimate 20.0 GB, superseded by measurement. Size is FINAL: image recovery was stopped permanently on 2026-09-02 (see docs/data_card.md), so this will not grow.
+
+  - name: averitec
+    method: hf
+    url: chenxwh/AVeriTeC
+    # Model-type repo despite holding a dataset. Fetching it with
+    # repo_type: dataset returns 404 — do not "correct" this.
+    repo_type: model
+    licence: CC-BY-NC-4.0
+    redistributable: false
+    expected: null
+    # Scope-dependent: covers data/* plus the dev knowledge-store shard only,
+    # not the full store. Recompute against actuals after the first fetch.
+    est_gb: 10.7575
+    enabled: true
+    include_patterns:
+      - "data/*"
+      # The dev knowledge store is a SINGLE ZIP FILE, not a directory. An
+      # earlier "data_store/knowledge_store/dev/*" glob matched nothing and
+      # failed SILENTLY: 12 MB arrived against a 12 GB estimate and the fetch
+      # reported success, because undershoot trips no disk guard.
+      - "data_store/knowledge_store/dev_knowledge_store.zip"
+    forbidden_patterns:
+      - "data_store/knowledge_store/test/*"          # superseded 15 Nov 2024
+      - "data_store/knowledge_store/test_updated/*"  # live held-out shard
+    notes: >-
+      Hosts the AVeriTeC data, the knowledge store and the FEVER shared-task
+      baseline. MEASURED: the repo is 110.70 GB across 41 files. The dev
+      knowledge store is a single ZIP (dev_knowledge_store.zip, 10.74 GB), NOT
+      a dev/ directory — a dev/* glob matches nothing and fails silently, which
+      is exactly what happened on the first run. The FULL knowledge store is
+      hundreds of GB — the shared-task VM budgets 450 GB including it — so it
+      must NEVER be fetched wholesale; always pass allow_patterns. Measured
+      shard sizes: dev 10.74 GB, test 26.85 GB, test_updated 11.98 GB,
+      train 60.58 GB. data_store/knowledge_store/test/ is
+      SUPERSEDED: the organisers replaced it on 15 Nov 2024 to fix a
+      data-leaking problem, and only test_updated/ is valid. Both are forbidden
+      — the old one because it is decommissioned, the new one because it is the
+      live held-out evidence. This is the entry the leak-guard test is
+      calibrated against.
+      MEASURED 10.7575 GB on disk 2026-09-02; initial estimate 12.0 GB, superseded by measurement.
+
+  - name: averimatec
+    method: hf
+    url: Rui4416/AVerImaTeC
+    repo_type: dataset
+    licence: research
+    redistributable: false
+    expected: null
+    est_gb: 0.2383
+    enabled: true
+    # Everything except the held-out test archive. include_patterns are REQUIRED
+    # here: an entry that forbids something may not also take everything, or the
+    # implicit "*" would reach the forbidden path anyway.
+    include_patterns:
+      - "train.json"
+      - "val.json"
+      - "images.zip"
+      - "README.md"
+      - ".gitattributes"
+    forbidden_patterns:
+      - "test_data.zip"
+    notes: >-
+      Multimodal claim + evidence. Evidence is restricted to sources predating
+      the claim date. MEASURED: train 793 / val 152 claims, images.zip 211 MB.
+      test_data.zip (30 MB) is the held-out split and is now FORBIDDEN. It was
+      fetched on the first pass because this entry declared no include_patterns
+      and forbade nothing, so it took the whole repo; the file has since been
+      removed from data/raw. Nothing had read it, so nothing leaked — but the
+      protection averitec has, this entry lacked.
+      MEASURED 0.2383 GB on disk 2026-09-02; initial estimate 5 GB, superseded by measurement.
+
+  - name: verite
+    method: git
+    url: github.com/stevejpapad/relevant-evidence-detection
+    repo_type: null
+    licence: "repo terms — UNVERIFIED"
+    redistributable: false
+    # MEASURED on disk 2026-09-03, not the published figures. The out-of-context
+    # class holds 325, one more than the paper's 324; see notes.
+    expected:
+      "true": 338
+      ooc: 325
+      miscaptioned: 338
+    est_gb: 0.0604
+    enabled: true
+    forbidden_patterns: []
+    notes: >-
+      Out-of-context misinformation, modality-balanced by construction. This is
+      the ONLY out-of-context corpus enabled — visualnews/newsclippings are
+      deferred — so it is load-bearing for that cell. COUNT DIFFERS FROM THE
+      PAPER BY ONE: VERITE.csv holds 1,001 rows (true 338, miscaptioned 338,
+      out-of-context 325) where the published figure is 324 out-of-context.
+      Investigated 2026-09-03 and it is a genuine record, not an artefact: the
+      index column runs contiguously 0..1000 with no gaps or repeats, there are
+      no duplicate rows, no blank line, and no header off-by-one, and all three
+      shipped files (VERITE.csv, VERITE_with_evidence.csv,
+      VERITE_ranked_evidence_clip_ViTB32.csv) independently agree on 338/338/325.
+      The row is KEPT. Never drop data to match a published number.
+      MEASURED 0.0604 GB on disk 2026-09-02; initial estimate 2 GB, superseded by measurement.
+
+  - name: fakeddit
+    method: gdrive
+    # github.com/entitize/Fakeddit holds ONLY image_downloader.py plus a README
+    # (5 files, no TSVs). Its README points the v2.0 text/metadata release at
+    # this Drive folder; URL taken from that README, not guessed.
+    url: drive.google.com/drive/folders/1jU7qgDqU1je9Y0PMKJ_f31yXRo5uWGFm
+    repo_type: null
+    licence: "research-only — UNVERIFIED"
+    redistributable: false
+    expected: null
+    # SAMPLE-DEPENDENT: assumes ~150,000 sampled images (fetch.py's default
+    # --sample-size). The full ~1M-image set would be ~42 GB. RECOMPUTE THIS
+    # FIGURE IF --sample-size CHANGES — the disk guards read it directly.
+    est_gb: 15.0724
+    enabled: true
+    # Paths as the Drive folder reports them (verified by listing it). The
+    # folder also holds all_samples/, the non-multimodal variant, which this
+    # project does not use.
+    include_patterns:
+      - "multimodal_only_samples/multimodal_train.tsv"
+      - "multimodal_only_samples/multimodal_validate.tsv"
+    forbidden_patterns:
+      # Catches BOTH test files in the folder: multimodal_test_public.tsv and
+      # all_samples/all_test_public.tsv. Both are labelled held-out splits.
+      - "*test_public.tsv"
+    notes: >-
+      6-way labels. Images are NOT downloaded wholesale: fetch.py takes a
+      seeded stratified sample across the 6-way label (default 150,000) and
+      hydrate.py fetches only those from the image_url column. The repo's
+      recommended prepackaged image archive is deliberately NOT used, because
+      it is the full set. The public test TSVs are labelled and are held out of
+      ingestion to keep them clean for final evaluation only.
+      MEASURED 15.0724 GB on disk 2026-09-02; initial estimate 8 GB, superseded by measurement.
+
+  - name: welfake
+    method: direct
+    url: zenodo.org/records/4561253
+    repo_type: null
+    licence: CC-BY
+    redistributable: false
+    # `expected` describes what the DOWNLOAD contains, verified on disk
+    # 2026-09-03. The 78,098 pre-filter figure is a property of the source, not
+    # of this file, so it lives in notes instead.
+    expected:
+      rows: 72134
+      real: 35028
+      fake: 37106
+    est_gb: 0.2283
+    enabled: true
+    forbidden_patterns: []
+    notes: >-
+      Text-only. Merged from four upstream sources and inherits their biases.
+      MEASURED: WELFake_Dataset.csv holds exactly 72,134 rows, label 0 (real)
+      35,028 and label 1 (fake) 37,106 — matching `expected` exactly. The
+      source reports 78,098 rows BEFORE filtering, but the Zenodo distribution
+      already ships the post-filter subset, so that 5,964-row drop happened
+      upstream and is NOT reproducible here. Do not expect to see it.
+      MEASURED 0.2283 GB on disk 2026-09-02; initial estimate 1 GB, superseded by measurement.
+
+  - name: liar
+    method: direct
+    url: www.cs.ucsb.edu/~william/data/liar_dataset.zip
+    repo_type: null
+    licence: "research-only (Wang, ACL 2017 — cite the paper) — UNVERIFIED"
+    redistributable: false
+    expected: null
+    est_gb: 0.0037
+    enabled: true
+    include_patterns:
+      - "train.tsv"
+      - "valid.tsv"
+      - "test.tsv"
+      - "README"
+    forbidden_patterns: []
+    notes: >-
+      12.8k short PolitiFact statements with 6-way labels. Test labels are
+      public, so nothing is held back here. Cheap enough to serve as the
+      pipeline smoke test before anything expensive runs.
+      MEASURED 0.0037 GB on disk 2026-09-02; initial estimate 0.01 GB, superseded by measurement.
+
+  - name: isot
+    method: kaggle
+    url: clmentbisaillon/fake-and-real-news-dataset
+    repo_type: null
+    licence: "see Kaggle — UNVERIFIED"
+    redistributable: false
+    expected:
+      real: 21417
+      fake: 23481
+    est_gb: 1
+    enabled: true
+    forbidden_patterns: []
+    notes: >-
+      KNOWN PUBLISHER SHORTCUT — all real news is Reuters, so models learn the
+      outlet rather than deception. NEGATIVE CONTROL ONLY. Never report an ISOT
+      number as a headline result.
+
+  - name: fakenewsnet
+    method: git
+    url: github.com/KaiDMML/FakeNewsNet
+    repo_type: null
+    licence: "research-only; content fetched via the repo's crawler — UNVERIFIED"
+    redistributable: false
+    expected: null
+    est_gb: 0.0411
+    enabled: true
+    include_patterns:
+      - "dataset/politifact_*.csv"
+      - "dataset/gossipcop_*.csv"
+      - "code/*"
+    forbidden_patterns: []
+    notes: >-
+      Ships as IDs plus a crawler; the realised size depends on how much
+      article/image content still resolves. est_gb is the post-crawl estimate,
+      and two crawls on different dates give different corpora.
+      MEASURED 0.0411 GB on disk 2026-09-02; initial estimate 1.5 GB, superseded by measurement.
+
+  - name: visualnews
+    method: git
+    url: github.com/FuxiaoLiu/VisualNews-Repository
+    repo_type: null
+    licence: "research-only; images distributed by request — UNVERIFIED"
+    redistributable: false
+    expected: null
+    est_gb: 60.0
+    enabled: false
+    include_patterns:
+      - "origin/*"
+      - "articles.json"
+    forbidden_patterns: []
+    notes: >-
+      DEFERRED — 60 GB on its own would consume half the budget, and it is only
+      needed as the image backbone for newsclippings. Enable both together, and
+      raise budget_gb deliberately when you do.
+
+  - name: newsclippings
+    method: git
+    url: github.com/g-luo/news_clippings
+    repo_type: null
+    licence: "research-only — UNVERIFIED"
+    redistributable: false
+    expected: null
+    est_gb: 8.0
+    enabled: false
+    include_patterns:
+      - "news_clippings/data/merged_balanced/*"
+    forbidden_patterns: []
+    notes: >-
+      DEFERRED — ships only as index files over visualnews image IDs, so it is
+      inert until visualnews is enabled and fetched. Out-of-context coverage
+      rests on verite while this pair stays deferred.

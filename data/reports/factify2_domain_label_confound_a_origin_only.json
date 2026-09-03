@@ -1,0 +1,354 @@
+{
+  "dataset": "factify2",
+  "label_field": "Category",
+  "source_filter": "origin",
+  "excluded_domains": [],
+  "complete_cases": {
+    "images_per_record": 2.0,
+    "records_total": 42500,
+    "records_complete": 37693,
+    "records_lost": 4807,
+    "retained_overall": 0.8869,
+    "per_class": {
+      "Insufficient_Multimodal": {
+        "records_total": 8500,
+        "records_complete": 8484,
+        "records_lost": 16,
+        "retained": 0.9981
+      },
+      "Insufficient_Text": {
+        "records_total": 8500,
+        "records_complete": 8444,
+        "records_lost": 56,
+        "retained": 0.9934
+      },
+      "Refute": {
+        "records_total": 8500,
+        "records_complete": 4310,
+        "records_lost": 4190,
+        "retained": 0.5071
+      },
+      "Support_Multimodal": {
+        "records_total": 8500,
+        "records_complete": 8414,
+        "records_lost": 86,
+        "retained": 0.9899
+      },
+      "Support_Text": {
+        "records_total": 8500,
+        "records_complete": 8041,
+        "records_lost": 459,
+        "retained": 0.946
+      }
+    }
+  },
+  "records_with_recovered_media": 77973,
+  "records_total": 85000,
+  "distinct_domains": 686,
+  "single_image_domains": 445,
+  "class_totals": {
+    "Insufficient_Multimodal": 16983,
+    "Insufficient_Text": 16936,
+    "Refute": 10711,
+    "Support_Multimodal": 16902,
+    "Support_Text": 16441
+  },
+  "mutual_information_nats": 0.4062,
+  "entropy_domain_nats": 1.1092,
+  "entropy_label_nats": 1.5959,
+  "normalised_mutual_information": {
+    "sqrt": 0.3053,
+    "arithmetic": 0.3003,
+    "definition": "NMI = I(D;Y) / sqrt(H(D)*H(Y)); arithmetic uses (H(D)+H(Y))/2"
+  },
+  "domain_only_classifier": {
+    "majority_class_baseline": 0.2178,
+    "uniform_class_baseline": 0.2,
+    "resubstitution_accuracy": 0.3799,
+    "heldout_accuracy": 0.3732,
+    "folds": 5,
+    "seed": 20260901,
+    "lift_over_baseline": 0.1554,
+    "note": "resubstitution is inflated by 445 single-image domains; heldout is the honest figure"
+  },
+  "top_domains": [
+    {
+      "domain": "pbs.twimg.com",
+      "images": 60836,
+      "share_of_corpus": 0.7802,
+      "class_distribution": {
+        "Insufficient_Multimodal": 14448,
+        "Insufficient_Text": 15486,
+        "Refute": 48,
+        "Support_Multimodal": 16095,
+        "Support_Text": 14759
+      },
+      "dominant_class": "Support_Multimodal",
+      "dominant_share": 0.2646
+    },
+    {
+      "domain": "factly.in",
+      "images": 3563,
+      "share_of_corpus": 0.0457,
+      "class_distribution": {
+        "Refute": 3561,
+        "Support_Text": 2
+      },
+      "dominant_class": "Refute",
+      "dominant_share": 0.9994
+    },
+    {
+      "domain": "images.hindustantimes.com",
+      "images": 3502,
+      "share_of_corpus": 0.0449,
+      "class_distribution": {
+        "Insufficient_Multimodal": 1040,
+        "Insufficient_Text": 1278,
+        "Refute": 6,
+        "Support_Multimodal": 266,
+        "Support_Text": 912
+      },
+      "dominant_class": "Insufficient_Text",
+      "dominant_share": 0.3649
+    },
+    {
+      "domain": "boomlive.in",
+      "images": 3209,
+      "share_of_corpus": 0.0412,
+      "class_distribution": {
+        "Refute": 3209
+      },
+      "dominant_class": "Refute",
+      "dominant_share": 1.0
+    },
+    {
+      "domain": "images.thequint.com",
+      "images": 1807,
+      "share_of_corpus": 0.0232,
+      "class_distribution": {
+        "Insufficient_Multimodal": 1,
+        "Refute": 1802,
+        "Support_Text": 4
+      },
+      "dominant_class": "Refute",
+      "dominant_share": 0.9972
+    },
+    {
+      "domain": "cdn.cnn.com",
+      "images": 1245,
+      "share_of_corpus": 0.016,
+      "class_distribution": {
+        "Insufficient_Multimodal": 760,
+        "Refute": 14,
+        "Support_Multimodal": 240,
+        "Support_Text": 231
+      },
+      "dominant_class": "Insufficient_Multimodal",
+      "dominant_share": 0.6104
+    },
+    {
+      "domain": "s.abcnews.com",
+      "images": 1225,
+      "share_of_corpus": 0.0157,
+      "class_distribution": {
+        "Insufficient_Multimodal": 700,
+        "Insufficient_Text": 2,
+        "Refute": 49,
+        "Support_Multimodal": 240,
+        "Support_Text": 234
+      },
+      "dominant_class": "Insufficient_Multimodal",
+      "dominant_share": 0.5714
+    },
+    {
+      "domain": "static01.nyt.com",
+      "images": 248,
+      "share_of_corpus": 0.0032,
+      "class_distribution": {
+        "Insufficient_Text": 13,
+        "Refute": 217,
+        "Support_Multimodal": 3,
+        "Support_Text": 15
+      },
+      "dominant_class": "Refute",
+      "dominant_share": 0.875
+    },
+    {
+      "domain": "i.ytimg.com",
+      "images": 200,
+      "share_of_corpus": 0.0026,
+      "class_distribution": {
+        "Insufficient_Multimodal": 3,
+        "Insufficient_Text": 7,
+        "Refute": 171,
+        "Support_Multimodal": 4,
+        "Support_Text": 15
+      },
+      "dominant_class": "Refute",
+      "dominant_share": 0.855
+    },
+    {
+      "domain": "media.npr.org",
+      "images": 81,
+      "share_of_corpus": 0.001,
+      "class_distribution": {
+        "Insufficient_Text": 3,
+        "Refute": 68,
+        "Support_Text": 10
+      },
+      "dominant_class": "Refute",
+      "dominant_share": 0.8395
+    },
+    {
+      "domain": "i0.wp.com",
+      "images": 78,
+      "share_of_corpus": 0.001,
+      "class_distribution": {
+        "Insufficient_Multimodal": 2,
+        "Insufficient_Text": 11,
+        "Refute": 45,
+        "Support_Multimodal": 5,
+        "Support_Text": 15
+      },
+      "dominant_class": "Refute",
+      "dominant_share": 0.5769
+    },
+    {
+      "domain": "cdn.factcheck.org",
+      "images": 70,
+      "share_of_corpus": 0.0009,
+      "class_distribution": {
+        "Refute": 70
+      },
+      "dominant_class": "Refute",
+      "dominant_share": 1.0
+    },
+    {
+      "domain": "ichef.bbci.co.uk",
+      "images": 55,
+      "share_of_corpus": 0.0007,
+      "class_distribution": {
+        "Insufficient_Text": 6,
+        "Refute": 40,
+        "Support_Text": 9
+      },
+      "dominant_class": "Refute",
+      "dominant_share": 0.7273
+    },
+    {
+      "domain": "media.newyorker.com",
+      "images": 52,
+      "share_of_corpus": 0.0007,
+      "class_distribution": {
+        "Insufficient_Text": 1,
+        "Refute": 46,
+        "Support_Multimodal": 1,
+        "Support_Text": 4
+      },
+      "dominant_class": "Refute",
+      "dominant_share": 0.8846
+    },
+    {
+      "domain": "gannett-cdn.com",
+      "images": 50,
+      "share_of_corpus": 0.0006,
+      "class_distribution": {
+        "Insufficient_Text": 3,
+        "Refute": 46,
+        "Support_Text": 1
+      },
+      "dominant_class": "Refute",
+      "dominant_share": 0.92
+    },
+    {
+      "domain": "media-cldnry.s-nbcnews.com",
+      "images": 47,
+      "share_of_corpus": 0.0006,
+      "class_distribution": {
+        "Insufficient_Multimodal": 1,
+        "Insufficient_Text": 1,
+        "Refute": 42,
+        "Support_Text": 3
+      },
+      "dominant_class": "Refute",
+      "dominant_share": 0.8936
+    },
+    {
+      "domain": "upload.wikimedia.org",
+      "images": 39,
+      "share_of_corpus": 0.0005,
+      "class_distribution": {
+        "Insufficient_Text": 2,
+        "Refute": 33,
+        "Support_Multimodal": 1,
+        "Support_Text": 3
+      },
+      "dominant_class": "Refute",
+      "dominant_share": 0.8462
+    },
+    {
+      "domain": "arc-anglerfish-washpost-prod-washpost.s3.amazonaws.com",
+      "images": 32,
+      "share_of_corpus": 0.0004,
+      "class_distribution": {
+        "Refute": 30,
+        "Support_Multimodal": 1,
+        "Support_Text": 1
+      },
+      "dominant_class": "Refute",
+      "dominant_share": 0.9375
+    },
+    {
+      "domain": "images.indianexpress.com",
+      "images": 31,
+      "share_of_corpus": 0.0004,
+      "class_distribution": {
+        "Insufficient_Multimodal": 4,
+        "Insufficient_Text": 11,
+        "Refute": 6,
+        "Support_Multimodal": 4,
+        "Support_Text": 6
+      },
+      "dominant_class": "Insufficient_Text",
+      "dominant_share": 0.3548
+    },
+    {
+      "domain": "static.politifact.com",
+      "images": 30,
+      "share_of_corpus": 0.0004,
+      "class_distribution": {
+        "Refute": 29,
+        "Support_Text": 1
+      },
+      "dominant_class": "Refute",
+      "dominant_share": 0.9667
+    }
+  ],
+  "per_class_most_common_domain": {
+    "Insufficient_Multimodal": {
+      "domain": "pbs.twimg.com",
+      "images": 14448,
+      "share_of_class": 0.8507
+    },
+    "Insufficient_Text": {
+      "domain": "pbs.twimg.com",
+      "images": 15486,
+      "share_of_class": 0.9144
+    },
+    "Refute": {
+      "domain": "factly.in",
+      "images": 3561,
+      "share_of_class": 0.3325
+    },
+    "Support_Multimodal": {
+      "domain": "pbs.twimg.com",
+      "images": 16095,
+      "share_of_class": 0.9523
+    },
+    "Support_Text": {
+      "domain": "pbs.twimg.com",
+      "images": 14759,
+      "share_of_class": 0.8977
+    }
+  }
+}

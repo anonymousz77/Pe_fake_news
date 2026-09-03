@@ -1,0 +1,92 @@
+{
+  "dataset": "mocheg",
+  "generated_at": "2026-09-02T22:58:00+00:00",
+  "status": "measured",
+  "files": {
+    "count": 166,
+    "bytes": 2039809055,
+    "gb": 1.8997
+  },
+  "licence": "CC-BY-4.0",
+  "redistributable": false,
+  "access": {
+    "method": "zenodo",
+    "url": "zenodo.org/records/6653772",
+    "repo_type": null
+  },
+  "expected": null,
+  "mismatches": [],
+  "rows": 43148,
+  "by_split": {
+    "train": 36358,
+    "val": 1562,
+    "test": 5228
+  },
+  "labels": {
+    "refuted": 19179,
+    "supported": 12407,
+    "NEI": 11562
+  },
+  "modality": {
+    "records": 43148,
+    "text_only": 43148,
+    "image_only": 0,
+    "both": 0,
+    "neither": 0,
+    "fractions": {
+      "text_only": 1.0,
+      "image_only": 0.0,
+      "both": 0.0,
+      "neither": 0.0
+    }
+  },
+  "dates": {
+    "field": null,
+    "items": 0,
+    "with_explicit_date": 0,
+    "with_url_derived_date": 0,
+    "explicit_coverage": 0.0,
+    "url_derived_coverage": 0.0,
+    "any_coverage": 0.0,
+    "range": null
+  },
+  "columns": [
+    "evidence_id",
+    "claim_id",
+    "Snopes URL",
+    "Commoncrawl URL",
+    "Offset",
+    "Length",
+    "Category",
+    "SubCategory",
+    "ruling_outline",
+    "Origin",
+    "Headline",
+    "Description",
+    "Source",
+    "Claim",
+    "cleaned_truthfulness",
+    "Truthfulness",
+    "Evidence",
+    "fact_checkor_website"
+  ],
+  "unique_claims": 21184,
+  "evidence": {
+    "kind": "one Corpus2 row per evidence item, keyed to a claim_id",
+    "records_with_evidence": 21184,
+    "records_total": 21184,
+    "coverage": 1.0,
+    "evidence_items": 43148,
+    "with_explicit_date": 0,
+    "with_url_derived_date": 0,
+    "explicit_coverage": 0.0,
+    "url_derived_coverage": 0.0,
+    "any_coverage": 0.0,
+    "range": null,
+    "note": "Corpus2 has NO date column; dates are derived from the Commoncrawl/Snopes URL only."
+  },
+  "notes": [
+    "this release is mocheg_v1_without_image and carries NO images",
+    "rows are evidence items, not claims; unique_claims is the claim count"
+  ]
+}

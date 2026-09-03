@@ -1,0 +1,56 @@
+{
+  "dataset": "fakeddit",
+  "label_field": "label",
+  "attempted": 150000,
+  "succeeded": 142434,
+  "failed": 7566,
+  "recovery_rate": 0.9496,
+  "recovery_rate_per_class": {
+    "0": 0.9291,
+    "1": 0.9346,
+    "2": 0.9229,
+    "3": 0.949,
+    "4": 0.9927,
+    "5": 0.9796
+  },
+  "per_class_attempted": {
+    "0": 58925,
+    "1": 8909,
+    "2": 28503,
+    "3": 3140,
+    "4": 44801,
+    "5": 5722
+  },
+  "per_class_succeeded": {
+    "0": 54745,
+    "1": 8326,
+    "2": 26305,
+    "3": 2980,
+    "4": 44473,
+    "5": 5605
+  },
+  "failure_reasons": {
+    "connectionerror": 116,
+    "connecttimeout": 4,
+    "http_400": 4,
+    "http_402": 4,
+    "http_403": 23,
+    "http_404": 7350,
+    "http_406": 1,
+    "http_409": 1,
+    "http_410": 5,
+    "http_429": 1,
+    "http_500": 5,
+    "http_502": 3,
+    "http_503": 27,
+    "http_530": 7,
+    "readtimeout": 7,
+    "sslerror": 7,
+    "toomanyredirects": 1
+  },
+  "seed": 20260901,
+  "concurrency": 16,
+  "started_at": "2026-09-01T23:05:37+00:00",
+  "finished_at": "2026-09-02T00:28:12+00:00",
+  "notes": null
+}

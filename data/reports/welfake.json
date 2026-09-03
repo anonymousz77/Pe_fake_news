@@ -1,0 +1,64 @@
+{
+  "dataset": "welfake",
+  "generated_at": "2026-09-02T22:59:56+00:00",
+  "status": "measured",
+  "files": {
+    "count": 1,
+    "bytes": 245086152,
+    "gb": 0.2283
+  },
+  "licence": "CC-BY",
+  "redistributable": false,
+  "access": {
+    "method": "direct",
+    "url": "zenodo.org/records/4561253",
+    "repo_type": null
+  },
+  "expected": {
+    "rows": 72134,
+    "real": 35028,
+    "fake": 37106
+  },
+  "mismatches": [],
+  "rows": 72134,
+  "by_split": {
+    "all": 72134
+  },
+  "labels": {
+    "1": 37106,
+    "0": 35028
+  },
+  "modality": {
+    "records": 72134,
+    "text_only": 72134,
+    "image_only": 0,
+    "both": 0,
+    "neither": 0,
+    "fractions": {
+      "text_only": 1.0,
+      "image_only": 0.0,
+      "both": 0.0,
+      "neither": 0.0
+    }
+  },
+  "dates": {
+    "field": null,
+    "items": 0,
+    "with_explicit_date": 0,
+    "with_url_derived_date": 0,
+    "explicit_coverage": 0.0,
+    "url_derived_coverage": 0.0,
+    "any_coverage": 0.0,
+    "range": null
+  },
+  "columns": [
+    "title",
+    "text",
+    "label"
+  ],
+  "notes": [
+    "single undivided CSV: no train/val/test split shipped",
+    "label 0 = real, 1 = fake",
+    "text-only corpus"
+  ]
+}

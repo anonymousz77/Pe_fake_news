@@ -1,0 +1,71 @@
+{
+  "dataset": "verite",
+  "generated_at": "2026-09-03T03:45:20+00:00",
+  "status": "measured",
+  "files": {
+    "count": 1870,
+    "bytes": 173657108,
+    "gb": 0.1617
+  },
+  "licence": "repo terms \u2014 UNVERIFIED",
+  "redistributable": false,
+  "access": {
+    "method": "git",
+    "url": "github.com/stevejpapad/relevant-evidence-detection",
+    "repo_type": null
+  },
+  "expected": {
+    "true": 338,
+    "ooc": 325,
+    "miscaptioned": 338
+  },
+  "mismatches": [],
+  "rows": 1001,
+  "by_split": {
+    "all": 1001
+  },
+  "labels": {
+    "true": 338,
+    "miscaptioned": 338,
+    "out-of-context": 325
+  },
+  "modality": {
+    "records": 1001,
+    "text_only": 280,
+    "image_only": 0,
+    "both": 721,
+    "neither": 0,
+    "fractions": {
+      "text_only": 0.2797,
+      "image_only": 0.0,
+      "both": 0.7203,
+      "neither": 0.0
+    }
+  },
+  "dates": {
+    "field": null,
+    "items": 0,
+    "with_explicit_date": 0,
+    "with_url_derived_date": 0,
+    "explicit_coverage": 0.0,
+    "url_derived_coverage": 0.0,
+    "any_coverage": 0.0,
+    "range": null
+  },
+  "columns": [
+    "caption",
+    "image_path",
+    "label"
+  ],
+  "images": {
+    "referenced": 1001,
+    "on_disk": 721,
+    "coverage": 0.7203,
+    "distinct_images": 663,
+    "note": "one image serves two classes: `true` and `miscaptioned` share the same true_N.jpg, so their coverage is identical by construction"
+  },
+  "notes": [
+    "single undivided CSV; image_path resolved relative to it",
+    "images are NOT shipped with the corpus. The register points at github.com/stevejpapad/relevant-evidence-detection (RED-DOT), which carries VERITE's CSVs and precomputed evidence only. The images were hydrated from true_url/false_url in VERITE_articles.csv -- see data/reports/hydration_verite.json for per-class recovery."
+  ]
+}

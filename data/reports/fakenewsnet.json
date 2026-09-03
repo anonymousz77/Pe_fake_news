@@ -1,0 +1,63 @@
+{
+  "dataset": "fakenewsnet",
+  "generated_at": "2026-09-02T22:59:56+00:00",
+  "status": "measured",
+  "files": {
+    "count": 17,
+    "bytes": 44138158,
+    "gb": 0.0411
+  },
+  "licence": "research-only; content fetched via the repo's crawler \u2014 UNVERIFIED",
+  "redistributable": false,
+  "access": {
+    "method": "git",
+    "url": "github.com/KaiDMML/FakeNewsNet",
+    "repo_type": null
+  },
+  "expected": null,
+  "mismatches": [],
+  "rows": 23196,
+  "by_split": {
+    "gossipcop_fake": 5323,
+    "gossipcop_real": 16817,
+    "politifact_fake": 432,
+    "politifact_real": 624
+  },
+  "labels": {
+    "real": 17441,
+    "fake": 5755
+  },
+  "modality": {
+    "records": 23196,
+    "text_only": 23196,
+    "image_only": 0,
+    "both": 0,
+    "neither": 0,
+    "fractions": {
+      "text_only": 1.0,
+      "image_only": 0.0,
+      "both": 0.0,
+      "neither": 0.0
+    }
+  },
+  "dates": {
+    "field": null,
+    "items": 0,
+    "with_explicit_date": 0,
+    "with_url_derived_date": 0,
+    "explicit_coverage": 0.0,
+    "url_derived_coverage": 0.0,
+    "any_coverage": 0.0,
+    "range": null
+  },
+  "columns": [
+    "id",
+    "news_url",
+    "title",
+    "tweet_ids"
+  ],
+  "notes": [
+    "label comes from the filename (politifact/gossipcop x fake/real)",
+    "rows are IDs plus a news_url; article text and images are NOT included and require the upstream crawler"
+  ]
+}

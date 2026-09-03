@@ -1,0 +1,99 @@
+{
+  "dataset": "averitec",
+  "generated_at": "2026-09-02T22:59:19+00:00",
+  "status": "measured",
+  "files": {
+    "count": 4,
+    "bytes": 11550772920,
+    "gb": 10.7575
+  },
+  "licence": "CC-BY-NC-4.0",
+  "redistributable": false,
+  "access": {
+    "method": "hf",
+    "url": "chenxwh/AVeriTeC",
+    "repo_type": "model"
+  },
+  "expected": null,
+  "mismatches": [],
+  "rows": 5783,
+  "by_split": {
+    "train": 3068,
+    "dev": 500,
+    "test": 2215
+  },
+  "labels": {
+    "?": 2215,
+    "Refuted": 2047,
+    "Supported": 971,
+    "Not Enough Evidence": 317,
+    "Conflicting Evidence/Cherrypicking": 233
+  },
+  "modality": {
+    "records": 5783,
+    "text_only": 5782,
+    "image_only": 0,
+    "both": 0,
+    "neither": 1,
+    "fractions": {
+      "text_only": 0.9998,
+      "image_only": 0.0,
+      "both": 0.0,
+      "neither": 0.0002
+    }
+  },
+  "dates": {
+    "field": "claim_date",
+    "items": 5783,
+    "with_explicit_date": 5678,
+    "with_url_derived_date": 0,
+    "explicit_coverage": 0.9818,
+    "url_derived_coverage": 0.0,
+    "any_coverage": 0.9818,
+    "range": {
+      "min": "1919-02-19",
+      "max": "2023-08-13"
+    }
+  },
+  "evidence": {
+    "kind": "questions -> answers, each with a source_url",
+    "records_with_evidence": 3568,
+    "records_total": 5783,
+    "coverage": 0.617,
+    "evidence_items": 9878,
+    "with_explicit_date": 0,
+    "with_url_derived_date": 908,
+    "explicit_coverage": 0.0,
+    "url_derived_coverage": 0.0919,
+    "any_coverage": 0.0919,
+    "range": {
+      "min": "1970-04-17",
+      "max": "2022-11-01"
+    },
+    "note": "answers carry NO date field; any date here is derived from the source URL path and is the publisher's filing convention, not an asserted publication date."
+  },
+  "notes": [
+    "test.json is the unlabelled shared-task split; its claims are counted in rows but carry no usable label",
+    "claim_date is day-first and unpadded (25-8-2020), parsed as such because 1,712 train values have a first component above 12",
+    "claim_date is explicit; evidence dates are not"
+  ],
+  "knowledge_store": {
+    "present": true,
+    "claim_files_total": 500,
+    "claim_files_scanned": 100,
+    "is_sample": true,
+    "unparsable_lines": 5945,
+    "field": null,
+    "items": 102325,
+    "with_explicit_date": 0,
+    "with_url_derived_date": 11075,
+    "explicit_coverage": 0.0,
+    "url_derived_coverage": 0.1082,
+    "any_coverage": 0.1082,
+    "range": {
+      "min": "1399-10-12",
+      "max": "2023-12-18"
+    },
+    "note": "knowledge-store records are claim_id/type/query/url/url2text \u2014 there is NO date field, so every date here is URL-derived."
+  }
+}

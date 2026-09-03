@@ -1,0 +1,60 @@
+# --- python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# --- local configuration ---
+# .env carries PE_FAKE_NEWS_ROOT, which is machine-specific by definition.
+.env
+.env.*
+!.env.example
+
+# --- data ---
+# Everything under data/ is ignored except the register, the integrity
+# manifest, and the .gitkeep files that hold the tree shape in git.
+#
+# data/sources.yaml   tracked — the register IS the project
+# data/MANIFEST.sha256 tracked — the integrity record must be reviewable
+# data/bible/         ignored — the evidence store, tens of GB of dated
+#                     documents. Hand-written prose lives in docs/, not here.
+
+data/raw/*
+!data/raw/.gitkeep
+
+data/interim/*
+!data/interim/.gitkeep
+
+data/processed/*
+!data/processed/.gitkeep
+!data/processed/splits/
+data/processed/splits/*
+!data/processed/splits/.gitkeep
+# Split membership is publishable: the files carry record_id and split
+# assignment ONLY. Labels and per-record domains are deliberately absent —
+# they are the annotation these datasets' licences protect. The split report
+# is an aggregate and carries the leakage proof.
+!data/processed/splits/*.csv
+!data/processed/splits/*_split_report*.json
+
+data/reports/*
+!data/reports/.gitkeep
+# Aggregate reports are publishable and are the point of publishing at all:
+# per-class recovery, domain purity and counts, the confound statistics.
+!data/reports/*.json
+# ...but NOT the .jsonl ledgers. hydration_<name>_failures.jsonl is per-record
+# and carries both labels and image URLs for gated corpora. It stays local.
+data/reports/*.jsonl
+
+data/bible/*
+!data/bible/.gitkeep
+
+# --- os noise ---
+.DS_Store
+Thumbs.db
+desktop.ini

@@ -1,0 +1,78 @@
+{
+  "dataset": "factify2",
+  "generated_at": "2026-09-02T22:58:22+00:00",
+  "status": "measured",
+  "files": {
+    "count": 79257,
+    "bytes": 10480043933,
+    "gb": 9.7603
+  },
+  "licence": "research-only; registration required \u2014 UNVERIFIED",
+  "redistributable": false,
+  "access": {
+    "method": "gdrive",
+    "url": "drive.google.com/drive/folders/13JwnIBzDfe8a5E1anPkt7J90r4NBIYES",
+    "repo_type": null
+  },
+  "expected": null,
+  "mismatches": [],
+  "rows": 42500,
+  "by_split": {
+    "train": 35000,
+    "val": 7500
+  },
+  "labels": {
+    "Support_Multimodal": 8500,
+    "Insufficient_Multimodal": 8500,
+    "Support_Text": 8500,
+    "Refute": 8500,
+    "Insufficient_Text": 8500
+  },
+  "modality": {
+    "records": 42500,
+    "text_only": 4075,
+    "image_only": 0,
+    "both": 38425,
+    "neither": 0,
+    "fractions": {
+      "text_only": 0.0959,
+      "image_only": 0.0,
+      "both": 0.9041,
+      "neither": 0.0
+    }
+  },
+  "dates": {
+    "field": null,
+    "items": 0,
+    "with_explicit_date": 0,
+    "with_url_derived_date": 0,
+    "explicit_coverage": 0.0,
+    "url_derived_coverage": 0.0,
+    "any_coverage": 0.0,
+    "range": null
+  },
+  "columns": [
+    "claim",
+    "claim_image",
+    "document",
+    "document_image",
+    "Category",
+    "Claim OCR",
+    "Document OCR"
+  ],
+  "evidence": {
+    "kind": "document text field (not discrete evidence items)",
+    "records_with_evidence": 42500,
+    "records_total": 42500,
+    "coverage": 1.0,
+    "evidence_items": 0,
+    "with_explicit_date": 0,
+    "with_url_derived_date": 0,
+    "date_coverage": 0.0,
+    "note": "NO DATE FIELD EXISTS in factify2. Columns are claim, claim_image, document, document_image, Category, and the two OCR fields. Its evidence therefore cannot participate in time-filtered retrieval at all."
+  },
+  "notes": [
+    "a record carries TWO images (claim + document); modality 'both' requires both to be on disk",
+    "test.csv is excluded: it is the unlabelled shared-task split"
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "dataset": "isot",
+  "generated_at": "2026-09-02T22:59:56+00:00",
+  "status": "NOT FETCHED",
+  "files": {
+    "count": 0,
+    "bytes": 0
+  },
+  "licence": "see Kaggle \u2014 UNVERIFIED",
+  "redistributable": false,
+  "access": {
+    "method": "kaggle",
+    "url": "clmentbisaillon/fake-and-real-news-dataset"
+  },
+  "expected": {
+    "real": 21417,
+    "fake": 23481
+  },
+  "mismatches": [],
+  "notes": [
+    "isot has never been fetched; nothing to measure."
+  ]
+}
