@@ -1,0 +1,1072 @@
+{
+  "inputs": {
+    "processed": true,
+    "dead_images": true,
+    "placeholders": "placeholders.yaml"
+  },
+  "registry": {
+    "version": 13,
+    "entries": 4135,
+    "by_status": {
+      "placeholder": 113,
+      "furniture": 1038,
+      "blank": 83,
+      "generic_stock": 236,
+      "verdict": 2665
+    }
+  },
+  "register": [
+    {
+      "name": "mocheg",
+      "enabled": true,
+      "licence": "CC-BY-4.0 (Zenodo record metadata + repo README; verbatim in docs/licences.md)",
+      "redistributable": true
+    },
+    {
+      "name": "factify2",
+      "enabled": true,
+      "licence": "none stated (README and shared-task page checked 2026-10-01); registration-gated",
+      "redistributable": false
+    },
+    {
+      "name": "averitec",
+      "enabled": true,
+      "licence": "CC-BY-NC-4.0 (HF repo card; verbatim in docs/licences.md)",
+      "redistributable": true
+    },
+    {
+      "name": "averimatec",
+      "enabled": true,
+      "licence": "none stated (HF dataset card has no license field, checked 2026-10-01)",
+      "redistributable": false
+    },
+    {
+      "name": "verite",
+      "enabled": true,
+      "licence": "Apache-2.0 repository; dataset 'intended solely for research purposes'; images gated, no redistribution",
+      "redistributable": false
+    },
+    {
+      "name": "fakeddit",
+      "enabled": true,
+      "licence": "none stated (repo has no licence file; website checked 2026-10-01)",
+      "redistributable": false
+    },
+    {
+      "name": "welfake",
+      "enabled": true,
+      "licence": "CC-BY-4.0 (Zenodo record metadata; verbatim in docs/licences.md)",
+      "redistributable": true
+    },
+    {
+      "name": "liar",
+      "enabled": true,
+      "licence": "research use only, no licence named (README in the zip: 'You are allowed to use this dataset for research purposes only.')",
+      "redistributable": false
+    },
+    {
+      "name": "isot",
+      "enabled": true,
+      "licence": "none stated (lab page and ReadMe PDF checked 2026-10-01; citation requested)",
+      "redistributable": false
+    },
+    {
+      "name": "fakenewsnet",
+      "enabled": true,
+      "licence": "none stated (repo has no licence file; README: complete dataset 'cannot be distributed')",
+      "redistributable": false
+    },
+    {
+      "name": "dgm4",
+      "enabled": true,
+      "licence": "Apache-2.0 (HF dataset card `license: apache-2.0`; the code repo is S-Lab License 1.0, non-commercial \u2014 verbatim in docs/licences.md)",
+      "redistributable": true
+    },
+    {
+      "name": "m4fc",
+      "enabled": true,
+      "licence": "CC-BY-SA-4.0 (dataset: README, data/README.md and data/license); code Apache-2.0 \u2014 verbatim in docs/licences.md",
+      "redistributable": true
+    },
+    {
+      "name": "visualnews",
+      "enabled": false,
+      "licence": "none stated (cs.rice.edu/~vo9/visualnews directory listing and repo README checked 2026-10-01)",
+      "redistributable": false
+    },
+    {
+      "name": "newsclippings",
+      "enabled": false,
+      "licence": "none stated (repo has no licence file; README checked 2026-10-01)",
+      "redistributable": false
+    }
+  ],
+  "datasets": {
+    "averimatec": {
+      "rows": 945,
+      "usable": 944,
+      "images_expected": 1393,
+      "images_usable": 1391,
+      "not_usable_by_status": {
+        "placeholder": 2
+      },
+      "splits": {
+        "test": 945
+      },
+      "per_class": {
+        "Conflicting Evidence/Cherrypicking": {
+          "rows": 7,
+          "usable": 7,
+          "images_expected": 16,
+          "images_usable": 16,
+          "not_usable_by_status": {},
+          "image_coverage": 1.0
+        },
+        "Not Enough Evidence": {
+          "rows": 24,
+          "usable": 24,
+          "images_expected": 28,
+          "images_usable": 28,
+          "not_usable_by_status": {},
+          "image_coverage": 1.0
+        },
+        "Refuted": {
+          "rows": 897,
+          "usable": 896,
+          "images_expected": 1329,
+          "images_usable": 1327,
+          "not_usable_by_status": {
+            "placeholder": 2
+          },
+          "image_coverage": 0.9985
+        },
+        "Supported": {
+          "rows": 17,
+          "usable": 17,
+          "images_expected": 20,
+          "images_usable": 20,
+          "not_usable_by_status": {},
+          "image_coverage": 1.0
+        }
+      }
+    },
+    "averitec": {
+      "rows": 5783,
+      "usable": 3567,
+      "images_expected": 0,
+      "images_usable": 0,
+      "not_usable_by_status": {},
+      "splits": {
+        "test": 2215,
+        "train": 3068,
+        "val": 500
+      },
+      "per_class": {
+        "Conflicting Evidence/Cherrypicking": {
+          "rows": 233,
+          "usable": 233,
+          "images_expected": 0,
+          "images_usable": 0,
+          "not_usable_by_status": {},
+          "image_coverage": null
+        },
+        "None": {
+          "rows": 2215,
+          "usable": 0,
+          "images_expected": 0,
+          "images_usable": 0,
+          "not_usable_by_status": {},
+          "image_coverage": null
+        },
+        "Not Enough Evidence": {
+          "rows": 317,
+          "usable": 317,
+          "images_expected": 0,
+          "images_usable": 0,
+          "not_usable_by_status": {},
+          "image_coverage": null
+        },
+        "Refuted": {
+          "rows": 2047,
+          "usable": 2047,
+          "images_expected": 0,
+          "images_usable": 0,
+          "not_usable_by_status": {},
+          "image_coverage": null
+        },
+        "Supported": {
+          "rows": 971,
+          "usable": 970,
+          "images_expected": 0,
+          "images_usable": 0,
+          "not_usable_by_status": {},
+          "image_coverage": null
+        }
+      }
+    },
+    "dgm4": {
+      "rows": 179295,
+      "usable": 179295,
+      "images_expected": 179295,
+      "images_usable": 179295,
+      "not_usable_by_status": {},
+      "splits": {
+        "train": 157159,
+        "val": 22136
+      },
+      "per_class": {
+        "face_attribute": {
+          "rows": 32512,
+          "usable": 32512,
+          "images_expected": 32512,
+          "images_usable": 32512,
+          "not_usable_by_status": {},
+          "image_coverage": 1.0
+        },
+        "face_attribute&text_attribute": {
+          "rows": 3595,
+          "usable": 3595,
+          "images_expected": 3595,
+          "images_usable": 3595,
+          "not_usable_by_status": {},
+          "image_coverage": 1.0
+        },
+        "face_attribute&text_swap": {
+          "rows": 7968,
+          "usable": 7968,
+          "images_expected": 7968,
+          "images_usable": 7968,
+          "not_usable_by_status": {},
+          "image_coverage": 1.0
+        },
+        "face_swap": {
+          "rows": 38492,
+          "usable": 38492,
+          "images_expected": 38492,
+          "images_usable": 38492,
+          "not_usable_by_status": {},
+          "image_coverage": 1.0
+        },
+        "face_swap&text_attribute": {
+          "rows": 4182,
+          "usable": 4182,
+          "images_expected": 4182,
+          "images_usable": 4182,
+          "not_usable_by_status": {},
+          "image_coverage": 1.0
+        },
+        "face_swap&text_swap": {
+          "rows": 9480,
+          "usable": 9480,
+          "images_expected": 9480,
+          "images_usable": 9480,
+          "not_usable_by_status": {},
+          "image_coverage": 1.0
+        },
+        "orig": {
+          "rows": 60550,
+          "usable": 60550,
+          "images_expected": 60550,
+          "images_usable": 60550,
+          "not_usable_by_status": {},
+          "image_coverage": 1.0
+        },
+        "text_attribute": {
+          "rows": 6834,
+          "usable": 6834,
+          "images_expected": 6834,
+          "images_usable": 6834,
+          "not_usable_by_status": {},
+          "image_coverage": 1.0
+        },
+        "text_swap": {
+          "rows": 15682,
+          "usable": 15682,
+          "images_expected": 15682,
+          "images_usable": 15682,
+          "not_usable_by_status": {},
+          "image_coverage": 1.0
+        }
+      }
+    },
+    "factify2": {
+      "rows": 42500,
+      "usable": 37807,
+      "images_expected": 85000,
+      "images_usable": 80006,
+      "not_usable_by_status": {
+        "dead:blocked_403+no_snapshot": 1404,
+        "dead:blocked_403+snapshot_verdict": 444,
+        "dead:blocked_403+snapshots_are_placeholders": 6,
+        "dead:dns_failure+no_snapshot": 24,
+        "dead:dns_failure+snapshot_verdict": 1,
+        "dead:fetched_blank+no_snapshot": 1,
+        "dead:fetched_furniture+no_snapshot": 138,
+        "dead:fetched_furniture+snapshot_furniture": 1,
+        "dead:fetched_furniture+snapshots_are_placeholders": 13,
+        "dead:fetched_verdict+no_snapshot": 9,
+        "dead:fetched_verdict+snapshot_verdict": 1,
+        "dead:fetched_verdict+snapshots_are_placeholders": 1,
+        "dead:gone_404+no_snapshot": 72,
+        "dead:gone_404+snapshot_verdict": 12,
+        "dead:host_serves_non_image+no_snapshot": 17,
+        "dead:host_serves_placeholder+archive_refuses_host_404": 2,
+        "dead:host_serves_placeholder+no_snapshot": 1202,
+        "dead:host_serves_placeholder+snapshot_furniture": 320,
+        "dead:host_serves_placeholder+snapshot_verdict": 57,
+        "dead:host_serves_placeholder+snapshots_are_placeholders": 1219,
+        "dead:refused_http_400+no_snapshot": 10,
+        "dead:refused_http_400+snapshots_failed": 1,
+        "dead:refused_http_406+no_snapshot": 10,
+        "dead:refused_http_412+no_snapshot": 1,
+        "dead:refused_http_415+no_snapshot": 1,
+        "dead:refused_http_429+no_snapshot": 1,
+        "dead:refused_http_429+snapshots_are_placeholders": 3,
+        "dead:server_error_5xx+no_snapshot": 6,
+        "dead:unreachable_connection_error+no_snapshot": 6,
+        "dead:unreachable_ssl_error+no_snapshot": 10,
+        "dead:unreachable_timeout+no_snapshot": 1
+      },
+      "splits": {
+        "test": 13583,
+        "train": 23817,
+        "val": 5100
+      },
+      "per_class": {
+        "Insufficient_Multimodal": {
+          "rows": 8500,
+          "usable": 8454,
+          "images_expected": 17000,
+          "images_usable": 16954,
+          "not_usable_by_status": {
+            "dead:host_serves_placeholder+no_snapshot": 18,
+            "dead:host_serves_placeholder+snapshot_furniture": 5,
+            "dead:host_serves_placeholder+snapshots_are_placeholders": 23
+          },
+          "image_coverage": 0.9973
+        },
+        "Insufficient_Text": {
+          "rows": 8500,
+          "usable": 8039,
+          "images_expected": 17000,
+          "images_usable": 16533,
+          "not_usable_by_status": {
+            "dead:blocked_403+no_snapshot": 7,
+            "dead:dns_failure+no_snapshot": 1,
+            "dead:gone_404+no_snapshot": 8,
+            "dead:gone_404+snapshot_verdict": 1,
+            "dead:host_serves_non_image+no_snapshot": 1,
+            "dead:host_serves_placeholder+no_snapshot": 125,
+            "dead:host_serves_placeholder+snapshot_furniture": 75,
+            "dead:host_serves_placeholder+snapshot_verdict": 4,
+            "dead:host_serves_placeholder+snapshots_are_placeholders": 241,
+            "dead:refused_http_400+no_snapshot": 1,
+            "dead:refused_http_415+no_snapshot": 1,
+            "dead:unreachable_ssl_error+no_snapshot": 1,
+            "dead:unreachable_timeout+no_snapshot": 1
+          },
+          "image_coverage": 0.9725
+        },
+        "Refute": {
+          "rows": 8500,
+          "usable": 5635,
+          "images_expected": 17000,
+          "images_usable": 13877,
+          "not_usable_by_status": {
+            "dead:blocked_403+no_snapshot": 1072,
+            "dead:blocked_403+snapshot_verdict": 444,
+            "dead:blocked_403+snapshots_are_placeholders": 6,
+            "dead:dns_failure+no_snapshot": 18,
+            "dead:dns_failure+snapshot_verdict": 1,
+            "dead:fetched_blank+no_snapshot": 1,
+            "dead:fetched_furniture+no_snapshot": 138,
+            "dead:fetched_furniture+snapshot_furniture": 1,
+            "dead:fetched_furniture+snapshots_are_placeholders": 13,
+            "dead:fetched_verdict+no_snapshot": 9,
+            "dead:fetched_verdict+snapshot_verdict": 1,
+            "dead:fetched_verdict+snapshots_are_placeholders": 1,
+            "dead:gone_404+no_snapshot": 47,
+            "dead:gone_404+snapshot_verdict": 9,
+            "dead:host_serves_non_image+no_snapshot": 11,
+            "dead:host_serves_placeholder+no_snapshot": 563,
+            "dead:host_serves_placeholder+snapshot_furniture": 155,
+            "dead:host_serves_placeholder+snapshot_verdict": 53,
+            "dead:host_serves_placeholder+snapshots_are_placeholders": 544,
+            "dead:refused_http_400+no_snapshot": 9,
+            "dead:refused_http_400+snapshots_failed": 1,
+            "dead:refused_http_406+no_snapshot": 10,
+            "dead:refused_http_412+no_snapshot": 1,
+            "dead:refused_http_429+no_snapshot": 1,
+            "dead:refused_http_429+snapshots_are_placeholders": 3,
+            "dead:server_error_5xx+no_snapshot": 2,
+            "dead:unreachable_connection_error+no_snapshot": 4,
+            "dead:unreachable_ssl_error+no_snapshot": 5
+          },
+          "image_coverage": 0.8163
+        },
+        "Support_Multimodal": {
+          "rows": 8500,
+          "usable": 8448,
+          "images_expected": 17000,
+          "images_usable": 16944,
+          "not_usable_by_status": {
+            "dead:blocked_403+no_snapshot": 42,
+            "dead:dns_failure+no_snapshot": 1,
+            "dead:gone_404+no_snapshot": 3,
+            "dead:gone_404+snapshot_verdict": 1,
+            "dead:host_serves_non_image+no_snapshot": 1,
+            "dead:host_serves_placeholder+no_snapshot": 2,
+            "dead:host_serves_placeholder+snapshots_are_placeholders": 4,
+            "dead:unreachable_connection_error+no_snapshot": 1,
+            "dead:unreachable_ssl_error+no_snapshot": 1
+          },
+          "image_coverage": 0.9967
+        },
+        "Support_Text": {
+          "rows": 8500,
+          "usable": 7231,
+          "images_expected": 17000,
+          "images_usable": 15698,
+          "not_usable_by_status": {
+            "dead:blocked_403+no_snapshot": 283,
+            "dead:dns_failure+no_snapshot": 4,
+            "dead:gone_404+no_snapshot": 14,
+            "dead:gone_404+snapshot_verdict": 1,
+            "dead:host_serves_non_image+no_snapshot": 4,
+            "dead:host_serves_placeholder+archive_refuses_host_404": 2,
+            "dead:host_serves_placeholder+no_snapshot": 494,
+            "dead:host_serves_placeholder+snapshot_furniture": 85,
+            "dead:host_serves_placeholder+snapshots_are_placeholders": 407,
+            "dead:server_error_5xx+no_snapshot": 4,
+            "dead:unreachable_connection_error+no_snapshot": 1,
+            "dead:unreachable_ssl_error+no_snapshot": 3
+          },
+          "image_coverage": 0.9234
+        }
+      }
+    },
+    "fakeddit": {
+      "rows": 623342,
+      "usable": 615822,
+      "images_expected": 150000,
+      "images_usable": 142480,
+      "not_usable_by_status": {
+        "dead:blocked_403+no_snapshot": 6,
+        "dead:dns_failure+no_snapshot": 65,
+        "dead:fetched_blank+no_snapshot": 4,
+        "dead:fetched_blank+snapshot_blank": 9,
+        "dead:fetched_blank+snapshot_placeholder": 6,
+        "dead:fetched_furniture+no_snapshot": 23,
+        "dead:fetched_furniture+snapshot_blank": 1,
+        "dead:fetched_furniture+snapshot_furniture": 203,
+        "dead:fetched_furniture+snapshot_placeholder": 2,
+        "dead:fetched_placeholder+no_snapshot": 4,
+        "dead:fetched_placeholder+snapshot_placeholder": 19,
+        "dead:gone_404+no_snapshot": 4313,
+        "dead:gone_404+snapshot_blank": 17,
+        "dead:gone_404+snapshot_furniture": 216,
+        "dead:gone_404+snapshot_placeholder": 865,
+        "dead:gone_404+snapshots_failed": 2,
+        "dead:gone_404+snapshots_not_images": 2,
+        "dead:gone_410+no_snapshot": 2,
+        "dead:host_serves_non_image+no_snapshot": 59,
+        "dead:host_serves_placeholder+no_snapshot": 1,
+        "dead:host_serves_placeholder+snapshots_are_placeholders": 1,
+        "dead:host_serves_placeholder+snapshots_not_images": 1,
+        "dead:refused_http_400+no_snapshot": 3,
+        "dead:refused_http_409+no_snapshot": 1,
+        "dead:refused_http_429+snapshot_blank": 1,
+        "dead:removed_by_host+no_snapshot": 1669,
+        "dead:server_error_5xx+no_snapshot": 20,
+        "dead:unreachable_ssl_error+no_snapshot": 4,
+        "dead:unreachable_timeout+no_snapshot": 1
+      },
+      "splits": {
+        "train": 563414,
+        "val": 59928
+      },
+      "per_class": {
+        "0": {
+          "rows": 245401,
+          "usable": 242060,
+          "images_expected": 58925,
+          "images_usable": 55584,
+          "not_usable_by_status": {
+            "dead:fetched_blank+no_snapshot": 3,
+            "dead:fetched_blank+snapshot_blank": 4,
+            "dead:fetched_blank+snapshot_placeholder": 1,
+            "dead:fetched_furniture+no_snapshot": 19,
+            "dead:fetched_furniture+snapshot_blank": 1,
+            "dead:fetched_furniture+snapshot_furniture": 176,
+            "dead:fetched_placeholder+no_snapshot": 1,
+            "dead:fetched_placeholder+snapshot_placeholder": 10,
+            "dead:gone_404+no_snapshot": 2421,
+            "dead:gone_404+snapshot_blank": 12,
+            "dead:gone_404+snapshot_furniture": 206,
+            "dead:gone_404+snapshot_placeholder": 487
+          },
+          "image_coverage": 0.9433
+        },
+        "1": {
+          "rows": 37002,
+          "usable": 36564,
+          "images_expected": 8909,
+          "images_usable": 8471,
+          "not_usable_by_status": {
+            "dead:fetched_furniture+no_snapshot": 2,
+            "dead:fetched_furniture+snapshot_furniture": 4,
+            "dead:fetched_furniture+snapshot_placeholder": 1,
+            "dead:fetched_placeholder+snapshot_placeholder": 4,
+            "dead:gone_404+no_snapshot": 404,
+            "dead:gone_404+snapshot_blank": 4,
+            "dead:gone_404+snapshot_furniture": 1,
+            "dead:gone_404+snapshot_placeholder": 18
+          },
+          "image_coverage": 0.9508
+        },
+        "2": {
+          "rows": 118498,
+          "usable": 116862,
+          "images_expected": 28503,
+          "images_usable": 26867,
+          "not_usable_by_status": {
+            "dead:fetched_blank+no_snapshot": 1,
+            "dead:fetched_blank+snapshot_blank": 4,
+            "dead:fetched_blank+snapshot_placeholder": 5,
+            "dead:fetched_furniture+no_snapshot": 1,
+            "dead:fetched_furniture+snapshot_furniture": 3,
+            "dead:fetched_furniture+snapshot_placeholder": 1,
+            "dead:fetched_placeholder+snapshot_placeholder": 2,
+            "dead:gone_404+no_snapshot": 1359,
+            "dead:gone_404+snapshot_furniture": 1,
+            "dead:gone_404+snapshot_placeholder": 256,
+            "dead:gone_404+snapshots_not_images": 2,
+            "dead:host_serves_placeholder+snapshots_not_images": 1
+          },
+          "image_coverage": 0.9426
+        },
+        "3": {
+          "rows": 13022,
+          "usable": 12888,
+          "images_expected": 3140,
+          "images_usable": 3006,
+          "not_usable_by_status": {
+            "dead:fetched_furniture+snapshot_furniture": 12,
+            "dead:gone_404+no_snapshot": 40,
+            "dead:gone_404+snapshot_blank": 1,
+            "dead:gone_404+snapshot_furniture": 5,
+            "dead:gone_404+snapshot_placeholder": 76
+          },
+          "image_coverage": 0.9573
+        },
+        "4": {
+          "rows": 185667,
+          "usable": 183786,
+          "images_expected": 44801,
+          "images_usable": 42920,
+          "not_usable_by_status": {
+            "dead:blocked_403+no_snapshot": 6,
+            "dead:dns_failure+no_snapshot": 65,
+            "dead:gone_404+no_snapshot": 46,
+            "dead:gone_404+snapshots_failed": 2,
+            "dead:gone_410+no_snapshot": 2,
+            "dead:host_serves_non_image+no_snapshot": 59,
+            "dead:host_serves_placeholder+no_snapshot": 1,
+            "dead:host_serves_placeholder+snapshots_are_placeholders": 1,
+            "dead:refused_http_400+no_snapshot": 3,
+            "dead:refused_http_409+no_snapshot": 1,
+            "dead:refused_http_429+snapshot_blank": 1,
+            "dead:removed_by_host+no_snapshot": 1669,
+            "dead:server_error_5xx+no_snapshot": 20,
+            "dead:unreachable_ssl_error+no_snapshot": 4,
+            "dead:unreachable_timeout+no_snapshot": 1
+          },
+          "image_coverage": 0.958
+        },
+        "5": {
+          "rows": 23752,
+          "usable": 23662,
+          "images_expected": 5722,
+          "images_usable": 5632,
+          "not_usable_by_status": {
+            "dead:fetched_blank+snapshot_blank": 1,
+            "dead:fetched_furniture+no_snapshot": 1,
+            "dead:fetched_furniture+snapshot_furniture": 8,
+            "dead:fetched_placeholder+no_snapshot": 3,
+            "dead:fetched_placeholder+snapshot_placeholder": 3,
+            "dead:gone_404+no_snapshot": 43,
+            "dead:gone_404+snapshot_furniture": 3,
+            "dead:gone_404+snapshot_placeholder": 28
+          },
+          "image_coverage": 0.9843
+        }
+      }
+    },
+    "fakenewsnet": {
+      "rows": 23194,
+      "usable": 23192,
+      "images_expected": 0,
+      "images_usable": 0,
+      "not_usable_by_status": {},
+      "splits": {
+        "test": 3479,
+        "train": 16236,
+        "val": 3479
+      },
+      "per_class": {
+        "None": {
+          "rows": 2,
+          "usable": 0,
+          "images_expected": 0,
+          "images_usable": 0,
+          "not_usable_by_status": {},
+          "image_coverage": null
+        },
+        "fake": {
+          "rows": 5753,
+          "usable": 5753,
+          "images_expected": 0,
+          "images_usable": 0,
+          "not_usable_by_status": {},
+          "image_coverage": null
+        },
+        "real": {
+          "rows": 17439,
+          "usable": 17439,
+          "images_expected": 0,
+          "images_usable": 0,
+          "not_usable_by_status": {},
+          "image_coverage": null
+        }
+      }
+    },
+    "isot": {
+      "rows": 44898,
+      "usable": 44898,
+      "images_expected": 0,
+      "images_usable": 0,
+      "not_usable_by_status": {},
+      "splits": {
+        "test": 6735,
+        "train": 31429,
+        "val": 6734
+      },
+      "per_class": {
+        "fake": {
+          "rows": 23481,
+          "usable": 23481,
+          "images_expected": 0,
+          "images_usable": 0,
+          "not_usable_by_status": {},
+          "image_coverage": null
+        },
+        "real": {
+          "rows": 21417,
+          "usable": 21417,
+          "images_expected": 0,
+          "images_usable": 0,
+          "not_usable_by_status": {},
+          "image_coverage": null
+        }
+      }
+    },
+    "liar": {
+      "rows": 12836,
+      "usable": 12836,
+      "images_expected": 0,
+      "images_usable": 0,
+      "not_usable_by_status": {},
+      "splits": {
+        "test": 1283,
+        "train": 10269,
+        "val": 1284
+      },
+      "per_class": {
+        "barely-true": {
+          "rows": 2108,
+          "usable": 2108,
+          "images_expected": 0,
+          "images_usable": 0,
+          "not_usable_by_status": {},
+          "image_coverage": null
+        },
+        "false": {
+          "rows": 2511,
+          "usable": 2511,
+          "images_expected": 0,
+          "images_usable": 0,
+          "not_usable_by_status": {},
+          "image_coverage": null
+        },
+        "half-true": {
+          "rows": 2638,
+          "usable": 2638,
+          "images_expected": 0,
+          "images_usable": 0,
+          "not_usable_by_status": {},
+          "image_coverage": null
+        },
+        "mostly-true": {
+          "rows": 2466,
+          "usable": 2466,
+          "images_expected": 0,
+          "images_usable": 0,
+          "not_usable_by_status": {},
+          "image_coverage": null
+        },
+        "pants-fire": {
+          "rows": 1050,
+          "usable": 1050,
+          "images_expected": 0,
+          "images_usable": 0,
+          "not_usable_by_status": {},
+          "image_coverage": null
+        },
+        "true": {
+          "rows": 2063,
+          "usable": 2063,
+          "images_expected": 0,
+          "images_usable": 0,
+          "not_usable_by_status": {},
+          "image_coverage": null
+        }
+      }
+    },
+    "m4fc": {
+      "rows": 3493,
+      "usable": 3441,
+      "images_expected": 3493,
+      "images_usable": 3441,
+      "not_usable_by_status": {
+        "dead:blocked_403+no_snapshot": 2,
+        "dead:blocked_403+snapshot_verdict": 2,
+        "dead:fetched_blank+no_snapshot": 1,
+        "dead:fetched_verdict+no_snapshot": 1,
+        "dead:fetched_verdict+snapshot_verdict": 3,
+        "dead:fetched_verdict+snapshots_are_placeholders": 2,
+        "dead:gone_404+archive_refuses_host_404": 40,
+        "dead:malformed_url_in_dataset": 1
+      },
+      "splits": {
+        "test": 420,
+        "train": 2573,
+        "val": 500
+      },
+      "per_class": {
+        "false": {
+          "rows": 3282,
+          "usable": 3230,
+          "images_expected": 3282,
+          "images_usable": 3230,
+          "not_usable_by_status": {
+            "dead:blocked_403+no_snapshot": 2,
+            "dead:blocked_403+snapshot_verdict": 2,
+            "dead:fetched_blank+no_snapshot": 1,
+            "dead:fetched_verdict+no_snapshot": 1,
+            "dead:fetched_verdict+snapshot_verdict": 3,
+            "dead:fetched_verdict+snapshots_are_placeholders": 2,
+            "dead:gone_404+archive_refuses_host_404": 40,
+            "dead:malformed_url_in_dataset": 1
+          },
+          "image_coverage": 0.9842
+        },
+        "not enough information": {
+          "rows": 16,
+          "usable": 16,
+          "images_expected": 16,
+          "images_usable": 16,
+          "not_usable_by_status": {},
+          "image_coverage": 1.0
+        },
+        "true": {
+          "rows": 195,
+          "usable": 195,
+          "images_expected": 195,
+          "images_usable": 195,
+          "not_usable_by_status": {},
+          "image_coverage": 1.0
+        }
+      }
+    },
+    "mocheg": {
+      "rows": 21184,
+      "usable": 21184,
+      "images_expected": 16291,
+      "images_usable": 14790,
+      "not_usable_by_status": {
+        "furniture": 76,
+        "placeholder": 31,
+        "verdict": 1394
+      },
+      "splits": {
+        "test": 2278,
+        "train": 18279,
+        "val": 627
+      },
+      "per_class": {
+        "NEI": {
+          "rows": 5377,
+          "usable": 5377,
+          "images_expected": 3724,
+          "images_usable": 3215,
+          "not_usable_by_status": {
+            "furniture": 20,
+            "verdict": 489
+          },
+          "image_coverage": 0.8633
+        },
+        "refuted": {
+          "rows": 8004,
+          "usable": 8004,
+          "images_expected": 7546,
+          "images_usable": 6959,
+          "not_usable_by_status": {
+            "furniture": 36,
+            "placeholder": 31,
+            "verdict": 520
+          },
+          "image_coverage": 0.9222
+        },
+        "supported": {
+          "rows": 7803,
+          "usable": 7803,
+          "images_expected": 5021,
+          "images_usable": 4616,
+          "not_usable_by_status": {
+            "furniture": 20,
+            "verdict": 385
+          },
+          "image_coverage": 0.9193
+        }
+      }
+    },
+    "verite": {
+      "rows": 1001,
+      "usable": 914,
+      "images_expected": 1001,
+      "images_usable": 914,
+      "not_usable_by_status": {
+        "dead:blocked_403+no_snapshot": 54,
+        "dead:blocked_403+snapshot_wrong_image": 2,
+        "dead:dns_failure+no_snapshot": 4,
+        "dead:dns_failure+snapshot_wrong_image": 1,
+        "dead:fetched_blank+no_snapshot": 2,
+        "dead:gone_404+no_snapshot": 13,
+        "dead:gone_410+no_snapshot": 1,
+        "dead:host_serves_non_image+no_snapshot": 6,
+        "dead:refused_http_202+no_snapshot": 1,
+        "dead:server_error_5xx+no_snapshot": 2,
+        "dead:unreachable_ssl_error+no_snapshot": 1
+      },
+      "splits": {
+        "test": 1001
+      },
+      "per_class": {
+        "miscaptioned": {
+          "rows": 338,
+          "usable": 307,
+          "images_expected": 338,
+          "images_usable": 307,
+          "not_usable_by_status": {
+            "dead:blocked_403+no_snapshot": 22,
+            "dead:blocked_403+snapshot_wrong_image": 1,
+            "dead:dns_failure+no_snapshot": 2,
+            "dead:fetched_blank+no_snapshot": 1,
+            "dead:gone_404+no_snapshot": 4,
+            "dead:host_serves_non_image+no_snapshot": 1
+          },
+          "image_coverage": 0.9083
+        },
+        "out-of-context": {
+          "rows": 325,
+          "usable": 300,
+          "images_expected": 325,
+          "images_usable": 300,
+          "not_usable_by_status": {
+            "dead:blocked_403+no_snapshot": 10,
+            "dead:dns_failure+snapshot_wrong_image": 1,
+            "dead:gone_404+no_snapshot": 5,
+            "dead:gone_410+no_snapshot": 1,
+            "dead:host_serves_non_image+no_snapshot": 4,
+            "dead:refused_http_202+no_snapshot": 1,
+            "dead:server_error_5xx+no_snapshot": 2,
+            "dead:unreachable_ssl_error+no_snapshot": 1
+          },
+          "image_coverage": 0.9231
+        },
+        "true": {
+          "rows": 338,
+          "usable": 307,
+          "images_expected": 338,
+          "images_usable": 307,
+          "not_usable_by_status": {
+            "dead:blocked_403+no_snapshot": 22,
+            "dead:blocked_403+snapshot_wrong_image": 1,
+            "dead:dns_failure+no_snapshot": 2,
+            "dead:fetched_blank+no_snapshot": 1,
+            "dead:gone_404+no_snapshot": 4,
+            "dead:host_serves_non_image+no_snapshot": 1
+          },
+          "image_coverage": 0.9083
+        }
+      }
+    },
+    "welfake": {
+      "rows": 72134,
+      "usable": 72134,
+      "images_expected": 0,
+      "images_usable": 0,
+      "not_usable_by_status": {},
+      "splits": {
+        "test": 10820,
+        "train": 50494,
+        "val": 10820
+      },
+      "per_class": {
+        "fake": {
+          "rows": 37106,
+          "usable": 37106,
+          "images_expected": 0,
+          "images_usable": 0,
+          "not_usable_by_status": {},
+          "image_coverage": null
+        },
+        "real": {
+          "rows": 35028,
+          "usable": 35028,
+          "images_expected": 0,
+          "images_usable": 0,
+          "not_usable_by_status": {},
+          "image_coverage": null
+        }
+      }
+    }
+  },
+  "built_at": "2026-10-03T22:40:16+00:00",
+  "images_verified_at": "2026-10-03T22:37:45+00:00",
+  "reverified": false,
+  "excluded_by_register": {
+    "m4fc": 1489
+  },
+  "dead": {
+    "verite": {
+      "dead": 56,
+      "not_closed": 0,
+      "by_origin": {
+        "blocked_403": 33,
+        "gone_404": 9,
+        "host_serves_non_image": 5,
+        "dns_failure": 3,
+        "server_error_5xx": 2,
+        "unreachable_ssl_error": 1,
+        "gone_410": 1,
+        "refused_http_202": 1,
+        "fetched_blank": 1
+      },
+      "by_archive": {
+        "no_snapshot": 54,
+        "snapshot_wrong_image": 2
+      },
+      "by_class": {
+        "out-of-context": 25,
+        "true": 31
+      }
+    },
+    "factify2": {
+      "dead": 4994,
+      "not_closed": 0,
+      "by_origin": {
+        "host_serves_placeholder": 2800,
+        "blocked_403": 1854,
+        "fetched_furniture": 152,
+        "gone_404": 84,
+        "dns_failure": 25,
+        "host_serves_non_image": 17,
+        "refused_http_400": 11,
+        "fetched_verdict": 11,
+        "refused_http_406": 10,
+        "unreachable_ssl_error": 10,
+        "server_error_5xx": 6,
+        "unreachable_connection_error": 6,
+        "refused_http_429": 4,
+        "unreachable_timeout": 1,
+        "refused_http_415": 1,
+        "fetched_blank": 1,
+        "refused_http_412": 1
+      },
+      "by_archive": {
+        "no_snapshot": 2913,
+        "snapshots_are_placeholders": 1242,
+        "snapshot_verdict": 515,
+        "snapshot_furniture": 321,
+        "archive_refuses_host_404": 2,
+        "snapshots_failed": 1
+      },
+      "by_class": {
+        "Insufficient_Multimodal": 46,
+        "Insufficient_Text": 467,
+        "Refute": 3123,
+        "Support_Multimodal": 56,
+        "Support_Text": 1302
+      }
+    },
+    "fakeddit": {
+      "dead": 7520,
+      "not_closed": 0,
+      "by_origin": {
+        "gone_404": 5415,
+        "removed_by_host": 1669,
+        "fetched_furniture": 229,
+        "dns_failure": 65,
+        "host_serves_non_image": 59,
+        "fetched_placeholder": 23,
+        "server_error_5xx": 20,
+        "fetched_blank": 19,
+        "blocked_403": 6,
+        "unreachable_ssl_error": 4,
+        "refused_http_400": 3,
+        "host_serves_placeholder": 3,
+        "gone_410": 2,
+        "unreachable_timeout": 1,
+        "refused_http_429": 1,
+        "refused_http_409": 1
+      },
+      "by_archive": {
+        "no_snapshot": 6175,
+        "snapshot_placeholder": 892,
+        "snapshot_furniture": 419,
+        "snapshot_blank": 28,
+        "snapshots_not_images": 3,
+        "snapshots_failed": 2,
+        "snapshots_are_placeholders": 1
+      },
+      "by_class": {
+        "0": 3341,
+        "1": 438,
+        "2": 1636,
+        "3": 134,
+        "4": 1881,
+        "5": 90
+      }
+    },
+    "m4fc": {
+      "dead": 61,
+      "not_closed": 0,
+      "by_origin": {
+        "gone_404": 49,
+        "fetched_verdict": 7,
+        "blocked_403": 4,
+        "fetched_blank": 1
+      },
+      "by_archive": {
+        "archive_refuses_host_404": 47,
+        "snapshot_verdict": 6,
+        "no_snapshot": 5,
+        "snapshots_are_placeholders": 3
+      },
+      "by_class": {
+        "false": 61
+      }
+    }
+  }
+}

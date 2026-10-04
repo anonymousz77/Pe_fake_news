@@ -1,0 +1,48 @@
+{
+  "dataset": "verite",
+  "label_field": "label",
+  "attempted": 1001,
+  "succeeded": 718,
+  "failed": 283,
+  "recovery_rate": 0.7173,
+  "recovery_rate_per_class": {
+    "miscaptioned": 0.6805,
+    "out-of-context": 0.7938,
+    "true": 0.6805
+  },
+  "per_class_attempted": {
+    "miscaptioned": 338,
+    "out-of-context": 325,
+    "true": 338
+  },
+  "per_class_succeeded": {
+    "miscaptioned": 230,
+    "out-of-context": 258,
+    "true": 230
+  },
+  "recovered_by_source": {
+    "origin": 718
+  },
+  "failure_reasons": {
+    "connectionerror": 8,
+    "connecttimeout": 1,
+    "empty_body": 1,
+    "http_202": 1,
+    "http_400": 2,
+    "http_402": 1,
+    "http_403": 110,
+    "http_404": 29,
+    "http_406": 6,
+    "http_429": 1,
+    "http_502": 2,
+    "http_503": 3,
+    "not_an_image": 6,
+    "not_attempted_this_pass": 108,
+    "sslerror": 4
+  },
+  "seed": null,
+  "concurrency": 1,
+  "started_at": "2026-09-20T20:32:13+00:00",
+  "finished_at": "2026-09-20T20:32:13+00:00",
+  "notes": "retry pass: attempted 176, recovered 1. Rates below are cumulative over all 1001 items."
+}

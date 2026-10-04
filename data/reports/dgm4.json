@@ -1,0 +1,63 @@
+{
+  "dataset": "dgm4",
+  "generated_at": "2026-10-03T18:04:27+00:00",
+  "status": "measured",
+  "files": {
+    "count": 12,
+    "bytes": 10689659069,
+    "gb": 9.9555
+  },
+  "licence": "Apache-2.0 (HF dataset card `license: apache-2.0`; the code repo is S-Lab License 1.0, non-commercial \u2014 verbatim in docs/licences.md)",
+  "redistributable": true,
+  "access": {
+    "method": "hf",
+    "url": "rshaojimmy/DGM4",
+    "repo_type": "dataset"
+  },
+  "expected": null,
+  "mismatches": [],
+  "rows": 179295,
+  "by_split": {
+    "train": 157169,
+    "val": 22126
+  },
+  "labels": {
+    "orig": 60550,
+    "face_swap": 38492,
+    "face_attribute": 32512,
+    "text_swap": 15682,
+    "face_swap&text_swap": 9480,
+    "face_attribute&text_swap": 7968,
+    "text_attribute": 6834,
+    "face_swap&text_attribute": 4182,
+    "face_attribute&text_attribute": 3595
+  },
+  "modality": {
+    "records": 179295,
+    "text_only": 0,
+    "image_only": 0,
+    "both": 179295,
+    "neither": 0,
+    "fractions": {
+      "text_only": 0.0,
+      "image_only": 0.0,
+      "both": 1.0,
+      "neither": 0.0
+    }
+  },
+  "dates": {
+    "field": null,
+    "items": 0,
+    "with_explicit_date": 0,
+    "with_url_derived_date": 0,
+    "explicit_coverage": 0.0,
+    "url_derived_coverage": 0.0,
+    "any_coverage": 0.0,
+    "range": null
+  },
+  "raw_metadata_rows": 230310,
+  "notes": [
+    "51,015 metadata rows are byte-identical repeats (train.json); each counted once",
+    "test split forbidden by the register; the authors' 230k total includes it"
+  ]
+}

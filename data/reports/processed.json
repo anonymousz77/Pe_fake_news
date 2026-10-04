@@ -1,0 +1,1651 @@
+{
+  "built_at": "2026-10-03T22:40:16+00:00",
+  "started_at": "2026-10-03T22:35:40+00:00",
+  "images_verified_at": "2026-10-03T22:37:45+00:00",
+  "reverified": false,
+  "excluded_by_register": {
+    "m4fc": 1489
+  },
+  "splits": {
+    "constraint_groups": 55215,
+    "records_in_constraint_groups": 172644,
+    "factify2": {
+      "constrained_domains": 780,
+      "components": 22994,
+      "largest_component": 8509,
+      "pinned_records": 10,
+      "leakage_violations": 0,
+      "domain_only": {
+        "domain_only_test_accuracy": 0.106,
+        "majority_baseline": 0.6423,
+        "uniform_baseline": 0.2,
+        "unseen_domain_rate": 0.581,
+        "test_pairs": 17221
+      }
+    },
+    "moved_by_reconciliation": {
+      "dgm4:train->val": 10,
+      "fakeddit:train->val": 586,
+      "m4fc:train->test": 420,
+      "m4fc:train->val": 1,
+      "mocheg:train->test": 266,
+      "mocheg:train->val": 38,
+      "mocheg:val->test": 11
+    },
+    "split_sizes": {
+      "averimatec": {
+        "test": 945
+      },
+      "averitec": {
+        "train": 3068,
+        "val": 500,
+        "test": 2215
+      },
+      "dgm4": {
+        "train": 157159,
+        "val": 22136
+      },
+      "factify2": {
+        "test": 13583,
+        "train": 23817,
+        "val": 5100
+      },
+      "fakeddit": {
+        "train": 563414,
+        "val": 59928
+      },
+      "fakenewsnet": {
+        "train": 16236,
+        "test": 3479,
+        "val": 3479
+      },
+      "isot": {
+        "train": 31429,
+        "test": 6735,
+        "val": 6734
+      },
+      "liar": {
+        "train": 10269,
+        "val": 1284,
+        "test": 1283
+      },
+      "m4fc": {
+        "train": 2573,
+        "val": 500,
+        "test": 420
+      },
+      "mocheg": {
+        "train": 18279,
+        "test": 2278,
+        "val": 627
+      },
+      "verite": {
+        "test": 1001
+      },
+      "welfake": {
+        "train": 50494,
+        "test": 10820,
+        "val": 10820
+      }
+    }
+  },
+  "datasets": {
+    "averimatec": {
+      "total": {
+        "image_placeholder": 2,
+        "images_expected": 1393,
+        "images_usable": 1391,
+        "modality_text+image": 944,
+        "modality_text_only": 1,
+        "reason_None": 7,
+        "reason_content_refuted": 897,
+        "reason_content_unverified": 24,
+        "reason_none": 17,
+        "rows": 945,
+        "split_test": 945,
+        "usable": 944
+      },
+      "per_class": {
+        "Conflicting Evidence/Cherrypicking": {
+          "images_expected": 16,
+          "images_usable": 16,
+          "modality_text+image": 7,
+          "reason_None": 7,
+          "rows": 7,
+          "split_test": 7,
+          "usable": 7,
+          "image_coverage": 1.0
+        },
+        "Not Enough Evidence": {
+          "images_expected": 28,
+          "images_usable": 28,
+          "modality_text+image": 24,
+          "reason_content_unverified": 24,
+          "rows": 24,
+          "split_test": 24,
+          "usable": 24,
+          "image_coverage": 1.0
+        },
+        "Refuted": {
+          "image_placeholder": 2,
+          "images_expected": 1329,
+          "images_usable": 1327,
+          "modality_text+image": 896,
+          "modality_text_only": 1,
+          "reason_content_refuted": 897,
+          "rows": 897,
+          "split_test": 897,
+          "usable": 896,
+          "image_coverage": 0.9985
+        },
+        "Supported": {
+          "images_expected": 20,
+          "images_usable": 20,
+          "modality_text+image": 17,
+          "reason_none": 17,
+          "rows": 17,
+          "split_test": 17,
+          "usable": 17,
+          "image_coverage": 1.0
+        }
+      }
+    },
+    "averitec": {
+      "total": {
+        "images_expected": 0,
+        "images_usable": 0,
+        "modality_none": 1,
+        "modality_text_only": 5782,
+        "reason_None": 2448,
+        "reason_content_refuted": 2047,
+        "reason_content_unverified": 317,
+        "reason_none": 971,
+        "rows": 5783,
+        "split_test": 2215,
+        "split_train": 3068,
+        "split_val": 500,
+        "usable": 3567
+      },
+      "per_class": {
+        "Conflicting Evidence/Cherrypicking": {
+          "images_expected": 0,
+          "images_usable": 0,
+          "modality_text_only": 233,
+          "reason_None": 233,
+          "rows": 233,
+          "split_train": 195,
+          "split_val": 38,
+          "usable": 233,
+          "image_coverage": null
+        },
+        "None": {
+          "images_expected": 0,
+          "images_usable": 0,
+          "modality_text_only": 2215,
+          "reason_None": 2215,
+          "rows": 2215,
+          "split_test": 2215,
+          "usable": 0,
+          "image_coverage": null
+        },
+        "Not Enough Evidence": {
+          "images_expected": 0,
+          "images_usable": 0,
+          "modality_text_only": 317,
+          "reason_content_unverified": 317,
+          "rows": 317,
+          "split_train": 282,
+          "split_val": 35,
+          "usable": 317,
+          "image_coverage": null
+        },
+        "Refuted": {
+          "images_expected": 0,
+          "images_usable": 0,
+          "modality_text_only": 2047,
+          "reason_content_refuted": 2047,
+          "rows": 2047,
+          "split_train": 1742,
+          "split_val": 305,
+          "usable": 2047,
+          "image_coverage": null
+        },
+        "Supported": {
+          "images_expected": 0,
+          "images_usable": 0,
+          "modality_none": 1,
+          "modality_text_only": 970,
+          "reason_none": 971,
+          "rows": 971,
+          "split_train": 849,
+          "split_val": 122,
+          "usable": 970,
+          "image_coverage": null
+        }
+      }
+    },
+    "dgm4": {
+      "total": {
+        "images_expected": 179295,
+        "images_usable": 179295,
+        "modality_text+image": 179295,
+        "reason_unmapped": 179295,
+        "rows": 179295,
+        "split_train": 157159,
+        "split_val": 22136,
+        "usable": 179295
+      },
+      "per_class": {
+        "face_attribute": {
+          "images_expected": 32512,
+          "images_usable": 32512,
+          "modality_text+image": 32512,
+          "reason_unmapped": 32512,
+          "rows": 32512,
+          "split_train": 28510,
+          "split_val": 4002,
+          "usable": 32512,
+          "image_coverage": 1.0
+        },
+        "face_attribute&text_attribute": {
+          "images_expected": 3595,
+          "images_usable": 3595,
+          "modality_text+image": 3595,
+          "reason_unmapped": 3595,
+          "rows": 3595,
+          "split_train": 3107,
+          "split_val": 488,
+          "usable": 3595,
+          "image_coverage": 1.0
+        },
+        "face_attribute&text_swap": {
+          "images_expected": 7968,
+          "images_usable": 7968,
+          "modality_text+image": 7968,
+          "reason_unmapped": 7968,
+          "rows": 7968,
+          "split_train": 7004,
+          "split_val": 964,
+          "usable": 7968,
+          "image_coverage": 1.0
+        },
+        "face_swap": {
+          "images_expected": 38492,
+          "images_usable": 38492,
+          "modality_text+image": 38492,
+          "reason_unmapped": 38492,
+          "rows": 38492,
+          "split_train": 33701,
+          "split_val": 4791,
+          "usable": 38492,
+          "image_coverage": 1.0
+        },
+        "face_swap&text_attribute": {
+          "images_expected": 4182,
+          "images_usable": 4182,
+          "modality_text+image": 4182,
+          "reason_unmapped": 4182,
+          "rows": 4182,
+          "split_train": 3649,
+          "split_val": 533,
+          "usable": 4182,
+          "image_coverage": 1.0
+        },
+        "face_swap&text_swap": {
+          "images_expected": 9480,
+          "images_usable": 9480,
+          "modality_text+image": 9480,
+          "reason_unmapped": 9480,
+          "rows": 9480,
+          "split_train": 8317,
+          "split_val": 1163,
+          "usable": 9480,
+          "image_coverage": 1.0
+        },
+        "orig": {
+          "images_expected": 60550,
+          "images_usable": 60550,
+          "modality_text+image": 60550,
+          "reason_unmapped": 60550,
+          "rows": 60550,
+          "split_train": 53074,
+          "split_val": 7476,
+          "usable": 60550,
+          "image_coverage": 1.0
+        },
+        "text_attribute": {
+          "images_expected": 6834,
+          "images_usable": 6834,
+          "modality_text+image": 6834,
+          "reason_unmapped": 6834,
+          "rows": 6834,
+          "split_train": 6009,
+          "split_val": 825,
+          "usable": 6834,
+          "image_coverage": 1.0
+        },
+        "text_swap": {
+          "images_expected": 15682,
+          "images_usable": 15682,
+          "modality_text+image": 15682,
+          "reason_unmapped": 15682,
+          "rows": 15682,
+          "split_train": 13788,
+          "split_val": 1894,
+          "usable": 15682,
+          "image_coverage": 1.0
+        }
+      }
+    },
+    "factify2": {
+      "total": {
+        "image_dead:blocked_403+no_snapshot": 1404,
+        "image_dead:blocked_403+snapshot_verdict": 444,
+        "image_dead:blocked_403+snapshots_are_placeholders": 6,
+        "image_dead:dns_failure+no_snapshot": 24,
+        "image_dead:dns_failure+snapshot_verdict": 1,
+        "image_dead:fetched_blank+no_snapshot": 1,
+        "image_dead:fetched_furniture+no_snapshot": 138,
+        "image_dead:fetched_furniture+snapshot_furniture": 1,
+        "image_dead:fetched_furniture+snapshots_are_placeholders": 13,
+        "image_dead:fetched_verdict+no_snapshot": 9,
+        "image_dead:fetched_verdict+snapshot_verdict": 1,
+        "image_dead:fetched_verdict+snapshots_are_placeholders": 1,
+        "image_dead:gone_404+no_snapshot": 72,
+        "image_dead:gone_404+snapshot_verdict": 12,
+        "image_dead:host_serves_non_image+no_snapshot": 17,
+        "image_dead:host_serves_placeholder+archive_refuses_host_404": 2,
+        "image_dead:host_serves_placeholder+no_snapshot": 1202,
+        "image_dead:host_serves_placeholder+snapshot_furniture": 320,
+        "image_dead:host_serves_placeholder+snapshot_verdict": 57,
+        "image_dead:host_serves_placeholder+snapshots_are_placeholders": 1219,
+        "image_dead:refused_http_400+no_snapshot": 10,
+        "image_dead:refused_http_400+snapshots_failed": 1,
+        "image_dead:refused_http_406+no_snapshot": 10,
+        "image_dead:refused_http_412+no_snapshot": 1,
+        "image_dead:refused_http_415+no_snapshot": 1,
+        "image_dead:refused_http_429+no_snapshot": 1,
+        "image_dead:refused_http_429+snapshots_are_placeholders": 3,
+        "image_dead:server_error_5xx+no_snapshot": 6,
+        "image_dead:unreachable_connection_error+no_snapshot": 6,
+        "image_dead:unreachable_ssl_error+no_snapshot": 10,
+        "image_dead:unreachable_timeout+no_snapshot": 1,
+        "images_expected": 85000,
+        "images_usable": 80006,
+        "modality_text+image": 42199,
+        "modality_text_only": 301,
+        "reason_content_refuted": 8500,
+        "reason_content_unverified": 17000,
+        "reason_none": 17000,
+        "rows": 42500,
+        "split_test": 13583,
+        "split_train": 23817,
+        "split_val": 5100,
+        "usable": 37807
+      },
+      "per_class": {
+        "Insufficient_Multimodal": {
+          "image_dead:host_serves_placeholder+no_snapshot": 18,
+          "image_dead:host_serves_placeholder+snapshot_furniture": 5,
+          "image_dead:host_serves_placeholder+snapshots_are_placeholders": 23,
+          "images_expected": 17000,
+          "images_usable": 16954,
+          "modality_text+image": 8500,
+          "reason_content_unverified": 8500,
+          "rows": 8500,
+          "split_test": 1275,
+          "split_train": 5950,
+          "split_val": 1275,
+          "usable": 8454,
+          "image_coverage": 0.9973
+        },
+        "Insufficient_Text": {
+          "image_dead:blocked_403+no_snapshot": 7,
+          "image_dead:dns_failure+no_snapshot": 1,
+          "image_dead:gone_404+no_snapshot": 8,
+          "image_dead:gone_404+snapshot_verdict": 1,
+          "image_dead:host_serves_non_image+no_snapshot": 1,
+          "image_dead:host_serves_placeholder+no_snapshot": 125,
+          "image_dead:host_serves_placeholder+snapshot_furniture": 75,
+          "image_dead:host_serves_placeholder+snapshot_verdict": 4,
+          "image_dead:host_serves_placeholder+snapshots_are_placeholders": 241,
+          "image_dead:refused_http_400+no_snapshot": 1,
+          "image_dead:refused_http_415+no_snapshot": 1,
+          "image_dead:unreachable_ssl_error+no_snapshot": 1,
+          "image_dead:unreachable_timeout+no_snapshot": 1,
+          "images_expected": 17000,
+          "images_usable": 16533,
+          "modality_text+image": 8494,
+          "modality_text_only": 6,
+          "reason_content_unverified": 8500,
+          "rows": 8500,
+          "split_test": 1275,
+          "split_train": 5950,
+          "split_val": 1275,
+          "usable": 8039,
+          "image_coverage": 0.9725
+        },
+        "Refute": {
+          "image_dead:blocked_403+no_snapshot": 1072,
+          "image_dead:blocked_403+snapshot_verdict": 444,
+          "image_dead:blocked_403+snapshots_are_placeholders": 6,
+          "image_dead:dns_failure+no_snapshot": 18,
+          "image_dead:dns_failure+snapshot_verdict": 1,
+          "image_dead:fetched_blank+no_snapshot": 1,
+          "image_dead:fetched_furniture+no_snapshot": 138,
+          "image_dead:fetched_furniture+snapshot_furniture": 1,
+          "image_dead:fetched_furniture+snapshots_are_placeholders": 13,
+          "image_dead:fetched_verdict+no_snapshot": 9,
+          "image_dead:fetched_verdict+snapshot_verdict": 1,
+          "image_dead:fetched_verdict+snapshots_are_placeholders": 1,
+          "image_dead:gone_404+no_snapshot": 47,
+          "image_dead:gone_404+snapshot_verdict": 9,
+          "image_dead:host_serves_non_image+no_snapshot": 11,
+          "image_dead:host_serves_placeholder+no_snapshot": 563,
+          "image_dead:host_serves_placeholder+snapshot_furniture": 155,
+          "image_dead:host_serves_placeholder+snapshot_verdict": 53,
+          "image_dead:host_serves_placeholder+snapshots_are_placeholders": 544,
+          "image_dead:refused_http_400+no_snapshot": 9,
+          "image_dead:refused_http_400+snapshots_failed": 1,
+          "image_dead:refused_http_406+no_snapshot": 10,
+          "image_dead:refused_http_412+no_snapshot": 1,
+          "image_dead:refused_http_429+no_snapshot": 1,
+          "image_dead:refused_http_429+snapshots_are_placeholders": 3,
+          "image_dead:server_error_5xx+no_snapshot": 2,
+          "image_dead:unreachable_connection_error+no_snapshot": 4,
+          "image_dead:unreachable_ssl_error+no_snapshot": 5,
+          "images_expected": 17000,
+          "images_usable": 13877,
+          "modality_text+image": 8242,
+          "modality_text_only": 258,
+          "reason_content_refuted": 8500,
+          "rows": 8500,
+          "split_test": 8483,
+          "split_train": 17,
+          "usable": 5635,
+          "image_coverage": 0.8163
+        },
+        "Support_Multimodal": {
+          "image_dead:blocked_403+no_snapshot": 42,
+          "image_dead:dns_failure+no_snapshot": 1,
+          "image_dead:gone_404+no_snapshot": 3,
+          "image_dead:gone_404+snapshot_verdict": 1,
+          "image_dead:host_serves_non_image+no_snapshot": 1,
+          "image_dead:host_serves_placeholder+no_snapshot": 2,
+          "image_dead:host_serves_placeholder+snapshots_are_placeholders": 4,
+          "image_dead:unreachable_connection_error+no_snapshot": 1,
+          "image_dead:unreachable_ssl_error+no_snapshot": 1,
+          "images_expected": 17000,
+          "images_usable": 16944,
+          "modality_text+image": 8496,
+          "modality_text_only": 4,
+          "reason_none": 8500,
+          "rows": 8500,
+          "split_test": 1275,
+          "split_train": 5950,
+          "split_val": 1275,
+          "usable": 8448,
+          "image_coverage": 0.9967
+        },
+        "Support_Text": {
+          "image_dead:blocked_403+no_snapshot": 283,
+          "image_dead:dns_failure+no_snapshot": 4,
+          "image_dead:gone_404+no_snapshot": 14,
+          "image_dead:gone_404+snapshot_verdict": 1,
+          "image_dead:host_serves_non_image+no_snapshot": 4,
+          "image_dead:host_serves_placeholder+archive_refuses_host_404": 2,
+          "image_dead:host_serves_placeholder+no_snapshot": 494,
+          "image_dead:host_serves_placeholder+snapshot_furniture": 85,
+          "image_dead:host_serves_placeholder+snapshots_are_placeholders": 407,
+          "image_dead:server_error_5xx+no_snapshot": 4,
+          "image_dead:unreachable_connection_error+no_snapshot": 1,
+          "image_dead:unreachable_ssl_error+no_snapshot": 3,
+          "images_expected": 17000,
+          "images_usable": 15698,
+          "modality_text+image": 8467,
+          "modality_text_only": 33,
+          "reason_none": 8500,
+          "rows": 8500,
+          "split_test": 1275,
+          "split_train": 5950,
+          "split_val": 1275,
+          "usable": 7231,
+          "image_coverage": 0.9234
+        }
+      }
+    },
+    "fakeddit": {
+      "total": {
+        "image_dead:blocked_403+no_snapshot": 6,
+        "image_dead:dns_failure+no_snapshot": 65,
+        "image_dead:fetched_blank+no_snapshot": 4,
+        "image_dead:fetched_blank+snapshot_blank": 9,
+        "image_dead:fetched_blank+snapshot_placeholder": 6,
+        "image_dead:fetched_furniture+no_snapshot": 23,
+        "image_dead:fetched_furniture+snapshot_blank": 1,
+        "image_dead:fetched_furniture+snapshot_furniture": 203,
+        "image_dead:fetched_furniture+snapshot_placeholder": 2,
+        "image_dead:fetched_placeholder+no_snapshot": 4,
+        "image_dead:fetched_placeholder+snapshot_placeholder": 19,
+        "image_dead:gone_404+no_snapshot": 4313,
+        "image_dead:gone_404+snapshot_blank": 17,
+        "image_dead:gone_404+snapshot_furniture": 216,
+        "image_dead:gone_404+snapshot_placeholder": 865,
+        "image_dead:gone_404+snapshots_failed": 2,
+        "image_dead:gone_404+snapshots_not_images": 2,
+        "image_dead:gone_410+no_snapshot": 2,
+        "image_dead:host_serves_non_image+no_snapshot": 59,
+        "image_dead:host_serves_placeholder+no_snapshot": 1,
+        "image_dead:host_serves_placeholder+snapshots_are_placeholders": 1,
+        "image_dead:host_serves_placeholder+snapshots_not_images": 1,
+        "image_dead:refused_http_400+no_snapshot": 3,
+        "image_dead:refused_http_409+no_snapshot": 1,
+        "image_dead:refused_http_429+snapshot_blank": 1,
+        "image_dead:removed_by_host+no_snapshot": 1669,
+        "image_dead:server_error_5xx+no_snapshot": 20,
+        "image_dead:unreachable_ssl_error+no_snapshot": 4,
+        "image_dead:unreachable_timeout+no_snapshot": 1,
+        "images_expected": 150000,
+        "images_usable": 142480,
+        "modality_text+image": 142480,
+        "modality_text_only": 480862,
+        "reason_unmapped": 623342,
+        "rows": 623342,
+        "split_train": 563414,
+        "split_val": 59928,
+        "usable": 615822
+      },
+      "per_class": {
+        "0": {
+          "image_dead:fetched_blank+no_snapshot": 3,
+          "image_dead:fetched_blank+snapshot_blank": 4,
+          "image_dead:fetched_blank+snapshot_placeholder": 1,
+          "image_dead:fetched_furniture+no_snapshot": 19,
+          "image_dead:fetched_furniture+snapshot_blank": 1,
+          "image_dead:fetched_furniture+snapshot_furniture": 176,
+          "image_dead:fetched_placeholder+no_snapshot": 1,
+          "image_dead:fetched_placeholder+snapshot_placeholder": 10,
+          "image_dead:gone_404+no_snapshot": 2421,
+          "image_dead:gone_404+snapshot_blank": 12,
+          "image_dead:gone_404+snapshot_furniture": 206,
+          "image_dead:gone_404+snapshot_placeholder": 487,
+          "images_expected": 58925,
+          "images_usable": 55584,
+          "modality_text+image": 55584,
+          "modality_text_only": 189817,
+          "reason_unmapped": 245401,
+          "rows": 245401,
+          "split_train": 221649,
+          "split_val": 23752,
+          "usable": 242060,
+          "image_coverage": 0.9433
+        },
+        "1": {
+          "image_dead:fetched_furniture+no_snapshot": 2,
+          "image_dead:fetched_furniture+snapshot_furniture": 4,
+          "image_dead:fetched_furniture+snapshot_placeholder": 1,
+          "image_dead:fetched_placeholder+snapshot_placeholder": 4,
+          "image_dead:gone_404+no_snapshot": 404,
+          "image_dead:gone_404+snapshot_blank": 4,
+          "image_dead:gone_404+snapshot_furniture": 1,
+          "image_dead:gone_404+snapshot_placeholder": 18,
+          "images_expected": 8909,
+          "images_usable": 8471,
+          "modality_text+image": 8471,
+          "modality_text_only": 28531,
+          "reason_unmapped": 37002,
+          "rows": 37002,
+          "split_train": 33394,
+          "split_val": 3608,
+          "usable": 36564,
+          "image_coverage": 0.9508
+        },
+        "2": {
+          "image_dead:fetched_blank+no_snapshot": 1,
+          "image_dead:fetched_blank+snapshot_blank": 4,
+          "image_dead:fetched_blank+snapshot_placeholder": 5,
+          "image_dead:fetched_furniture+no_snapshot": 1,
+          "image_dead:fetched_furniture+snapshot_furniture": 3,
+          "image_dead:fetched_furniture+snapshot_placeholder": 1,
+          "image_dead:fetched_placeholder+snapshot_placeholder": 2,
+          "image_dead:gone_404+no_snapshot": 1359,
+          "image_dead:gone_404+snapshot_furniture": 1,
+          "image_dead:gone_404+snapshot_placeholder": 256,
+          "image_dead:gone_404+snapshots_not_images": 2,
+          "image_dead:host_serves_placeholder+snapshots_not_images": 1,
+          "images_expected": 28503,
+          "images_usable": 26867,
+          "modality_text+image": 26867,
+          "modality_text_only": 91631,
+          "reason_unmapped": 118498,
+          "rows": 118498,
+          "split_train": 107221,
+          "split_val": 11277,
+          "usable": 116862,
+          "image_coverage": 0.9426
+        },
+        "3": {
+          "image_dead:fetched_furniture+snapshot_furniture": 12,
+          "image_dead:gone_404+no_snapshot": 40,
+          "image_dead:gone_404+snapshot_blank": 1,
+          "image_dead:gone_404+snapshot_furniture": 5,
+          "image_dead:gone_404+snapshot_placeholder": 76,
+          "images_expected": 3140,
+          "images_usable": 3006,
+          "modality_text+image": 3006,
+          "modality_text_only": 10016,
+          "reason_unmapped": 13022,
+          "rows": 13022,
+          "split_train": 11775,
+          "split_val": 1247,
+          "usable": 12888,
+          "image_coverage": 0.9573
+        },
+        "4": {
+          "image_dead:blocked_403+no_snapshot": 6,
+          "image_dead:dns_failure+no_snapshot": 65,
+          "image_dead:gone_404+no_snapshot": 46,
+          "image_dead:gone_404+snapshots_failed": 2,
+          "image_dead:gone_410+no_snapshot": 2,
+          "image_dead:host_serves_non_image+no_snapshot": 59,
+          "image_dead:host_serves_placeholder+no_snapshot": 1,
+          "image_dead:host_serves_placeholder+snapshots_are_placeholders": 1,
+          "image_dead:refused_http_400+no_snapshot": 3,
+          "image_dead:refused_http_409+no_snapshot": 1,
+          "image_dead:refused_http_429+snapshot_blank": 1,
+          "image_dead:removed_by_host+no_snapshot": 1669,
+          "image_dead:server_error_5xx+no_snapshot": 20,
+          "image_dead:unreachable_ssl_error+no_snapshot": 4,
+          "image_dead:unreachable_timeout+no_snapshot": 1,
+          "images_expected": 44801,
+          "images_usable": 42920,
+          "modality_text+image": 42920,
+          "modality_text_only": 142747,
+          "reason_unmapped": 185667,
+          "rows": 185667,
+          "split_train": 167847,
+          "split_val": 17820,
+          "usable": 183786,
+          "image_coverage": 0.958
+        },
+        "5": {
+          "image_dead:fetched_blank+snapshot_blank": 1,
+          "image_dead:fetched_furniture+no_snapshot": 1,
+          "image_dead:fetched_furniture+snapshot_furniture": 8,
+          "image_dead:fetched_placeholder+no_snapshot": 3,
+          "image_dead:fetched_placeholder+snapshot_placeholder": 3,
+          "image_dead:gone_404+no_snapshot": 43,
+          "image_dead:gone_404+snapshot_furniture": 3,
+          "image_dead:gone_404+snapshot_placeholder": 28,
+          "images_expected": 5722,
+          "images_usable": 5632,
+          "modality_text+image": 5632,
+          "modality_text_only": 18120,
+          "reason_unmapped": 23752,
+          "rows": 23752,
+          "split_train": 21528,
+          "split_val": 2224,
+          "usable": 23662,
+          "image_coverage": 0.9843
+        }
+      }
+    },
+    "fakenewsnet": {
+      "total": {
+        "images_expected": 0,
+        "images_usable": 0,
+        "modality_text_only": 23194,
+        "reason_unmapped": 23194,
+        "rows": 23194,
+        "split_test": 3479,
+        "split_train": 16236,
+        "split_val": 3479,
+        "usable": 23192
+      },
+      "per_class": {
+        "None": {
+          "images_expected": 0,
+          "images_usable": 0,
+          "modality_text_only": 2,
+          "reason_unmapped": 2,
+          "rows": 2,
+          "split_train": 2,
+          "usable": 0,
+          "image_coverage": null
+        },
+        "fake": {
+          "images_expected": 0,
+          "images_usable": 0,
+          "modality_text_only": 5753,
+          "reason_unmapped": 5753,
+          "rows": 5753,
+          "split_test": 863,
+          "split_train": 4027,
+          "split_val": 863,
+          "usable": 5753,
+          "image_coverage": null
+        },
+        "real": {
+          "images_expected": 0,
+          "images_usable": 0,
+          "modality_text_only": 17439,
+          "reason_unmapped": 17439,
+          "rows": 17439,
+          "split_test": 2616,
+          "split_train": 12207,
+          "split_val": 2616,
+          "usable": 17439,
+          "image_coverage": null
+        }
+      }
+    },
+    "isot": {
+      "total": {
+        "images_expected": 0,
+        "images_usable": 0,
+        "modality_text_only": 44898,
+        "reason_unmapped": 44898,
+        "rows": 44898,
+        "split_test": 6735,
+        "split_train": 31429,
+        "split_val": 6734,
+        "usable": 44898
+      },
+      "per_class": {
+        "fake": {
+          "images_expected": 0,
+          "images_usable": 0,
+          "modality_text_only": 23481,
+          "reason_unmapped": 23481,
+          "rows": 23481,
+          "split_test": 3522,
+          "split_train": 16437,
+          "split_val": 3522,
+          "usable": 23481,
+          "image_coverage": null
+        },
+        "real": {
+          "images_expected": 0,
+          "images_usable": 0,
+          "modality_text_only": 21417,
+          "reason_unmapped": 21417,
+          "rows": 21417,
+          "split_test": 3213,
+          "split_train": 14992,
+          "split_val": 3212,
+          "usable": 21417,
+          "image_coverage": null
+        }
+      }
+    },
+    "liar": {
+      "total": {
+        "images_expected": 0,
+        "images_usable": 0,
+        "modality_text_only": 12836,
+        "reason_unmapped": 12836,
+        "rows": 12836,
+        "split_test": 1283,
+        "split_train": 10269,
+        "split_val": 1284,
+        "usable": 12836
+      },
+      "per_class": {
+        "barely-true": {
+          "images_expected": 0,
+          "images_usable": 0,
+          "modality_text_only": 2108,
+          "reason_unmapped": 2108,
+          "rows": 2108,
+          "split_test": 214,
+          "split_train": 1657,
+          "split_val": 237,
+          "usable": 2108,
+          "image_coverage": null
+        },
+        "false": {
+          "images_expected": 0,
+          "images_usable": 0,
+          "modality_text_only": 2511,
+          "reason_unmapped": 2511,
+          "rows": 2511,
+          "split_test": 250,
+          "split_train": 1998,
+          "split_val": 263,
+          "usable": 2511,
+          "image_coverage": null
+        },
+        "half-true": {
+          "images_expected": 0,
+          "images_usable": 0,
+          "modality_text_only": 2638,
+          "reason_unmapped": 2638,
+          "rows": 2638,
+          "split_test": 267,
+          "split_train": 2123,
+          "split_val": 248,
+          "usable": 2638,
+          "image_coverage": null
+        },
+        "mostly-true": {
+          "images_expected": 0,
+          "images_usable": 0,
+          "modality_text_only": 2466,
+          "reason_unmapped": 2466,
+          "rows": 2466,
+          "split_test": 249,
+          "split_train": 1966,
+          "split_val": 251,
+          "usable": 2466,
+          "image_coverage": null
+        },
+        "pants-fire": {
+          "images_expected": 0,
+          "images_usable": 0,
+          "modality_text_only": 1050,
+          "reason_unmapped": 1050,
+          "rows": 1050,
+          "split_test": 92,
+          "split_train": 842,
+          "split_val": 116,
+          "usable": 1050,
+          "image_coverage": null
+        },
+        "true": {
+          "images_expected": 0,
+          "images_usable": 0,
+          "modality_text_only": 2063,
+          "reason_unmapped": 2063,
+          "rows": 2063,
+          "split_test": 211,
+          "split_train": 1683,
+          "split_val": 169,
+          "usable": 2063,
+          "image_coverage": null
+        }
+      }
+    },
+    "m4fc": {
+      "total": {
+        "image_dead:blocked_403+no_snapshot": 2,
+        "image_dead:blocked_403+snapshot_verdict": 2,
+        "image_dead:fetched_blank+no_snapshot": 1,
+        "image_dead:fetched_verdict+no_snapshot": 1,
+        "image_dead:fetched_verdict+snapshot_verdict": 3,
+        "image_dead:fetched_verdict+snapshots_are_placeholders": 2,
+        "image_dead:gone_404+archive_refuses_host_404": 40,
+        "image_dead:malformed_url_in_dataset": 1,
+        "images_expected": 3493,
+        "images_usable": 3441,
+        "modality_text+image": 3441,
+        "modality_text_only": 52,
+        "reason_content_refuted": 3282,
+        "reason_content_unverified": 16,
+        "reason_none": 195,
+        "rows": 3493,
+        "split_test": 420,
+        "split_train": 2573,
+        "split_val": 500,
+        "usable": 3441
+      },
+      "per_class": {
+        "false": {
+          "image_dead:blocked_403+no_snapshot": 2,
+          "image_dead:blocked_403+snapshot_verdict": 2,
+          "image_dead:fetched_blank+no_snapshot": 1,
+          "image_dead:fetched_verdict+no_snapshot": 1,
+          "image_dead:fetched_verdict+snapshot_verdict": 3,
+          "image_dead:fetched_verdict+snapshots_are_placeholders": 2,
+          "image_dead:gone_404+archive_refuses_host_404": 40,
+          "image_dead:malformed_url_in_dataset": 1,
+          "images_expected": 3282,
+          "images_usable": 3230,
+          "modality_text+image": 3230,
+          "modality_text_only": 52,
+          "reason_content_refuted": 3282,
+          "rows": 3282,
+          "split_test": 420,
+          "split_train": 2394,
+          "split_val": 468,
+          "usable": 3230,
+          "image_coverage": 0.9842
+        },
+        "not enough information": {
+          "images_expected": 16,
+          "images_usable": 16,
+          "modality_text+image": 16,
+          "reason_content_unverified": 16,
+          "rows": 16,
+          "split_train": 15,
+          "split_val": 1,
+          "usable": 16,
+          "image_coverage": 1.0
+        },
+        "true": {
+          "images_expected": 195,
+          "images_usable": 195,
+          "modality_text+image": 195,
+          "reason_none": 195,
+          "rows": 195,
+          "split_train": 164,
+          "split_val": 31,
+          "usable": 195,
+          "image_coverage": 1.0
+        }
+      }
+    },
+    "mocheg": {
+      "total": {
+        "image_furniture": 76,
+        "image_placeholder": 31,
+        "image_verdict": 1394,
+        "images_expected": 16291,
+        "images_usable": 14790,
+        "modality_text+image": 11443,
+        "modality_text_only": 9741,
+        "reason_content_refuted": 8004,
+        "reason_content_unverified": 5377,
+        "reason_none": 7803,
+        "rows": 21184,
+        "split_test": 2278,
+        "split_train": 18279,
+        "split_val": 627,
+        "usable": 21184
+      },
+      "per_class": {
+        "NEI": {
+          "image_furniture": 20,
+          "image_verdict": 489,
+          "images_expected": 3724,
+          "images_usable": 3215,
+          "modality_text+image": 2572,
+          "modality_text_only": 2805,
+          "reason_content_unverified": 5377,
+          "rows": 5377,
+          "split_test": 693,
+          "split_train": 4484,
+          "split_val": 200,
+          "usable": 5377,
+          "image_coverage": 0.8633
+        },
+        "refuted": {
+          "image_furniture": 36,
+          "image_placeholder": 31,
+          "image_verdict": 520,
+          "images_expected": 7546,
+          "images_usable": 6959,
+          "modality_text+image": 5231,
+          "modality_text_only": 2773,
+          "reason_content_refuted": 8004,
+          "rows": 8004,
+          "split_test": 900,
+          "split_train": 6878,
+          "split_val": 226,
+          "usable": 8004,
+          "image_coverage": 0.9222
+        },
+        "supported": {
+          "image_furniture": 20,
+          "image_verdict": 385,
+          "images_expected": 5021,
+          "images_usable": 4616,
+          "modality_text+image": 3640,
+          "modality_text_only": 4163,
+          "reason_none": 7803,
+          "rows": 7803,
+          "split_test": 685,
+          "split_train": 6917,
+          "split_val": 201,
+          "usable": 7803,
+          "image_coverage": 0.9193
+        }
+      }
+    },
+    "verite": {
+      "total": {
+        "image_dead:blocked_403+no_snapshot": 54,
+        "image_dead:blocked_403+snapshot_wrong_image": 2,
+        "image_dead:dns_failure+no_snapshot": 4,
+        "image_dead:dns_failure+snapshot_wrong_image": 1,
+        "image_dead:fetched_blank+no_snapshot": 2,
+        "image_dead:gone_404+no_snapshot": 13,
+        "image_dead:gone_410+no_snapshot": 1,
+        "image_dead:host_serves_non_image+no_snapshot": 6,
+        "image_dead:refused_http_202+no_snapshot": 1,
+        "image_dead:server_error_5xx+no_snapshot": 2,
+        "image_dead:unreachable_ssl_error+no_snapshot": 1,
+        "images_expected": 1001,
+        "images_usable": 914,
+        "modality_text+image": 914,
+        "modality_text_only": 87,
+        "reason_media_mismatch": 325,
+        "reason_none": 338,
+        "reason_wrong_image": 338,
+        "rows": 1001,
+        "split_test": 1001,
+        "usable": 914
+      },
+      "per_class": {
+        "miscaptioned": {
+          "image_dead:blocked_403+no_snapshot": 22,
+          "image_dead:blocked_403+snapshot_wrong_image": 1,
+          "image_dead:dns_failure+no_snapshot": 2,
+          "image_dead:fetched_blank+no_snapshot": 1,
+          "image_dead:gone_404+no_snapshot": 4,
+          "image_dead:host_serves_non_image+no_snapshot": 1,
+          "images_expected": 338,
+          "images_usable": 307,
+          "modality_text+image": 307,
+          "modality_text_only": 31,
+          "reason_wrong_image": 338,
+          "rows": 338,
+          "split_test": 338,
+          "usable": 307,
+          "image_coverage": 0.9083
+        },
+        "out-of-context": {
+          "image_dead:blocked_403+no_snapshot": 10,
+          "image_dead:dns_failure+snapshot_wrong_image": 1,
+          "image_dead:gone_404+no_snapshot": 5,
+          "image_dead:gone_410+no_snapshot": 1,
+          "image_dead:host_serves_non_image+no_snapshot": 4,
+          "image_dead:refused_http_202+no_snapshot": 1,
+          "image_dead:server_error_5xx+no_snapshot": 2,
+          "image_dead:unreachable_ssl_error+no_snapshot": 1,
+          "images_expected": 325,
+          "images_usable": 300,
+          "modality_text+image": 300,
+          "modality_text_only": 25,
+          "reason_media_mismatch": 325,
+          "rows": 325,
+          "split_test": 325,
+          "usable": 300,
+          "image_coverage": 0.9231
+        },
+        "true": {
+          "image_dead:blocked_403+no_snapshot": 22,
+          "image_dead:blocked_403+snapshot_wrong_image": 1,
+          "image_dead:dns_failure+no_snapshot": 2,
+          "image_dead:fetched_blank+no_snapshot": 1,
+          "image_dead:gone_404+no_snapshot": 4,
+          "image_dead:host_serves_non_image+no_snapshot": 1,
+          "images_expected": 338,
+          "images_usable": 307,
+          "modality_text+image": 307,
+          "modality_text_only": 31,
+          "reason_none": 338,
+          "rows": 338,
+          "split_test": 338,
+          "usable": 307,
+          "image_coverage": 0.9083
+        }
+      }
+    },
+    "welfake": {
+      "total": {
+        "images_expected": 0,
+        "images_usable": 0,
+        "modality_text_only": 72134,
+        "reason_unmapped": 72134,
+        "rows": 72134,
+        "split_test": 10820,
+        "split_train": 50494,
+        "split_val": 10820,
+        "usable": 72134
+      },
+      "per_class": {
+        "fake": {
+          "images_expected": 0,
+          "images_usable": 0,
+          "modality_text_only": 37106,
+          "reason_unmapped": 37106,
+          "rows": 37106,
+          "split_test": 5566,
+          "split_train": 25974,
+          "split_val": 5566,
+          "usable": 37106,
+          "image_coverage": null
+        },
+        "real": {
+          "images_expected": 0,
+          "images_usable": 0,
+          "modality_text_only": 35028,
+          "reason_unmapped": 35028,
+          "rows": 35028,
+          "split_test": 5254,
+          "split_train": 24520,
+          "split_val": 5254,
+          "usable": 35028,
+          "image_coverage": null
+        }
+      }
+    }
+  },
+  "reason_codes": {
+    "codes": [
+      "content_refuted",
+      "content_unverified",
+      "media_mismatch",
+      "wrong_image",
+      "none",
+      "unmapped"
+    ],
+    "supervised_codes": [
+      "content_refuted",
+      "content_unverified",
+      "media_mismatch",
+      "wrong_image",
+      "none"
+    ],
+    "datasets": {
+      "averimatec": {
+        "records": 945,
+        "reason_code": {
+          "content_refuted": 897,
+          "content_unverified": 24,
+          "none": 17,
+          "null:no_clean_code": 7
+        },
+        "none": 17,
+        "unmapped": 0,
+        "supervised_records": 938,
+        "evaluation_only": true,
+        "per_class": {
+          "Conflicting Evidence/Cherrypicking": {
+            "reason_code": "null:no_clean_code",
+            "records": 7
+          },
+          "Not Enough Evidence": {
+            "reason_code": "content_unverified",
+            "records": 24
+          },
+          "Refuted": {
+            "reason_code": "content_refuted",
+            "records": 897
+          },
+          "Supported": {
+            "reason_code": "none",
+            "records": 17
+          }
+        }
+      },
+      "averitec": {
+        "records": 5783,
+        "reason_code": {
+          "content_refuted": 2047,
+          "content_unverified": 317,
+          "none": 971,
+          "null:no_clean_code": 233,
+          "null:unlabelled": 2215
+        },
+        "none": 971,
+        "unmapped": 0,
+        "supervised_records": 3335,
+        "evaluation_only": false,
+        "per_class": {
+          "Conflicting Evidence/Cherrypicking": {
+            "reason_code": "null:no_clean_code",
+            "records": 233
+          },
+          "None": {
+            "reason_code": "null:unlabelled",
+            "records": 2215
+          },
+          "Not Enough Evidence": {
+            "reason_code": "content_unverified",
+            "records": 317
+          },
+          "Refuted": {
+            "reason_code": "content_refuted",
+            "records": 2047
+          },
+          "Supported": {
+            "reason_code": "none",
+            "records": 971
+          }
+        }
+      },
+      "dgm4": {
+        "records": 179295,
+        "reason_code": {
+          "unmapped": 179295
+        },
+        "none": 0,
+        "unmapped": 179295,
+        "supervised_records": 0,
+        "evaluation_only": false,
+        "per_class": {
+          "face_attribute": {
+            "reason_code": "unmapped",
+            "records": 32512
+          },
+          "face_attribute&text_attribute": {
+            "reason_code": "unmapped",
+            "records": 3595
+          },
+          "face_attribute&text_swap": {
+            "reason_code": "unmapped",
+            "records": 7968
+          },
+          "face_swap": {
+            "reason_code": "unmapped",
+            "records": 38492
+          },
+          "face_swap&text_attribute": {
+            "reason_code": "unmapped",
+            "records": 4182
+          },
+          "face_swap&text_swap": {
+            "reason_code": "unmapped",
+            "records": 9480
+          },
+          "orig": {
+            "reason_code": "unmapped",
+            "records": 60550
+          },
+          "text_attribute": {
+            "reason_code": "unmapped",
+            "records": 6834
+          },
+          "text_swap": {
+            "reason_code": "unmapped",
+            "records": 15682
+          }
+        }
+      },
+      "factify2": {
+        "records": 42500,
+        "reason_code": {
+          "content_refuted": 8500,
+          "content_unverified": 17000,
+          "none": 17000
+        },
+        "none": 17000,
+        "unmapped": 0,
+        "supervised_records": 42500,
+        "evaluation_only": false,
+        "per_class": {
+          "Insufficient_Multimodal": {
+            "reason_code": "content_unverified",
+            "records": 8500
+          },
+          "Insufficient_Text": {
+            "reason_code": "content_unverified",
+            "records": 8500
+          },
+          "Refute": {
+            "reason_code": "content_refuted",
+            "records": 8500
+          },
+          "Support_Multimodal": {
+            "reason_code": "none",
+            "records": 8500
+          },
+          "Support_Text": {
+            "reason_code": "none",
+            "records": 8500
+          }
+        }
+      },
+      "fakeddit": {
+        "records": 623342,
+        "reason_code": {
+          "unmapped": 623342
+        },
+        "none": 0,
+        "unmapped": 623342,
+        "supervised_records": 0,
+        "evaluation_only": false,
+        "per_class": {
+          "0": {
+            "reason_code": "unmapped",
+            "records": 245401
+          },
+          "1": {
+            "reason_code": "unmapped",
+            "records": 37002
+          },
+          "2": {
+            "reason_code": "unmapped",
+            "records": 118498
+          },
+          "3": {
+            "reason_code": "unmapped",
+            "records": 13022
+          },
+          "4": {
+            "reason_code": "unmapped",
+            "records": 185667
+          },
+          "5": {
+            "reason_code": "unmapped",
+            "records": 23752
+          }
+        }
+      },
+      "fakenewsnet": {
+        "records": 23194,
+        "reason_code": {
+          "unmapped": 23194
+        },
+        "none": 0,
+        "unmapped": 23194,
+        "supervised_records": 0,
+        "evaluation_only": false,
+        "per_class": {
+          "None": {
+            "reason_code": "unmapped",
+            "records": 2
+          },
+          "fake": {
+            "reason_code": "unmapped",
+            "records": 5753
+          },
+          "real": {
+            "reason_code": "unmapped",
+            "records": 17439
+          }
+        }
+      },
+      "isot": {
+        "records": 44898,
+        "reason_code": {
+          "unmapped": 44898
+        },
+        "none": 0,
+        "unmapped": 44898,
+        "supervised_records": 0,
+        "evaluation_only": false,
+        "per_class": {
+          "fake": {
+            "reason_code": "unmapped",
+            "records": 23481
+          },
+          "real": {
+            "reason_code": "unmapped",
+            "records": 21417
+          }
+        }
+      },
+      "liar": {
+        "records": 12836,
+        "reason_code": {
+          "unmapped": 12836
+        },
+        "none": 0,
+        "unmapped": 12836,
+        "supervised_records": 0,
+        "evaluation_only": false,
+        "per_class": {
+          "barely-true": {
+            "reason_code": "unmapped",
+            "records": 2108
+          },
+          "false": {
+            "reason_code": "unmapped",
+            "records": 2511
+          },
+          "half-true": {
+            "reason_code": "unmapped",
+            "records": 2638
+          },
+          "mostly-true": {
+            "reason_code": "unmapped",
+            "records": 2466
+          },
+          "pants-fire": {
+            "reason_code": "unmapped",
+            "records": 1050
+          },
+          "true": {
+            "reason_code": "unmapped",
+            "records": 2063
+          }
+        }
+      },
+      "m4fc": {
+        "records": 3493,
+        "reason_code": {
+          "content_refuted": 3282,
+          "content_unverified": 16,
+          "none": 195
+        },
+        "none": 195,
+        "unmapped": 0,
+        "supervised_records": 3493,
+        "evaluation_only": false,
+        "per_class": {
+          "false": {
+            "reason_code": "content_refuted",
+            "records": 3282
+          },
+          "not enough information": {
+            "reason_code": "content_unverified",
+            "records": 16
+          },
+          "true": {
+            "reason_code": "none",
+            "records": 195
+          }
+        }
+      },
+      "mocheg": {
+        "records": 21184,
+        "reason_code": {
+          "content_refuted": 8004,
+          "content_unverified": 5377,
+          "none": 7803
+        },
+        "none": 7803,
+        "unmapped": 0,
+        "supervised_records": 21184,
+        "evaluation_only": false,
+        "per_class": {
+          "NEI": {
+            "reason_code": "content_unverified",
+            "records": 5377
+          },
+          "refuted": {
+            "reason_code": "content_refuted",
+            "records": 8004
+          },
+          "supported": {
+            "reason_code": "none",
+            "records": 7803
+          }
+        }
+      },
+      "verite": {
+        "records": 1001,
+        "reason_code": {
+          "media_mismatch": 325,
+          "none": 338,
+          "wrong_image": 338
+        },
+        "none": 338,
+        "unmapped": 0,
+        "supervised_records": 1001,
+        "evaluation_only": true,
+        "per_class": {
+          "miscaptioned": {
+            "reason_code": "wrong_image",
+            "records": 338
+          },
+          "out-of-context": {
+            "reason_code": "media_mismatch",
+            "records": 325
+          },
+          "true": {
+            "reason_code": "none",
+            "records": 338
+          }
+        }
+      },
+      "welfake": {
+        "records": 72134,
+        "reason_code": {
+          "unmapped": 72134
+        },
+        "none": 0,
+        "unmapped": 72134,
+        "supervised_records": 0,
+        "evaluation_only": false,
+        "per_class": {
+          "fake": {
+            "reason_code": "unmapped",
+            "records": 37106
+          },
+          "real": {
+            "reason_code": "unmapped",
+            "records": 35028
+          }
+        }
+      }
+    },
+    "not_cleanly_mapped": [
+      {
+        "dataset": "averimatec",
+        "label": "Conflicting Evidence/Cherrypicking",
+        "records": 7,
+        "kind": "no_clean_code",
+        "why": "as for AVeriTeC"
+      },
+      {
+        "dataset": "averitec",
+        "label": "Conflicting Evidence/Cherrypicking",
+        "records": 233,
+        "kind": "no_clean_code",
+        "why": "evidence both supports and refutes, or the claim is true but cherry-picked: neither refuted, unverified, nor clean"
+      },
+      {
+        "dataset": "averitec",
+        "label": null,
+        "records": 2215,
+        "kind": "unlabelled",
+        "why": "no label"
+      }
+    ],
+    "inherited_rules": [
+      {
+        "dataset": "averimatec",
+        "label": "Refuted",
+        "reason_code": "content_refuted",
+        "from": "averitec"
+      },
+      {
+        "dataset": "averimatec",
+        "label": "Not Enough Evidence",
+        "reason_code": "content_unverified",
+        "from": "averitec"
+      },
+      {
+        "dataset": "averimatec",
+        "label": "Supported",
+        "reason_code": "none",
+        "from": "averitec"
+      }
+    ],
+    "evaluation_only": {
+      "averimatec": "95% one class (897 of 945 Refuted): evaluation only, per the brief",
+      "verite": "an evaluation benchmark with no training split: every row is test"
+    },
+    "open": {},
+    "fakeddit_6_way": {
+      "0": {
+        "name": "True",
+        "subreddits": [
+          "mildlyinteresting",
+          "photoshopbattles",
+          "nottheonion",
+          "upliftingnews",
+          "neutralnews",
+          "usnews",
+          "usanews",
+          "pic"
+        ]
+      },
+      "1": {
+        "name": "Satire/Parody",
+        "subreddits": [
+          "fakealbumcovers",
+          "theonion",
+          "satire",
+          "waterfordwhispersnews"
+        ]
+      },
+      "2": {
+        "name": "False Connection",
+        "subreddits": [
+          "pareidolia",
+          "fakehistoryporn",
+          "misleadingthumbnails",
+          "confusing_perspective"
+        ]
+      },
+      "3": {
+        "name": "Imposter Content",
+        "subreddits": [
+          "subredditsimulator",
+          "subsimulatorgpt2"
+        ]
+      },
+      "4": {
+        "name": "Manipulated Content",
+        "subreddits": [
+          "psbattle_artwork"
+        ]
+      },
+      "5": {
+        "name": "Misleading Content",
+        "subreddits": [
+          "propagandaposters",
+          "savedyouaclick",
+          "fakefacts"
+        ]
+      }
+    },
+    "total_supervised_records": 72451,
+    "total_supervised_trainable": 70512,
+    "total_supervised_evaluation_only": 1939
+  },
+  "modality_evidence": {
+    "averimatec": {
+      "None": 945
+    },
+    "averitec": {
+      "None": 5783
+    },
+    "dgm4": {
+      "None": 179295
+    },
+    "factify2": {
+      "multimodal": 17000,
+      "text": 17000,
+      "None": 8500
+    },
+    "fakeddit": {
+      "None": 623342
+    },
+    "fakenewsnet": {
+      "None": 23194
+    },
+    "isot": {
+      "None": 44898
+    },
+    "liar": {
+      "None": 12836
+    },
+    "m4fc": {
+      "None": 3493
+    },
+    "mocheg": {
+      "None": 21184
+    },
+    "verite": {
+      "None": 1001
+    },
+    "welfake": {
+      "None": 72134
+    }
+  }
+}

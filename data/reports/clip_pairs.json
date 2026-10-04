@@ -1,0 +1,67 @@
+{
+  "model": "openai/clip-vit-base-patch32",
+  "seed": 20260901,
+  "comparisons": {
+    "dgm4:orig vs dgm4:text_swap": {
+      "n_true": 8000,
+      "n_defective": 15682,
+      "mean_cosine_true": 0.3137,
+      "mean_cosine_defective": 0.2333,
+      "auc": 0.8938,
+      "auc_95ci": [
+        0.8894,
+        0.8979
+      ]
+    },
+    "dgm4:orig vs dgm4:text_swap_same_publisher": {
+      "n_true": 8000,
+      "n_defective": 7814,
+      "mean_cosine_true": 0.3137,
+      "mean_cosine_defective": 0.2392,
+      "auc": 0.8789,
+      "auc_95ci": [
+        0.8739,
+        0.8839
+      ]
+    },
+    "dgm4:orig_matched vs dgm4:text_swap_matched": {
+      "n_true": 6106,
+      "n_defective": 6106,
+      "mean_cosine_true": 0.3231,
+      "mean_cosine_defective": 0.242,
+      "auc": 0.907,
+      "auc_95ci": [
+        0.9022,
+        0.912
+      ]
+    },
+    "verite:true vs verite:out-of-context": {
+      "n_true": 231,
+      "n_defective": 261,
+      "mean_cosine_true": 0.3318,
+      "mean_cosine_defective": 0.2895,
+      "auc": 0.7642,
+      "auc_95ci": [
+        0.7234,
+        0.8033
+      ]
+    },
+    "verite:true vs verite:miscaptioned": {
+      "n_true": 231,
+      "n_defective": 231,
+      "mean_cosine_true": 0.3318,
+      "mean_cosine_defective": 0.3203,
+      "auc": 0.5869,
+      "auc_95ci": [
+        0.5379,
+        0.6404
+      ]
+    }
+  },
+  "paired": {
+    "dgm4:orig_matched vs dgm4:text_swap_matched": {
+      "pairs": 6106,
+      "true_caption_scores_higher": 0.943
+    }
+  }
+}

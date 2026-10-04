@@ -1,0 +1,35 @@
+{
+ "usable_records": 37807,
+ "split_sizes": {
+  "train": 22747,
+  "test": 10325,
+  "val": 4735
+ },
+ "test_class_counts": {
+  "Refute": 5620,
+  "Support_Text": 990,
+  "Support_Multimodal": 1259,
+  "Insufficient_Text": 1191,
+  "Insufficient_Multimodal": 1265
+ },
+ "val_class_counts": {
+  "Support_Multimodal": 1260,
+  "Support_Text": 1013,
+  "Insufficient_Multimodal": 1267,
+  "Insufficient_Text": 1195
+ },
+ "source_disjoint": {
+  "domain_only_test_accuracy": 0.1266,
+  "majority_baseline": 0.5686,
+  "uniform_baseline": 0.2,
+  "unseen_domain_rate": 0.5119,
+  "test_pairs": 13045
+ },
+ "random_70_15_15": {
+  "domain_only_test_accuracy": 0.4027,
+  "majority_baseline": 0.2216,
+  "uniform_baseline": 0.2,
+  "unseen_domain_rate": 0.0111,
+  "test_pairs": 6742
+ }
+}

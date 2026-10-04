@@ -1,0 +1,810 @@
+{
+  "rules": {
+    "codes": [
+      "content_refuted",
+      "content_unverified",
+      "media_mismatch",
+      "wrong_image",
+      "none",
+      "unmapped"
+    ],
+    "supervised_codes": [
+      "content_refuted",
+      "content_unverified",
+      "media_mismatch",
+      "wrong_image",
+      "none"
+    ],
+    "datasets": {
+      "averimatec": {
+        "records": 945,
+        "reason_code": {
+          "content_refuted": 897,
+          "content_unverified": 24,
+          "none": 17,
+          "null:no_clean_code": 7
+        },
+        "none": 17,
+        "unmapped": 0,
+        "supervised_records": 938,
+        "evaluation_only": true,
+        "per_class": {
+          "Conflicting Evidence/Cherrypicking": {
+            "reason_code": "null:no_clean_code",
+            "records": 7
+          },
+          "Not Enough Evidence": {
+            "reason_code": "content_unverified",
+            "records": 24
+          },
+          "Refuted": {
+            "reason_code": "content_refuted",
+            "records": 897
+          },
+          "Supported": {
+            "reason_code": "none",
+            "records": 17
+          }
+        }
+      },
+      "averitec": {
+        "records": 5783,
+        "reason_code": {
+          "content_refuted": 2047,
+          "content_unverified": 317,
+          "none": 971,
+          "null:no_clean_code": 233,
+          "null:unlabelled": 2215
+        },
+        "none": 971,
+        "unmapped": 0,
+        "supervised_records": 3335,
+        "evaluation_only": false,
+        "per_class": {
+          "Conflicting Evidence/Cherrypicking": {
+            "reason_code": "null:no_clean_code",
+            "records": 233
+          },
+          "None": {
+            "reason_code": "null:unlabelled",
+            "records": 2215
+          },
+          "Not Enough Evidence": {
+            "reason_code": "content_unverified",
+            "records": 317
+          },
+          "Refuted": {
+            "reason_code": "content_refuted",
+            "records": 2047
+          },
+          "Supported": {
+            "reason_code": "none",
+            "records": 971
+          }
+        }
+      },
+      "dgm4": {
+        "records": 179295,
+        "reason_code": {
+          "unmapped": 179295
+        },
+        "none": 0,
+        "unmapped": 179295,
+        "supervised_records": 0,
+        "evaluation_only": false,
+        "per_class": {
+          "face_attribute": {
+            "reason_code": "unmapped",
+            "records": 32512
+          },
+          "face_attribute&text_attribute": {
+            "reason_code": "unmapped",
+            "records": 3595
+          },
+          "face_attribute&text_swap": {
+            "reason_code": "unmapped",
+            "records": 7968
+          },
+          "face_swap": {
+            "reason_code": "unmapped",
+            "records": 38492
+          },
+          "face_swap&text_attribute": {
+            "reason_code": "unmapped",
+            "records": 4182
+          },
+          "face_swap&text_swap": {
+            "reason_code": "unmapped",
+            "records": 9480
+          },
+          "orig": {
+            "reason_code": "unmapped",
+            "records": 60550
+          },
+          "text_attribute": {
+            "reason_code": "unmapped",
+            "records": 6834
+          },
+          "text_swap": {
+            "reason_code": "unmapped",
+            "records": 15682
+          }
+        }
+      },
+      "factify2": {
+        "records": 42500,
+        "reason_code": {
+          "content_refuted": 8500,
+          "content_unverified": 17000,
+          "none": 17000
+        },
+        "none": 17000,
+        "unmapped": 0,
+        "supervised_records": 42500,
+        "evaluation_only": false,
+        "per_class": {
+          "Insufficient_Multimodal": {
+            "reason_code": "content_unverified",
+            "records": 8500
+          },
+          "Insufficient_Text": {
+            "reason_code": "content_unverified",
+            "records": 8500
+          },
+          "Refute": {
+            "reason_code": "content_refuted",
+            "records": 8500
+          },
+          "Support_Multimodal": {
+            "reason_code": "none",
+            "records": 8500
+          },
+          "Support_Text": {
+            "reason_code": "none",
+            "records": 8500
+          }
+        }
+      },
+      "fakeddit": {
+        "records": 623342,
+        "reason_code": {
+          "unmapped": 623342
+        },
+        "none": 0,
+        "unmapped": 623342,
+        "supervised_records": 0,
+        "evaluation_only": false,
+        "per_class": {
+          "0": {
+            "reason_code": "unmapped",
+            "records": 245401
+          },
+          "1": {
+            "reason_code": "unmapped",
+            "records": 37002
+          },
+          "2": {
+            "reason_code": "unmapped",
+            "records": 118498
+          },
+          "3": {
+            "reason_code": "unmapped",
+            "records": 13022
+          },
+          "4": {
+            "reason_code": "unmapped",
+            "records": 185667
+          },
+          "5": {
+            "reason_code": "unmapped",
+            "records": 23752
+          }
+        }
+      },
+      "fakenewsnet": {
+        "records": 23194,
+        "reason_code": {
+          "unmapped": 23194
+        },
+        "none": 0,
+        "unmapped": 23194,
+        "supervised_records": 0,
+        "evaluation_only": false,
+        "per_class": {
+          "None": {
+            "reason_code": "unmapped",
+            "records": 2
+          },
+          "fake": {
+            "reason_code": "unmapped",
+            "records": 5753
+          },
+          "real": {
+            "reason_code": "unmapped",
+            "records": 17439
+          }
+        }
+      },
+      "isot": {
+        "records": 44898,
+        "reason_code": {
+          "unmapped": 44898
+        },
+        "none": 0,
+        "unmapped": 44898,
+        "supervised_records": 0,
+        "evaluation_only": false,
+        "per_class": {
+          "fake": {
+            "reason_code": "unmapped",
+            "records": 23481
+          },
+          "real": {
+            "reason_code": "unmapped",
+            "records": 21417
+          }
+        }
+      },
+      "liar": {
+        "records": 12836,
+        "reason_code": {
+          "unmapped": 12836
+        },
+        "none": 0,
+        "unmapped": 12836,
+        "supervised_records": 0,
+        "evaluation_only": false,
+        "per_class": {
+          "barely-true": {
+            "reason_code": "unmapped",
+            "records": 2108
+          },
+          "false": {
+            "reason_code": "unmapped",
+            "records": 2511
+          },
+          "half-true": {
+            "reason_code": "unmapped",
+            "records": 2638
+          },
+          "mostly-true": {
+            "reason_code": "unmapped",
+            "records": 2466
+          },
+          "pants-fire": {
+            "reason_code": "unmapped",
+            "records": 1050
+          },
+          "true": {
+            "reason_code": "unmapped",
+            "records": 2063
+          }
+        }
+      },
+      "m4fc": {
+        "records": 3493,
+        "reason_code": {
+          "content_refuted": 3282,
+          "content_unverified": 16,
+          "none": 195
+        },
+        "none": 195,
+        "unmapped": 0,
+        "supervised_records": 3493,
+        "evaluation_only": false,
+        "per_class": {
+          "false": {
+            "reason_code": "content_refuted",
+            "records": 3282
+          },
+          "not enough information": {
+            "reason_code": "content_unverified",
+            "records": 16
+          },
+          "true": {
+            "reason_code": "none",
+            "records": 195
+          }
+        }
+      },
+      "mocheg": {
+        "records": 21184,
+        "reason_code": {
+          "content_refuted": 8004,
+          "content_unverified": 5377,
+          "none": 7803
+        },
+        "none": 7803,
+        "unmapped": 0,
+        "supervised_records": 21184,
+        "evaluation_only": false,
+        "per_class": {
+          "NEI": {
+            "reason_code": "content_unverified",
+            "records": 5377
+          },
+          "refuted": {
+            "reason_code": "content_refuted",
+            "records": 8004
+          },
+          "supported": {
+            "reason_code": "none",
+            "records": 7803
+          }
+        }
+      },
+      "verite": {
+        "records": 1001,
+        "reason_code": {
+          "media_mismatch": 325,
+          "none": 338,
+          "wrong_image": 338
+        },
+        "none": 338,
+        "unmapped": 0,
+        "supervised_records": 1001,
+        "evaluation_only": true,
+        "per_class": {
+          "miscaptioned": {
+            "reason_code": "wrong_image",
+            "records": 338
+          },
+          "out-of-context": {
+            "reason_code": "media_mismatch",
+            "records": 325
+          },
+          "true": {
+            "reason_code": "none",
+            "records": 338
+          }
+        }
+      },
+      "welfake": {
+        "records": 72134,
+        "reason_code": {
+          "unmapped": 72134
+        },
+        "none": 0,
+        "unmapped": 72134,
+        "supervised_records": 0,
+        "evaluation_only": false,
+        "per_class": {
+          "fake": {
+            "reason_code": "unmapped",
+            "records": 37106
+          },
+          "real": {
+            "reason_code": "unmapped",
+            "records": 35028
+          }
+        }
+      }
+    },
+    "not_cleanly_mapped": [
+      {
+        "dataset": "averimatec",
+        "label": "Conflicting Evidence/Cherrypicking",
+        "records": 7,
+        "kind": "no_clean_code",
+        "why": "as for AVeriTeC"
+      },
+      {
+        "dataset": "averitec",
+        "label": "Conflicting Evidence/Cherrypicking",
+        "records": 233,
+        "kind": "no_clean_code",
+        "why": "evidence both supports and refutes, or the claim is true but cherry-picked: neither refuted, unverified, nor clean"
+      },
+      {
+        "dataset": "averitec",
+        "label": null,
+        "records": 2215,
+        "kind": "unlabelled",
+        "why": "no label"
+      }
+    ],
+    "inherited_rules": [
+      {
+        "dataset": "averimatec",
+        "label": "Refuted",
+        "reason_code": "content_refuted",
+        "from": "averitec"
+      },
+      {
+        "dataset": "averimatec",
+        "label": "Not Enough Evidence",
+        "reason_code": "content_unverified",
+        "from": "averitec"
+      },
+      {
+        "dataset": "averimatec",
+        "label": "Supported",
+        "reason_code": "none",
+        "from": "averitec"
+      }
+    ],
+    "evaluation_only": {
+      "averimatec": "95% one class (897 of 945 Refuted): evaluation only, per the brief",
+      "verite": "an evaluation benchmark with no training split: every row is test"
+    },
+    "open": {},
+    "fakeddit_6_way": {
+      "0": {
+        "name": "True",
+        "subreddits": [
+          "mildlyinteresting",
+          "photoshopbattles",
+          "nottheonion",
+          "upliftingnews",
+          "neutralnews",
+          "usnews",
+          "usanews",
+          "pic"
+        ]
+      },
+      "1": {
+        "name": "Satire/Parody",
+        "subreddits": [
+          "fakealbumcovers",
+          "theonion",
+          "satire",
+          "waterfordwhispersnews"
+        ]
+      },
+      "2": {
+        "name": "False Connection",
+        "subreddits": [
+          "pareidolia",
+          "fakehistoryporn",
+          "misleadingthumbnails",
+          "confusing_perspective"
+        ]
+      },
+      "3": {
+        "name": "Imposter Content",
+        "subreddits": [
+          "subredditsimulator",
+          "subsimulatorgpt2"
+        ]
+      },
+      "4": {
+        "name": "Manipulated Content",
+        "subreddits": [
+          "psbattle_artwork"
+        ]
+      },
+      "5": {
+        "name": "Misleading Content",
+        "subreddits": [
+          "propagandaposters",
+          "savedyouaclick",
+          "fakefacts"
+        ]
+      }
+    },
+    "total_supervised_records": 72451,
+    "total_supervised_trainable": 70512,
+    "total_supervised_evaluation_only": 1939
+  },
+  "distribution": {
+    "datasets": {
+      "averimatec": {
+        "records": 945,
+        "reason_code": {
+          "content_refuted": 897,
+          "content_unverified": 24,
+          "none": 17,
+          "null:no_clean_code": 7
+        },
+        "none": 17,
+        "unmapped": 0,
+        "supervised_records": 938,
+        "supervision_use": "evaluation_only",
+        "per_class": {
+          "Conflicting Evidence/Cherrypicking": {
+            "null:no_clean_code": 7
+          },
+          "Not Enough Evidence": {
+            "content_unverified": 24
+          },
+          "Refuted": {
+            "content_refuted": 897
+          },
+          "Supported": {
+            "none": 17
+          }
+        }
+      },
+      "averitec": {
+        "records": 5783,
+        "reason_code": {
+          "content_refuted": 2047,
+          "content_unverified": 317,
+          "none": 971,
+          "null:no_clean_code": 233,
+          "null:unlabelled": 2215
+        },
+        "none": 971,
+        "unmapped": 0,
+        "supervised_records": 3335,
+        "supervision_use": "trainable",
+        "per_class": {
+          "Conflicting Evidence/Cherrypicking": {
+            "null:no_clean_code": 233
+          },
+          "None": {
+            "null:unlabelled": 2215
+          },
+          "Not Enough Evidence": {
+            "content_unverified": 317
+          },
+          "Refuted": {
+            "content_refuted": 2047
+          },
+          "Supported": {
+            "none": 971
+          }
+        }
+      },
+      "dgm4": {
+        "records": 179295,
+        "reason_code": {
+          "unmapped": 179295
+        },
+        "none": 0,
+        "unmapped": 179295,
+        "supervised_records": 0,
+        "supervision_use": "weak_training_only",
+        "per_class": {
+          "face_attribute": {
+            "unmapped": 32512
+          },
+          "face_attribute&text_attribute": {
+            "unmapped": 3595
+          },
+          "face_attribute&text_swap": {
+            "unmapped": 7968
+          },
+          "face_swap": {
+            "unmapped": 38492
+          },
+          "face_swap&text_attribute": {
+            "unmapped": 4182
+          },
+          "face_swap&text_swap": {
+            "unmapped": 9480
+          },
+          "orig": {
+            "unmapped": 60550
+          },
+          "text_attribute": {
+            "unmapped": 6834
+          },
+          "text_swap": {
+            "unmapped": 15682
+          }
+        }
+      },
+      "factify2": {
+        "records": 42500,
+        "reason_code": {
+          "content_refuted": 8500,
+          "content_unverified": 17000,
+          "none": 17000
+        },
+        "none": 17000,
+        "unmapped": 0,
+        "supervised_records": 42500,
+        "supervision_use": "trainable",
+        "per_class": {
+          "Insufficient_Multimodal": {
+            "content_unverified": 8500
+          },
+          "Insufficient_Text": {
+            "content_unverified": 8500
+          },
+          "Refute": {
+            "content_refuted": 8500
+          },
+          "Support_Multimodal": {
+            "none": 8500
+          },
+          "Support_Text": {
+            "none": 8500
+          }
+        }
+      },
+      "fakeddit": {
+        "records": 623342,
+        "reason_code": {
+          "unmapped": 623342
+        },
+        "none": 0,
+        "unmapped": 623342,
+        "supervised_records": 0,
+        "supervision_use": "trainable",
+        "per_class": {
+          "0": {
+            "unmapped": 245401
+          },
+          "1": {
+            "unmapped": 37002
+          },
+          "2": {
+            "unmapped": 118498
+          },
+          "3": {
+            "unmapped": 13022
+          },
+          "4": {
+            "unmapped": 185667
+          },
+          "5": {
+            "unmapped": 23752
+          }
+        }
+      },
+      "fakenewsnet": {
+        "records": 23194,
+        "reason_code": {
+          "unmapped": 23194
+        },
+        "none": 0,
+        "unmapped": 23194,
+        "supervised_records": 0,
+        "supervision_use": "trainable",
+        "per_class": {
+          "None": {
+            "unmapped": 2
+          },
+          "fake": {
+            "unmapped": 5753
+          },
+          "real": {
+            "unmapped": 17439
+          }
+        }
+      },
+      "isot": {
+        "records": 44898,
+        "reason_code": {
+          "unmapped": 44898
+        },
+        "none": 0,
+        "unmapped": 44898,
+        "supervised_records": 0,
+        "supervision_use": "trainable",
+        "per_class": {
+          "fake": {
+            "unmapped": 23481
+          },
+          "real": {
+            "unmapped": 21417
+          }
+        }
+      },
+      "liar": {
+        "records": 12836,
+        "reason_code": {
+          "unmapped": 12836
+        },
+        "none": 0,
+        "unmapped": 12836,
+        "supervised_records": 0,
+        "supervision_use": "trainable",
+        "per_class": {
+          "barely-true": {
+            "unmapped": 2108
+          },
+          "false": {
+            "unmapped": 2511
+          },
+          "half-true": {
+            "unmapped": 2638
+          },
+          "mostly-true": {
+            "unmapped": 2466
+          },
+          "pants-fire": {
+            "unmapped": 1050
+          },
+          "true": {
+            "unmapped": 2063
+          }
+        }
+      },
+      "m4fc": {
+        "records": 3493,
+        "reason_code": {
+          "content_refuted": 3282,
+          "content_unverified": 16,
+          "none": 195
+        },
+        "none": 195,
+        "unmapped": 0,
+        "supervised_records": 3493,
+        "supervision_use": "trainable",
+        "per_class": {
+          "false": {
+            "content_refuted": 3282
+          },
+          "not enough information": {
+            "content_unverified": 16
+          },
+          "true": {
+            "none": 195
+          }
+        }
+      },
+      "mocheg": {
+        "records": 21184,
+        "reason_code": {
+          "content_refuted": 8004,
+          "content_unverified": 5377,
+          "none": 7803
+        },
+        "none": 7803,
+        "unmapped": 0,
+        "supervised_records": 21184,
+        "supervision_use": "trainable",
+        "per_class": {
+          "NEI": {
+            "content_unverified": 5377
+          },
+          "refuted": {
+            "content_refuted": 8004
+          },
+          "supported": {
+            "none": 7803
+          }
+        }
+      },
+      "verite": {
+        "records": 1001,
+        "reason_code": {
+          "media_mismatch": 325,
+          "none": 338,
+          "wrong_image": 338
+        },
+        "none": 338,
+        "unmapped": 0,
+        "supervised_records": 1001,
+        "supervision_use": "evaluation_only",
+        "per_class": {
+          "miscaptioned": {
+            "wrong_image": 338
+          },
+          "out-of-context": {
+            "media_mismatch": 325
+          },
+          "true": {
+            "none": 338
+          }
+        }
+      },
+      "welfake": {
+        "records": 72134,
+        "reason_code": {
+          "unmapped": 72134
+        },
+        "none": 0,
+        "unmapped": 72134,
+        "supervised_records": 0,
+        "supervision_use": "trainable",
+        "per_class": {
+          "fake": {
+            "unmapped": 37106
+          },
+          "real": {
+            "unmapped": 35028
+          }
+        }
+      }
+    },
+    "supervised_records": {
+      "evaluation_only": 1939,
+      "trainable": 70512
+    },
+    "supervised_total": 72451
+  }
+}

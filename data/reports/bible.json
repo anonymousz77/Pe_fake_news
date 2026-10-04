@@ -1,0 +1,199 @@
+{
+  "generated_at": "2026-09-10T23:43:49+00:00",
+  "html_parser": "lxml",
+  "documents_indexed": 1368613,
+  "documents_quarantined": 3214,
+  "quarantine_rate": 0.0023,
+  "quarantined_by_reason": {
+    "none": 2078,
+    "implausible_date": 742,
+    "http_last_modified": 394
+  },
+  "quarantined_by_origin": {
+    "enrich": 1539,
+    "wikinews": 937,
+    "ccnews": 738
+  },
+  "date_source": {
+    "jsonld": 686719,
+    "meta_published": 388413,
+    "warc_date": 245650,
+    "url_path": 24792,
+    "explicit_field": 21457,
+    "wayback_capture": 1582
+  },
+  "date_source_whole_store": {
+    "jsonld": 686719,
+    "meta_published": 388413,
+    "warc_date": 245650,
+    "url_path": 24792,
+    "explicit_field": 21457,
+    "none": 2078,
+    "wayback_capture": 1582,
+    "implausible_date": 742,
+    "http_last_modified": 394
+  },
+  "date_confidence": {
+    "high": 1096589,
+    "low": 272024
+  },
+  "by_origin": {
+    "ccnews": 1342262,
+    "wikinews": 21457,
+    "enrich": 4894
+  },
+  "date_source_by_origin": {
+    "ccnews": {
+      "jsonld": 684467,
+      "meta_published": 387482,
+      "warc_date": 245650,
+      "url_path": 24663
+    },
+    "enrich": {
+      "jsonld": 2252,
+      "wayback_capture": 1582,
+      "meta_published": 931,
+      "url_path": 129
+    },
+    "wikinews": {
+      "explicit_field": 21457
+    }
+  },
+  "date_confidence_by_origin": {
+    "ccnews": {
+      "high": 1071949,
+      "low": 270313
+    },
+    "enrich": {
+      "high": 3183,
+      "low": 1711
+    },
+    "wikinews": {
+      "high": 21457
+    }
+  },
+  "enrich_vs_claim": {
+    "predates": 2724,
+    "postdates": 2170
+  },
+  "enrich_predate_rate": 0.5566,
+  "date_range": {
+    "min": "1395-06-03",
+    "max": "2562-02-02"
+  },
+  "plausibility_window": {
+    "min": "1900-01-01",
+    "max": "2026-09-10"
+  },
+  "non_gregorian_calendar": {
+    "1395": 16,
+    "1398": 23,
+    "2561": 10,
+    "2562": 16
+  },
+  "by_year": {
+    "1395": 16,
+    "1398": 23,
+    "1970": 1,
+    "1971": 1,
+    "1975": 1,
+    "1982": 1,
+    "1984": 1,
+    "1985": 1,
+    "1988": 1,
+    "1990": 1,
+    "1992": 1,
+    "1994": 5,
+    "1995": 1,
+    "1997": 3,
+    "1998": 8,
+    "1999": 9,
+    "2000": 4,
+    "2001": 1,
+    "2002": 8,
+    "2003": 12,
+    "2004": 126,
+    "2005": 3397,
+    "2006": 3582,
+    "2007": 3721,
+    "2008": 3053,
+    "2009": 2569,
+    "2010": 2226,
+    "2011": 1317,
+    "2012": 8723,
+    "2013": 6818,
+    "2014": 2391,
+    "2015": 2779,
+    "2016": 59003,
+    "2017": 45757,
+    "2018": 88937,
+    "2019": 293516,
+    "2020": 474680,
+    "2021": 167333,
+    "2022": 175929,
+    "2023": 22120,
+    "2024": 221,
+    "2025": 230,
+    "2026": 60,
+    "2561": 10,
+    "2562": 16
+  },
+  "enrich_yield": {
+    "evidence_urls": 8482,
+    "indexed": 4894,
+    "quarantined": 1539,
+    "high_confidence": 3183,
+    "high_confidence_date_sources": {
+      "jsonld": 2252,
+      "meta_published": 931
+    },
+    "high_confidence_rate_over_urls": 0.3753,
+    "indexed_rate_over_urls": 0.577
+  },
+  "domains": {
+    "distinct": 21805,
+    "top": {
+      "en.wikinews.org": 21457,
+      "fastcompany.com": 13489,
+      "bhaskar.com": 9847,
+      "thesun.co.uk": 9734,
+      "newsbreak.com": 8013,
+      "dailymail.co.uk": 8002,
+      "thesun.ie": 7762,
+      "aktiencheck.de": 7160,
+      "cwetochki.ru": 6360,
+      "goal.com": 6096,
+      "hankyung.com": 5992,
+      "gulf365.co": 5735,
+      "sondakika.com": 5712,
+      "mirtesen.ru": 5390,
+      "nysenewstimes.com": 5219,
+      "americanbankingnews.com": 5198,
+      "shutterstock.com": 5182,
+      "finanznachrichten.de": 4942,
+      "zazoom.it": 4569,
+      "newsparent.com": 4459,
+      "telez.fr": 4297,
+      "haberler.com": 4159,
+      "reuters.com": 4069,
+      "mathematicexperts.com": 4056,
+      "arklatexhomepage.com": 3235
+    }
+  },
+  "index_bytes": {
+    "bm25.sqlite": 13387153408,
+    "temporal.sqlite": 439357440
+  },
+  "store_bytes": 23325776218,
+  "store_gb": 21.7238,
+  "transfer_bytes": 46697867261,
+  "transfer_gb": 43.4908,
+  "caps": {
+    "store_gb": 30.0,
+    "transfer_gb": 60.0
+  },
+  "excluded": {
+    "mocheg": "43,148 evidence URLs (78% of all bundled evidence) cannot enter the store: the corpus ships no claim-date field, so nothing in it can be placed on a timeline relative to its claim. A property of the dataset, not of this pipeline.",
+    "http_last_modified": "recorded as provenance but never used as a publication date; such documents are quarantined."
+  }
+}

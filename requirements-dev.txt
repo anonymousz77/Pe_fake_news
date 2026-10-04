@@ -1,0 +1,40 @@
+# Pe_Fake_News_Dec — development dependencies
+#
+# Install on top of requirements.txt:
+#     pip install -r requirements.txt -r requirements-dev.txt
+#
+# Pins were captured from `pip freeze` in the project venv (.venv,
+# CPython 3.11.9) on 2026-09-01.
+
+-r requirements.txt
+
+# Installed during this session; pin taken from that run's `pip freeze`.
+pytest==9.1.1
+
+# Licence audit (2026-10-01): extracts the text of licence/readme PDFs that a
+# dataset distributes, e.g. ISOT_Fake_News_Dataset_ReadMe.pdf.
+pypdf==6.1.1
+
+# Placeholder audit (2026-10-01): OCR over single-copy images, looking for
+# "unavailable / not found / error / expired / removed / forbidden" cards.
+# Runs on the CUDA torch pinned in requirements.txt; installing it moved no
+# existing pin. The rest are its dependencies as resolved on that date.
+easyocr==1.7.2
+opencv-python-headless==5.0.0.93
+scikit-image==0.26.0
+scipy==1.17.1
+shapely==2.1.2
+pyclipper==1.4.0
+python-bidi==0.6.11
+ninja==1.13.2
+ImageIO==2.38.0
+lazy-loader==0.6
+tifffile==2026.3.3
+
+# UNPINNED — not installed in this venv, so there was no version to record
+# and none has been invented. Pin it from `pip freeze` after installing.
+ruff
+
+# --- notebooks ---
+jupytext==1.19.5
+nbformat==5.11.1

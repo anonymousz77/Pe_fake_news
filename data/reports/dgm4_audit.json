@@ -1,0 +1,451 @@
+{
+  "records": 179295,
+  "seed": 20260901,
+  "publisher_by_class": {
+    "face_attribute": {
+      "guardian": 16732,
+      "bbc": 6804,
+      "usa_today": 4781,
+      "washington_post": 4195
+    },
+    "face_attribute&text_attribute": {
+      "guardian": 1943,
+      "bbc": 1055,
+      "usa_today": 319,
+      "washington_post": 278
+    },
+    "face_attribute&text_swap": {
+      "guardian": 4301,
+      "usa_today": 1335,
+      "bbc": 1194,
+      "washington_post": 1138
+    },
+    "face_swap": {
+      "guardian": 19843,
+      "bbc": 8061,
+      "usa_today": 5589,
+      "washington_post": 4999
+    },
+    "face_swap&text_attribute": {
+      "guardian": 2272,
+      "bbc": 1178,
+      "usa_today": 396,
+      "washington_post": 336
+    },
+    "face_swap&text_swap": {
+      "guardian": 5101,
+      "bbc": 1689,
+      "usa_today": 1469,
+      "washington_post": 1221
+    },
+    "orig": {
+      "guardian": 32235,
+      "bbc": 11849,
+      "usa_today": 8903,
+      "washington_post": 7563
+    },
+    "text_attribute": {
+      "guardian": 4004,
+      "bbc": 1556,
+      "usa_today": 714,
+      "washington_post": 560
+    },
+    "text_swap": {
+      "guardian": 7754,
+      "usa_today": 3678,
+      "washington_post": 2478,
+      "bbc": 1772
+    }
+  },
+  "class_by_publisher": {
+    "bbc": {
+      "records": 35158,
+      "purity": 0.337,
+      "dominant_class": "orig",
+      "text_swap_share": 0.0504
+    },
+    "guardian": {
+      "records": 94185,
+      "purity": 0.3423,
+      "dominant_class": "orig",
+      "text_swap_share": 0.0823
+    },
+    "usa_today": {
+      "records": 27184,
+      "purity": 0.3275,
+      "dominant_class": "orig",
+      "text_swap_share": 0.1353
+    },
+    "washington_post": {
+      "records": 22768,
+      "purity": 0.3322,
+      "dominant_class": "orig",
+      "text_swap_share": 0.1088
+    }
+  },
+  "image_folder_by_class": {
+    "face_attribute": {
+      "manipulation/HFGI": 16309,
+      "manipulation/StyleCLIP": 16203
+    },
+    "face_attribute&text_attribute": {
+      "manipulation/HFGI": 1817,
+      "manipulation/StyleCLIP": 1778
+    },
+    "face_attribute&text_swap": {
+      "manipulation/StyleCLIP": 3925,
+      "manipulation/HFGI": 4043
+    },
+    "face_swap": {
+      "manipulation/infoswap": 25726,
+      "manipulation/simswap": 12766
+    },
+    "face_swap&text_attribute": {
+      "manipulation/infoswap": 2604,
+      "manipulation/simswap": 1578
+    },
+    "face_swap&text_swap": {
+      "manipulation/simswap": 3305,
+      "manipulation/infoswap": 6175
+    },
+    "orig": {
+      "origin/washington_post": 7563,
+      "origin/usa_today": 8903,
+      "origin/guardian": 32235,
+      "origin/bbc": 11849
+    },
+    "text_attribute": {
+      "origin/guardian": 4004,
+      "origin/usa_today": 714,
+      "origin/bbc": 1556,
+      "origin/washington_post": 560
+    },
+    "text_swap": {
+      "origin/bbc": 1772,
+      "origin/guardian": 7754,
+      "origin/washington_post": 2478,
+      "origin/usa_today": 3678
+    }
+  },
+  "text_only_9way": {
+    "accuracy": 0.1403,
+    "majority_baseline": 0.3377,
+    "per_class": {
+      "face_attribute": {
+        "support": 32512,
+        "recall": 0.0044,
+        "precision": 0.0049
+      },
+      "face_attribute&text_attribute": {
+        "support": 3595,
+        "recall": 0.0,
+        "precision": 0.0
+      },
+      "face_attribute&text_swap": {
+        "support": 7968,
+        "recall": 0.052,
+        "precision": 0.1507
+      },
+      "face_swap": {
+        "support": 38492,
+        "recall": 0.01,
+        "precision": 0.0104
+      },
+      "face_swap&text_attribute": {
+        "support": 4182,
+        "recall": 0.0,
+        "precision": 0.0
+      },
+      "face_swap&text_swap": {
+        "support": 9480,
+        "recall": 0.0816,
+        "precision": 0.1723
+      },
+      "orig": {
+        "support": 60550,
+        "recall": 0.2786,
+        "precision": 0.2001
+      },
+      "text_attribute": {
+        "support": 6834,
+        "recall": 0.0095,
+        "precision": 0.0913
+      },
+      "text_swap": {
+        "support": 15682,
+        "recall": 0.4153,
+        "precision": 0.3203
+      }
+    }
+  },
+  "text_only_text_swap_vs_orig": {
+    "accuracy": 0.8258,
+    "majority_baseline": 0.7943,
+    "per_class": {
+      "orig": {
+        "support": 60550,
+        "recall": 0.9033,
+        "precision": 0.8805
+      },
+      "text_swap": {
+        "support": 15682,
+        "recall": 0.5268,
+        "precision": 0.5852
+      }
+    }
+  },
+  "text_only_publisher": {
+    "accuracy": 0.8093,
+    "majority_baseline": 0.5253,
+    "per_class": {
+      "bbc": {
+        "support": 35158,
+        "recall": 0.7957,
+        "precision": 0.8012
+      },
+      "guardian": {
+        "support": 94185,
+        "recall": 0.8448,
+        "precision": 0.8844
+      },
+      "usa_today": {
+        "support": 27184,
+        "recall": 0.7629,
+        "precision": 0.7044
+      },
+      "washington_post": {
+        "support": 22768,
+        "recall": 0.7389,
+        "precision": 0.6739
+      }
+    }
+  },
+  "nmi_publisher_label": 0.005,
+  "style_mismatch_rule": {
+    "orig": {
+      "style_mismatch": 9232,
+      "style_match": 51318,
+      "mismatch_rate": 0.1525
+    },
+    "text_swap": {
+      "style_mismatch": 6743,
+      "style_match": 8939,
+      "mismatch_rate": 0.43
+    }
+  },
+  "swap_source": {
+    "text_swap_rows": 15682,
+    "caption_found_among_dgm4_pristine_captions": 15682,
+    "same_publisher": 7814,
+    "cross_publisher": 7867,
+    "ambiguous_publisher": 1,
+    "source_not_in_dgm4": 0,
+    "cross_publisher_share_of_found": 0.5017
+  },
+  "combined_vs_text_swap": {
+    "by_metadata": {
+      "text_swap_with_fake_image_box": 0,
+      "combined_without_fake_image_box": 0,
+      "text_swap_image_folders": {
+        "origin": 15682
+      },
+      "combined_image_folders": {
+        "manipulation": 17448
+      }
+    },
+    "text_only": {
+      "accuracy": 0.5193,
+      "majority_baseline": 0.5267,
+      "per_class": {
+        "combined": {
+          "support": 17448,
+          "recall": 0.5443,
+          "precision": 0.5436
+        },
+        "text_swap": {
+          "support": 15682,
+          "recall": 0.4916,
+          "precision": 0.4923
+        }
+      }
+    }
+  },
+  "sample_text_swap_captions": [
+    "Garner starred with Tommy Lee Jones Donald Sutherland and Clint Eastwood in Space Cowboys in 2000",
+    "This 2003 Broadway revival of Cat On a Hot Tin Roof starring Jason Patric and Ashley Judd failed to impress critics",
+    "Marvin Gaye used his music to advance Sexual Healing Ben Carson used his hands to advance brain healing",
+    "An Apple fan wearing a Steve Jobs mask queuing for an iPhone 5 in Tokyo",
+    "Geno Auriemma celebrates with Kaleena MosquedaLewis left and Kiah Stokes",
+    "From left Huckabee Cruz Louisiana Gov Bobby Jindal and former Pennsylvania senator Rick Santorum gather on stage at the Homeschool Iowa s Capitol Day event in Des Moines",
+    "Extravagantdodgy titfers are nt the exclusive preserve of the ladies as Eric Williams of Chicago shows",
+    "Conservative deputy chairman Lord Ashcroft centre with William and Ffion Hague An Ashcroft company faces an Electoral Commission investigation over donations to the Tories"
+  ],
+  "swap_caption_reuse": {
+    "distinct_captions": 7600,
+    "max_reuse": 109,
+    "rows_from_captions_used_5_plus_times": 5247
+  },
+  "caption_split_straddle": {
+    "swapped_captions_in_both_train_and_val": 0,
+    "of": 7600
+  },
+  "integrity": {
+    "train": {
+      "rows_in_file": 208184,
+      "distinct": 157169,
+      "byte_identical_repeats": 51015,
+      "rows_in_repeated_groups_by_class": {
+        "orig": 89780
+      }
+    },
+    "val": {
+      "rows_in_file": 22126,
+      "distinct": 22126,
+      "byte_identical_repeats": 0,
+      "rows_in_repeated_groups_by_class": {}
+    },
+    "straddle_train_val": {
+      "byte_identical_rows": 0,
+      "source_ids": 0,
+      "image_paths": 0,
+      "caption_texts": 4,
+      "rows_carrying_shared_captions_by_class": {
+        "orig": 12,
+        "face_attribute": 5,
+        "face_swap": 6,
+        "face_attribute&text_attribute": 1,
+        "text_attribute": 1
+      }
+    },
+    "deduplicated_before_every_count": true
+  },
+  "caption_grouped_cv": {
+    "all swaps": {
+      "accuracy": 0.7901,
+      "majority_baseline": 0.7943,
+      "per_class": {
+        "orig": {
+          "support": 60550,
+          "recall": 0.9869,
+          "precision": 0.7971
+        },
+        "text_swap": {
+          "support": 15682,
+          "recall": 0.0299,
+          "precision": 0.3722
+        }
+      }
+    },
+    "same-publisher swaps": {
+      "accuracy": 0.8849,
+      "majority_baseline": 0.8857,
+      "per_class": {
+        "orig": {
+          "support": 60550,
+          "recall": 0.9983,
+          "precision": 0.8862
+        },
+        "text_swap": {
+          "support": 7814,
+          "recall": 0.0061,
+          "precision": 0.3221
+        }
+      }
+    }
+  },
+  "same_publisher_subset": {
+    "publisher_only_classifier": {
+      "accuracy": 0.8857,
+      "majority_baseline": 0.8857,
+      "per_class": {
+        "orig": {
+          "support": 60550,
+          "recall": 1.0,
+          "precision": 0.8857
+        },
+        "text_swap": {
+          "support": 7814,
+          "recall": 0.0,
+          "precision": 0.0
+        }
+      }
+    },
+    "text_swap_rate_by_publisher": {
+      "bbc": 0.0403,
+      "guardian": 0.1452,
+      "usa_today": 0.1094,
+      "washington_post": 0.09
+    },
+    "text_swap_rate_overall": 0.1143,
+    "text_swap_rows": 7814,
+    "by_split": {
+      "train": 6826,
+      "val": 988
+    },
+    "by_publisher": {
+      "guardian": 5475,
+      "washington_post": 748,
+      "usa_today": 1094,
+      "bbc": 497
+    },
+    "distinct_captions": 4671,
+    "text_only_random_folds": {
+      "accuracy": 0.8872,
+      "majority_baseline": 0.8857,
+      "per_class": {
+        "orig": {
+          "support": 60550,
+          "recall": 0.957,
+          "precision": 0.919
+        },
+        "text_swap": {
+          "support": 7814,
+          "recall": 0.3459,
+          "precision": 0.5096
+        }
+      }
+    },
+    "purity_by_publisher": {
+      "bbc": 0.9597,
+      "guardian": 0.8548,
+      "usa_today": 0.8906,
+      "washington_post": 0.91
+    },
+    "nmi_publisher_label": 0.0142,
+    "style_mismatch_rule": {
+      "orig": {
+        "style_mismatch": 9232,
+        "style_match": 51318,
+        "mismatch_rate": 0.1525
+      },
+      "text_swap": {
+        "style_match": 6920,
+        "style_mismatch": 894,
+        "mismatch_rate": 0.1144
+      }
+    }
+  },
+  "decision": {
+    "rule": "map text_swap -> media_mismatch iff (a) no publisher label-pure (purity < 0.90), (b) text-only within 1 point of majority, (c) swaps within-publisher",
+    "whole_class": {
+      "a_no_label_pure_publisher": true,
+      "b_text_only_near_baseline": false,
+      "c_swaps_within_publisher": false,
+      "max_publisher_purity": 0.3423,
+      "text_only_gap_pp_random_folds": 3.15,
+      "text_only_gap_pp_caption_grouped": -0.42,
+      "passes": false
+    },
+    "same_publisher_subset": {
+      "a_no_label_pure_publisher": false,
+      "b_text_only_near_baseline": true,
+      "c_swaps_within_publisher": true,
+      "max_publisher_purity": 0.9597,
+      "text_only_gap_pp_caption_grouped": -0.08,
+      "text_only_gap_pp_random_folds": 0.15,
+      "passes": false
+    },
+    "applied": "leave DGM4 unmapped",
+    "note": "(a) on the subset is an absolute purity >= 0.90 over orig + same-publisher swaps, where orig is 88.6% of rows, so a publisher with no information already sits near 0.886; the publisher-only classifier in same_publisher_subset is the base-rate-corrected view. The rule was fixed before this run and is applied as written."
+  }
+}

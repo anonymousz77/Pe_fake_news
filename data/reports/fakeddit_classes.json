@@ -1,0 +1,227 @@
+{
+  "sample_rows": 150000,
+  "seed": 20260901,
+  "classes": {
+    "0": {
+      "name": "True",
+      "rows_in_sample": 58925,
+      "subreddits": {
+        "mildlyinteresting": 22855,
+        "photoshopbattles": 14739,
+        "nottheonion": 8507,
+        "upliftingnews": 6386,
+        "neutralnews": 1911,
+        "usnews": 1563,
+        "usanews": 1555,
+        "pic": 1409
+      },
+      "sample_titles": "0 titles in data/interim/fakeddit_classes_full.json"
+    },
+    "1": {
+      "name": "Satire/Parody",
+      "rows_in_sample": 8909,
+      "subreddits": {
+        "fakealbumcovers": 5807,
+        "theonion": 2004,
+        "satire": 1004,
+        "waterfordwhispersnews": 94
+      },
+      "sample_titles": "0 titles in data/interim/fakeddit_classes_full.json"
+    },
+    "2": {
+      "name": "False Connection",
+      "rows_in_sample": 28503,
+      "subreddits": {
+        "pareidolia": 12621,
+        "fakehistoryporn": 9480,
+        "misleadingthumbnails": 4182,
+        "confusing_perspective": 2220
+      },
+      "sample_titles": "5 titles in data/interim/fakeddit_classes_full.json"
+    },
+    "3": {
+      "name": "Imposter Content",
+      "rows_in_sample": 3140,
+      "subreddits": {
+        "subredditsimulator": 3078,
+        "subsimulatorgpt2": 62
+      },
+      "sample_titles": "0 titles in data/interim/fakeddit_classes_full.json"
+    },
+    "4": {
+      "name": "Manipulated Content",
+      "rows_in_sample": 44801,
+      "subreddits": {
+        "psbattle_artwork": 44801
+      },
+      "sample_titles": "0 titles in data/interim/fakeddit_classes_full.json"
+    },
+    "5": {
+      "name": "Misleading Content",
+      "rows_in_sample": 5722,
+      "subreddits": {
+        "propagandaposters": 3659,
+        "savedyouaclick": 2062,
+        "fakefacts": 1
+      },
+      "sample_titles": "5 titles in data/interim/fakeddit_classes_full.json"
+    }
+  },
+  "fakehistoryporn": {
+    "rows_in_sample": 9480,
+    "sample_titles": "12 titles in data/interim/fakeddit_classes_full.json",
+    "share_with_circa": 0.121,
+    "share_with_circa_elsewhere": 0.0008
+  },
+  "purity": {
+    "subreddits": 22,
+    "subreddits_with_more_than_one_label": {}
+  },
+  "text_only_6way": {
+    "accuracy": 0.6393,
+    "majority_baseline": 0.3928,
+    "per_class": {
+      "0": {
+        "support": 58925,
+        "recall": 0.9404,
+        "precision": 0.5776
+      },
+      "1": {
+        "support": 8909,
+        "recall": 0.0684,
+        "precision": 0.8852
+      },
+      "2": {
+        "support": 28503,
+        "recall": 0.4107,
+        "precision": 0.6912
+      },
+      "3": {
+        "support": 3140,
+        "recall": 0.0032,
+        "precision": 0.9091
+      },
+      "4": {
+        "support": 44801,
+        "recall": 0.5946,
+        "precision": 0.7657
+      },
+      "5": {
+        "support": 5722,
+        "recall": 0.2646,
+        "precision": 0.9266
+      }
+    }
+  },
+  "text_only_subreddit": {
+    "accuracy": 0.5928,
+    "majority_baseline": 0.2987
+  },
+  "text_only_subreddit_within_code_2": {
+    "accuracy": 0.7956,
+    "majority_baseline": 0.4428,
+    "per_class": {
+      "confusing_perspective": {
+        "support": 2220,
+        "recall": 0.0703,
+        "precision": 0.8254
+      },
+      "fakehistoryporn": {
+        "support": 9480,
+        "recall": 0.9633,
+        "precision": 0.8521
+      },
+      "misleadingthumbnails": {
+        "support": 4182,
+        "recall": 0.3424,
+        "precision": 0.7825
+      },
+      "pareidolia": {
+        "support": 12621,
+        "recall": 0.9475,
+        "precision": 0.7584
+      }
+    }
+  },
+  "leave_one_subreddit_out_code_2": {
+    "confusing_perspective": {
+      "held_out_rows": 2220,
+      "recall_on_unseen_subreddit": 0.0333,
+      "false_positive_rate": 0.0238
+    },
+    "fakehistoryporn": {
+      "held_out_rows": 9480,
+      "recall_on_unseen_subreddit": 0.0028,
+      "false_positive_rate": 0.0161
+    },
+    "misleadingthumbnails": {
+      "held_out_rows": 4182,
+      "recall_on_unseen_subreddit": 0.0373,
+      "false_positive_rate": 0.0209
+    },
+    "pareidolia": {
+      "held_out_rows": 12621,
+      "recall_on_unseen_subreddit": 0.0046,
+      "false_positive_rate": 0.0103
+    }
+  },
+  "text_only_binary_code_2": {
+    "in_distribution_recall_by_subreddit": {
+      "confusing_perspective": 0.0383,
+      "fakehistoryporn": 0.4988,
+      "misleadingthumbnails": 0.0928,
+      "pareidolia": 0.2579
+    },
+    "support": 28503,
+    "recall": 0.2967,
+    "precision": 0.8152
+  },
+  "text_only_subreddit_within_code_5": {
+    "accuracy": 0.9521,
+    "majority_baseline": 0.6395,
+    "per_class": {
+      "fakefacts": {
+        "support": 1,
+        "recall": 0.0,
+        "precision": 0.0
+      },
+      "propagandaposters": {
+        "support": 3659,
+        "recall": 0.9719,
+        "precision": 0.9541
+      },
+      "savedyouaclick": {
+        "support": 2062,
+        "recall": 0.9176,
+        "precision": 0.9484
+      }
+    }
+  },
+  "leave_one_subreddit_out_code_5": {
+    "fakefacts": {
+      "held_out_rows": 1,
+      "recall_on_unseen_subreddit": 0.0,
+      "false_positive_rate": 0.0009
+    },
+    "propagandaposters": {
+      "held_out_rows": 3659,
+      "recall_on_unseen_subreddit": 0.0,
+      "false_positive_rate": 0.0001
+    },
+    "savedyouaclick": {
+      "held_out_rows": 2062,
+      "recall_on_unseen_subreddit": 0.0,
+      "false_positive_rate": 0.0006
+    }
+  },
+  "text_only_binary_code_5": {
+    "in_distribution_recall_by_subreddit": {
+      "fakefacts": 0.0,
+      "propagandaposters": 0.2848,
+      "savedyouaclick": 0.0092
+    },
+    "support": 5722,
+    "recall": 0.1854,
+    "precision": 0.9323
+  }
+}

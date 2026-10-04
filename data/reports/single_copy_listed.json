@@ -1,0 +1,742 @@
+{
+ "reviewed": 1445,
+ "criteria": "single copy on disk AND (bytes < 5120 OR max(width,height) < 100)",
+ "registered": 269,
+ "listed": [
+  {
+   "dataset": "factify2",
+   "file": "train_11502_document_image.png",
+   "sha256": "c5631115b04d11a733abc7f8b49fa8ca6529729d9b38cd132a9583b1cb789b8b",
+   "note": "political party symbol used as topic image"
+  },
+  {
+   "dataset": "factify2",
+   "file": "train_21704_document_image.png",
+   "sha256": "8c20ef025be238a63d88414fc74c0e915f48285a790b354231754ed885a3bf30",
+   "note": "near-black video-player strip 650x51"
+  },
+  {
+   "dataset": "factify2",
+   "file": "val_2614_document_image.png",
+   "sha256": "7936716483e0ce8b722418303256c285ec275ce47b09c4226a541591175da214",
+   "note": "airline logo used as topic image"
+  },
+  {
+   "dataset": "factify2",
+   "file": "val_6465_claim_image.jpg",
+   "sha256": "ab8da3c8e35a5e37fb25c5bff8e0d4fc7bc7113d28d9d6ef25140e288e53c4f9",
+   "note": "near-black frame with specks; may be a night photograph"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "104pjf.jpg",
+   "sha256": "742561e664eaa29eaa6d7fd85a9389a8639384b5b07e78056e57b3a85bfb8131",
+   "note": "cartoon tiger mascot; may be a site avatar"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "1105b3.gif",
+   "sha256": "1a7974e53499a0552ca61c6faf421ce0229f8b9e109faeba3532dbbd5767ea65",
+   "note": "near-black frame with one light; may be a night photograph"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "13hc9i.jpg",
+   "sha256": "2e2c737d89cf0fe832be634a1c1a793b3913ca07a57f5749728adb0682d4b7d9",
+   "note": "political party poster"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "16i5nc.jpg",
+   "sha256": "819d6f7313f9d709e10584216c40921ec1c5f431c0ae40ab4bf58be2e83354c2",
+   "note": "Marvel logo used as topic image"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "185oe8.png",
+   "sha256": "36907c013ec02f323ebfd4aa6604fc0847ef0b2d174bf185dc8db5bd28f6124c",
+   "note": "Pinterest product card"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "1hzju4.png",
+   "sha256": "2eda7f681b69d5365da9c943b49aefca2d0e0626f8cb4c4429aec278da156d9e",
+   "note": "near-black frame with one small figure"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "1kyiru.jpg",
+   "sha256": "1167942031db03f7a5c7557fd59f68eb52521e7f7df3c91d51beca6452e29441",
+   "note": "near-black frame with lights"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "1lwmrt.jpg",
+   "sha256": "2183dde47d702e6f91c6d42f2fcf037cf2b4353d74289f67a6c0167767d40908",
+   "note": "generic map tile; may be a static-map placeholder"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "1q1hlv.jpg",
+   "sha256": "3a276bc0302dc623e47ca72578207bfe7d9622f82089920a215de812607de4aa",
+   "note": "red-star icon; symbol, not clearly a publisher logo"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "1qf7qs.jpg",
+   "sha256": "424b0eeb64fb992f60f7fcfa163422027a504b00804b81e1c439fd9b7ca521f4",
+   "note": "line-drawn generic avatar"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "1r4bp0.jpg",
+   "sha256": "c081566f76271975df2ee3ee794fbf00e123bdbbcf38b76e12794f72752745ba",
+   "note": "near-empty pale strip with faint text"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "1v6hi6.jpg",
+   "sha256": "b3da6f254646d1fbaf6bd66da316084973999feeba213c199e4a706ea02c4d93",
+   "note": "stock dance-silhouette graphic"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "1w92hg.gif",
+   "sha256": "b9fd25333074a8535bb4c8158d7426e20aaaba0447ef95bf0dc4f0e99311b3c6",
+   "note": "empty grid with one mark"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "20rbk6.jpg",
+   "sha256": "48ad898cc2f3687fdf3e872f8aa0dea36dc46f2a246c5addf16461c995c795d8",
+   "note": "tree illustration; icon-like"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "267qvv.jpg",
+   "sha256": "1d1c483cc4c61d1d665462b838b137a5e47ee429ec34bd82b51b2b47a3af841a",
+   "note": "two-panel person-silhouette image; may be a placeholder"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "26gdr1.png",
+   "sha256": "33faf2934beb5fb422030f684a95e98b724d60c400c6cca223259f8650c37cf2",
+   "note": "regional flag"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "26srbw.jpg",
+   "sha256": "3419318a486d5e28a048eefc48308e6a537a6f15fe38c5b1b8387e850410c70c",
+   "note": "black blob on white"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "29d860.jpg",
+   "sha256": "e9ac5687dd9298d476ae0a2c639308c5d40b347944d10b6af4e8808dd9ba6665",
+   "note": "near-uniform dark-blue frame"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "29hkha.png",
+   "sha256": "17a50e96292cf90b111630957c81672680831a0f34ccae858b800b4d3a0c46b9",
+   "note": "spreadsheet toolbar screenshot"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "2ey2x1.jpg",
+   "sha256": "7f0a9bd1f045927564b1ff46b4281d8a1501360d7df58c3b8c4c09cfbda4dec3",
+   "note": "dark strip 320x66"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "2pk4vc.jpg",
+   "sha256": "e80fa0d12e38b696a9edf299d72058156393d4c2beaa9fe65c423349a2f4d0a6",
+   "note": "abstract blue shape; may be a logo"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "2regd9.jpg",
+   "sha256": "657848c0fd92259eb1d91d7b3aff176d6d6fe7fdaf3cd99e630f7445229c879a",
+   "note": "EU-flag strip"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "2v0ujk.jpg",
+   "sha256": "f5dd6e8acd90f05208ab494c713bfd06aea3137ad40f56a1fabc5a762fad9044",
+   "note": "thin screenshot strip"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "2vmqoj.jpg",
+   "sha256": "f2d18248696f7a8365318b49a9d09093c1f93c67f5e0952b399897d8dc5233ff",
+   "note": "red 'I love you' dot graphic"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "34z4ib.jpg",
+   "sha256": "486d8a468a99c7608fc6f4268737ac2645a95a926ea5012a22487644263de1b1",
+   "note": "hand-gesture icon"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "3655ta.jpg",
+   "sha256": "21cae16f82268f7829447493526561c3d6a708f4ac55f35304b55d26470ad0d5",
+   "note": "Windows logo used as topic image"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "36ssnr.jpg",
+   "sha256": "af6515ca5342af4a26ea92f47a02ef3077b2aeb9e82fb2f58e976dd6c1ba06d2",
+   "note": "emoji face"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "3avapt.png",
+   "sha256": "5536964405d92e22d1a0c37df1d2976af3cc02e935f63ddc6c82b0aefb04f4d0",
+   "note": "near-white frame; re-check for flatness"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "3c1y9z.jpg",
+   "sha256": "c3f52102597476a87064daa60da44094f8c076c6125a284774fa980761c70e11",
+   "note": "'DAESH' title graphic"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "3e2ljs.jpg",
+   "sha256": "0dea6bfef27c327231fe12f382da3f4d92a29b9617d585f823bd412e69b7635f",
+   "note": "tweet screenshot strip"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "3mma4c.gif",
+   "sha256": "440e467e2640b087a9853752433775ba90f3f33b50aa274d1a22b0b529c79d7d",
+   "note": "near-black card with tiny watermark"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "3pthn5.jpg",
+   "sha256": "c9c3bde97d8a97effbb351765c9ebd891e855ad52b373bf91c2df861ffbbbdd2",
+   "note": "BBC News angry-emoji speech-bubble card"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "40a4i7.jpg",
+   "sha256": "2dfdc661773228eafb582a19bf8146caad21806d4ec556bedf13f34f0098619d",
+   "note": "ring of coloured squares; logo-like"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "41l9vl.jpg",
+   "sha256": "4340d3c00e1d3181f838d7fa28cbbd754cd486461e52d67b592c99da49a95c77",
+   "note": "robot mascot illustration"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "4501lh.jpg",
+   "sha256": "6ea1a5aaa7335aea6b364d1ee6424dbf891a858df606d907345378bb8c361321",
+   "note": "Super Bowl XXVI logo used as topic image"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "460dnu.jpg",
+   "sha256": "ba3a860e2ab8fa95abb298c07368c2fd591f4ff561e7d2feabfdc06ed11e0905",
+   "note": "near-uniform dark-blue frame"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "46rww9.png",
+   "sha256": "01661cf954c628f1ea53790438fdf9395e526346705a07047540d3e0556f3df1",
+   "note": "red-bordered screenshot strip"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "47e7ah.jpg",
+   "sha256": "d5b0c2e58f711ffa450f1ae38fcf6b3f865340dc66f656d94493394b455b13ef",
+   "note": "event promotion banner"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "49ltpb.jpg",
+   "sha256": "ed0d473dec84542d29175156c55a1743fdef0954e0b7b3d4d08f25f19c5dd952",
+   "note": "esports team logo used as topic image"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "4k3yoo.jpg",
+   "sha256": "54bda4c2d6884e4173b7f0f31ca95c6e226278eca93e9c98313c371c4048e294",
+   "note": "thin image strip 320x30"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "4kpv79.jpg",
+   "sha256": "97b8d6ab48d8cdf4efd994610fa0c3d422024bdc6b7d2df5ad415aea4ded2dce",
+   "note": "Disney+ logo used as topic image"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "4odx70.jpg",
+   "sha256": "7ad72e5f2a018ee6c1749a268faf464daee83c1f37b0c39b0ba5bbdf28bb9521",
+   "note": "retailer paint advertisement"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "4w8tp5.jpg",
+   "sha256": "5e210d99710672c5477ccddde0bc5e46e5016f4473bece5d38506b55933c6136",
+   "note": "airbnb logo used as topic image"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "4wpr3c.jpg",
+   "sha256": "cfbaa34784ecd6e5a26a55a4ba4f8c7deecbbbfc958abfb34ba27e5bd8d478da",
+   "note": "near-uniform blue frame; re-check for flatness"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "4yldao.jpg",
+   "sha256": "01fa5fdd5d01d57d8b76cbbbe96ce26cc456beffe10fdb7cba7597dce589d933",
+   "note": "near-uniform grey frame; re-check for flatness"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "50n2n0.jpg",
+   "sha256": "e15cd87c33c5b64ff554a3993932071a704e6d07cb51890d1a65da1c57649b07",
+   "note": "faint grey sketch on white"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "50vlun.jpg",
+   "sha256": "a5ba4d4c1c823f4ec7f3412e075a978ab3011c8fbc67a010071acf4a260f3887",
+   "note": "single Arabic letter on brown; logo-like"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "536wjm.jpg",
+   "sha256": "92a7c1666a3e879689998fb357544d11c113829afc3f7c33c840096736fdd0e6",
+   "note": "near-uniform teal frame; re-check for flatness"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "55wb98.jpg",
+   "sha256": "00f1efd0a0099563d5ca3d624c4a2cf0f35f4a5a311050933311069516e8fde9",
+   "note": "near-white frame; re-check for flatness"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "56ny4u.jpg",
+   "sha256": "1851da16db101d331e6a2e0ccf8bfcde5e774692317766f1c6aee95253c4c75e",
+   "note": "thin strip 320x11"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "5afysn.jpg",
+   "sha256": "79e1803a6ba758e1b3f309176f085593a02610082855912482dd8ec053a8cfd2",
+   "note": "near-black frame; re-check for flatness"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "5b4ol0.jpg",
+   "sha256": "854f6ef2087761e5fad44b3103de8a38a2d7a860ef1970af29419e9ad36a4064",
+   "note": "Olympic rings used as topic image"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "5oqzuq.jpg",
+   "sha256": "c9282539a17009986c6ac44d14a9bbf33b54e1aed9d729ca8122692d07d6a679",
+   "note": "text-only project title graphic"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "5t9q4i.jpg",
+   "sha256": "defd01db87272c63ebaf0d57ebeb93b0a7a08760c366c6f58185340fc3bcda4c",
+   "note": "white frame with blue top strip"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "61gowl.jpg",
+   "sha256": "3c7d1af8ab2b272414906efaf8b67ac19e72a1db2fd7191aa2400d434ed4d598",
+   "note": "near-black tall frame; re-check for flatness"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "63mv6a.jpg",
+   "sha256": "716cd8a98058ccdd135f2c9a9033f50107b754bfc842b7040c29148934c4edbe",
+   "note": "Kickstarter logo used as topic image"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "63rka2.png",
+   "sha256": "e22317efa4b7a47c33456c35d5b9845579ff08d5562078cf18f5be87dc17dec0",
+   "note": "small text mark on white"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "65oiep.jpg",
+   "sha256": "516416d6afe83e66247111b8f6525183327ef16e66235fff69196710c96cf569",
+   "note": "eye graphic"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "65vdj4.jpg",
+   "sha256": "8316f75f23f30e5d13adfcd74fcc0112f67e5044de0659774d128a3ae0c2223b",
+   "note": "'Succession to the Crown' badge"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "67juaz.jpg",
+   "sha256": "147825bedbb3f184d6ea335fd25b84751ce39e3bdd15c73234b8e9a6eec5279c",
+   "note": "near-black frame; re-check for flatness"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "6981jz.jpg",
+   "sha256": "974313c2cc64936f2ba0d703d6d114e206b1b6b2ef50010d368c8d0828aa4b22",
+   "note": "Cloudflare logo used as topic image"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "69rvld.jpg",
+   "sha256": "b56f654f5e85b791747ebe81db9db5137b1cb0dd908e92fec045bea724a5abe2",
+   "note": "red card with faint skull"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "6cnhlz.jpg",
+   "sha256": "006bcef4bd6b0b8fb8b516563da13233287774c65283047abc29bfb5efb1c02f",
+   "note": "blue banded strip"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "6fxplh.jpg",
+   "sha256": "ffdbb45c9f04e2282f498cc13746bfc3a05b0327f318cb5e7e69965faeeb446a",
+   "note": "dotted pattern frame"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "6gjxd3.jpg",
+   "sha256": "456b2043da254355864bf02f06cf34799e7f96395632b24230fe915256816d25",
+   "note": "Facebook logo photograph used as topic image"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "6skgyw.jpg",
+   "sha256": "8391046add6a5ec5c6e3774db935fc6e1e9813418ea20800ee7baed12bb40567",
+   "note": "ID2020 logo used as topic image"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "72ikay.jpg",
+   "sha256": "938701523039b2fa458aa30e03943cb9cdfb917a12303a3915585c0f15d6e545",
+   "note": "Apple logo used as topic image"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "7jtwej.jpg",
+   "sha256": "dc983f606ff9b2848b64278ddffa39f237e55c6dff59fee47eaaf6922096c046",
+   "note": "FCC logo used as topic image"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "82pqg7.jpg",
+   "sha256": "53e4433556a7341f923ad1c9fde221b4890871c7634c2aec02f17b9e9a6fa26d",
+   "note": "jeweller logo used as advertiser/topic image"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "8f587k.jpg",
+   "sha256": "366c4d9958fea037f76ad4a9b0c1c2ea87ebec8df1f1145f58e7817b1bffd0ae",
+   "note": "app UI screenshot"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "8maozq.jpg",
+   "sha256": "6605413326d80c1cb9548890ca266c0640cb14c1fa850fb5d28dcfe7e9c3e4ec",
+   "note": "near-white page header with small logo"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "8yxf22.png",
+   "sha256": "5ae8723d8f499dc31a4490e1321e84dd18cffca4382684c314aca2da4cb3b54d",
+   "note": "national flag"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "8zv4h7.jpg",
+   "sha256": "af9adfb1cf8d3d3f50060e3a235228642e415eb397496a002d599871f3be6edb",
+   "note": "pixelated beige grid"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "930ljz.jpg",
+   "sha256": "c5d975f5562e4830902d18dbc3235088645936c421e290e52fd5c0e064f382aa",
+   "note": "grey concentric-circle icon"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "96epl0.gif",
+   "sha256": "211125e95ab11e4f0f5b129b57d6df6dea6cf4bc57cb4fcd9fd331a26a574a8d",
+   "note": "black frame with 'MAKE GIFS AT GIFSOUP.COM' watermark; may be a GIF's first frame"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "973nto.gif",
+   "sha256": "c7c2f568aee09a9d6fcf7ed2af661023c5431bebfdc2fe17de5c39a1f6a2a00e",
+   "note": "black frame with tiny symbol"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "9i60hv.jpg",
+   "sha256": "3a7f51d9bfacd5269d6f8f0da458a0fbf15f838a20eeef72628a5fa1c7afd9fc",
+   "note": "WikiLeaks logo with arrow, topic image"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "axnzc6.png",
+   "sha256": "cbbd34ca4e5046091ef1d0f868a06c677c803c845845ac86990dec7239191d4e",
+   "note": "white card reading 'square image / two phrases'; template-like"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "b11yxe.jpg",
+   "sha256": "d7d0680a99dbc46cf3a91d4dc0bb864297f2b84fbe2bf7b89812a84fc3176099",
+   "note": "empty Twitter composer screenshot"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "ba80s9.jpg",
+   "sha256": "cc90062e9f8ccae181f22e4566ecaa67cccb218e41742e8fa2b3dec3cab0a921",
+   "note": "reddit UI bar"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "bar1ot.gif",
+   "sha256": "8c34db847e6b333271878bd252870031895cacc613d74d5eb454365752c29bc7",
+   "note": "two-tone diagonal frame"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "bazo5d.jpg",
+   "sha256": "95f4107f0f3f2b9ea7a2b7da77df586a682bae55c62c973398b32464a69a8ada",
+   "note": "black frame; re-check for flatness"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "bbyqrw.jpg",
+   "sha256": "803794b3ee0308ffdc2ace3cc9c30f39dbe57d1044bab86db654df67d532bcc6",
+   "note": "Apple logo; site fallback or topic image"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "bh5ff9.png",
+   "sha256": "81c1cce23e5a93c35f3e85206f6713f45a041f8e712efb39e326ea4f8fe19969",
+   "note": "near-white frame with small red tag"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "bivpa2.jpg",
+   "sha256": "c4f50e9f36f5076a8b42747f7869c4ec04e90ff09c94ab80b4eba365d2c860b7",
+   "note": "near-black frame; re-check for flatness"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "blqa70.jpg",
+   "sha256": "1af652658fbfce5419c29a9d157e73bacb64e28a2ef0987816c372b502f3817f",
+   "note": "near-black frame with one dot"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "blr66c.jpg",
+   "sha256": "bf8ed2690f49c789ff0c5799bcc8bab87e6ed91f558325d9c5bc9a4aae2ebe68",
+   "note": "near-white frame with small UI elements"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "bt8yro.jpg",
+   "sha256": "e85d92d0b608b625ea49d4a7d2d9a53e95a6d44f63bb4479472e7c999697a301",
+   "note": "near-uniform blue frame; re-check for flatness"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "bvjw11.jpg",
+   "sha256": "1ed808ae5ae32b5815b4ad5288a529410e3ef968541634cd7aadde01c58f8986",
+   "note": "black frame with one dot; re-check for flatness"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "bww88h.jpg",
+   "sha256": "d53de2b6717ff65c315d545ec3972d7658fc74241640548df02bf357fcd79d5c",
+   "note": "near-white frame"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "cvie1w.jpg",
+   "sha256": "9db7f894049d04f3afa580bec4fcea51501d0e6f40db4c4c4d86c90cf8e53757",
+   "note": "near-black frame with faint numeral"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "cww7nq.jpg",
+   "sha256": "27c4121989241c096cd8970b2997fab15cf9d4d71429ef9bf00d862f4e21d1bd",
+   "note": "small tag strip 108x23"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "d3xt4z.jpg",
+   "sha256": "2f9fe6e54c6daf1f0c2b4cf21104d2704f78e032c9b1f8e77cd0db0eaf1f22de",
+   "note": "near-white frame"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "d66yah.jpg",
+   "sha256": "7585bde36e29ff158bed4dec7865071097b29791e24713de4a4b419ca9dee57a",
+   "note": "grey rectangle; re-check for flatness"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "dk2edd.png",
+   "sha256": "ecb4738c8fbcda6d8be0e9454a975e0b5cddd0bc3c7cacf96e6ddfe525481e5b",
+   "note": "black text strip"
+  },
+  {
+   "dataset": "fakeddit",
+   "file": "z0yya.jpg",
+   "sha256": "205adfe0f565355dc4c0bad0f42fdd5e050766717107d55001f4b9f8a244fad7",
+   "note": "Citrix logo used as topic image"
+  }
+ ],
+ "ocr_review": {
+  "flagged": 270,
+  "registered": 11,
+  "criteria": "OCR text matches scripts/ocr_audit.ERROR_WORDS",
+  "listed": [
+   {
+    "dataset": "fakeddit",
+    "file": "44i3hh.jpg",
+    "sha256": "85e54fdc9694a1d10e26cc4a3b75e3db5c705aebd84116a49f1601d49cda2ff3",
+    "note": "black card 'NO IMAGE OF THE SQUIRREL IS AVAILABLE.'; may be a reddit joke rather than a host placeholder"
+   },
+   {
+    "dataset": "fakeddit",
+    "file": "8xde9h.png",
+    "sha256": "d44ab8f999d728c7612bd06558a717255a1777609bf855103ba01ce57600125c",
+    "note": "reddit logo with '[deleted]' author line; may be a post image rather than a placeholder"
+   },
+   {
+    "dataset": "fakeddit",
+    "file": "da2g7x.jpg",
+    "sha256": "81cf2f56b5d511629c7f0854dedd661d114cf2a180e2dfb11cd8dc52d0c37f31",
+    "note": "phone screenshot of Google's 404 page; looks posted deliberately rather than served in place of an image"
+   }
+  ]
+ },
+ "mocheg_size_review": {
+  "reviewed": 29,
+  "listed": [
+   {
+    "dataset": "mocheg",
+    "file": "01070-05657-09-57e41ce3077dcc6b138b76c3.jpg",
+    "note": "The Beatles 'White Album' cover: genuinely white, genuinely the album"
+   },
+   {
+    "dataset": "mocheg",
+    "file": "301249-304844-0-DL_supporting.jpg",
+    "note": "thin image strip 471x32"
+   },
+   {
+    "dataset": "mocheg",
+    "file": "302345-309237-0-flagpanel_r3_c2.jpg",
+    "note": "thin dark divider strip 479x14"
+   },
+   {
+    "dataset": "mocheg",
+    "file": "302345-309237-2-flagpanel_r1_c2.jpg",
+    "note": "thin dark divider strip 479x13"
+   },
+   {
+    "dataset": "mocheg",
+    "file": "303677-3142799-5-bottom_body.jpg",
+    "note": "near-white strip 556x27 with one mark"
+   },
+   {
+    "dataset": "mocheg",
+    "file": "303899-3151633-7-180629134020-netflix-domination-thumb.jpg",
+    "note": "Netflix logo used as topic image"
+   }
+  ]
+ },
+ "ocr_review_dgm4": {
+  "read": 205843,
+  "flagged": 7,
+  "registered": 0,
+  "reviewed": [
+   {
+    "file": "HFGI/828069-HFGI.jpg",
+    "matched": [
+     "error"
+    ],
+    "verdict": "genuine",
+    "note": "protest placards 'Bible truth or Roman error' (face-edited copy)"
+   },
+   {
+    "file": "HFGI/841105-HFGI.jpg",
+    "matched": [
+     "403"
+    ],
+    "verdict": "genuine",
+    "note": "school canteen photo; '403' is a misread wall sign"
+   },
+   {
+    "file": "StyleCLIP/1166846-StyleCLIP.jpg",
+    "matched": [
+     "403"
+    ],
+    "verdict": "genuine",
+    "note": "BBC Radio 2 award photo; '403' is a misread logo"
+   },
+   {
+    "file": "StyleCLIP/237726-StyleCLIP.jpg",
+    "matched": [
+     "404"
+    ],
+    "verdict": "genuine",
+    "note": "phone screenshot of a texttoconnect.org study ad; '404' is the status bar (face-edited copy)"
+   },
+   {
+    "file": "infoswap/237726-012113-infoswap.jpg",
+    "matched": [
+     "404"
+    ],
+    "verdict": "genuine",
+    "note": "same screenshot, face-swapped copy"
+   },
+   {
+    "file": "guardian/0440/736.jpg",
+    "matched": [
+     "error"
+    ],
+    "verdict": "genuine",
+    "note": "protest placards 'Bible truth or Roman error' (original)"
+   },
+   {
+    "file": "usa_today/0467/742.jpg",
+    "matched": [
+     "404"
+    ],
+    "verdict": "genuine",
+    "note": "same screenshot, original"
+   }
+  ]
+ },
+ "ocr_review_m4fc": {
+  "read": 4503,
+  "flagged": 15,
+  "registered": 0,
+  "verdict": "all 15 genuine: claim screenshots whose text contains 403/404 as numbers or quotes \"removed\"/\"deleted\" as part of the claim"
+ },
+ "ocr_review_recovered": {
+  "flagged": 28,
+  "verdict": 9,
+  "already_registered": 3,
+  "note": "factify2 images recovered from the archive carry rating badges: see data/reports/verdict_images.json"
+ }
+}

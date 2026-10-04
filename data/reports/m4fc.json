@@ -1,0 +1,77 @@
+{
+  "dataset": "m4fc",
+  "generated_at": "2026-10-03T18:04:28+00:00",
+  "status": "measured",
+  "files": {
+    "count": 4948,
+    "bytes": 1206238783,
+    "gb": 1.1234
+  },
+  "licence": "CC-BY-SA-4.0 (dataset: README, data/README.md and data/license); code Apache-2.0 \u2014 verbatim in docs/licences.md",
+  "redistributable": true,
+  "access": {
+    "method": "git",
+    "url": "github.com/UKPLab/M4FC",
+    "repo_type": null
+  },
+  "expected": {
+    "images": 4982,
+    "claims": 6980
+  },
+  "mismatches": [
+    {
+      "field": "claims",
+      "expected": 6980,
+      "measured": 6789,
+      "difference": -191,
+      "detail": "count 'claims' differs by -191"
+    }
+  ],
+  "rows": 4982,
+  "by_split": {
+    "train": 2994,
+    "val": 499,
+    "test": 1489
+  },
+  "labels": {
+    "false": 4663,
+    "true": 292,
+    "not enough information": 27
+  },
+  "modality": {
+    "records": 4982,
+    "text_only": 62,
+    "image_only": 0,
+    "both": 4920,
+    "neither": 0,
+    "fractions": {
+      "text_only": 0.0124,
+      "image_only": 0.0,
+      "both": 0.9876,
+      "neither": 0.0
+    }
+  },
+  "dates": {
+    "field": null,
+    "items": 0,
+    "with_explicit_date": 0,
+    "with_url_derived_date": 0,
+    "explicit_coverage": 0.0,
+    "url_derived_coverage": 0.0,
+    "any_coverage": 0.0,
+    "range": null
+  },
+  "counts": {
+    "images": 4982,
+    "claims": 6789
+  },
+  "claim_breakdown": {
+    "english_claims": 4982,
+    "multilingual_claims": 1807,
+    "synthetic_true_captions": 1000
+  },
+  "notes": [
+    "images are hydrated from image_url; test rows never enter the processed layer",
+    "claims counted as claim + multilingual_claim; the authors' 6,980 is not reproduced"
+  ]
+}

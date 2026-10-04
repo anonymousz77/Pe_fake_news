@@ -1,0 +1,72 @@
+{
+  "dataset": "isot",
+  "generated_at": "2026-10-03T18:04:19+00:00",
+  "status": "measured",
+  "files": {
+    "count": 3,
+    "bytes": 159479640,
+    "gb": 0.1485
+  },
+  "licence": "none stated (lab page and ReadMe PDF checked 2026-10-01; citation requested)",
+  "redistributable": false,
+  "access": {
+    "method": "direct",
+    "url": "onlineacademiccommunity.uvic.ca/isot/wp-content/uploads/sites/7295/2023/03/News-_dataset.zip",
+    "repo_type": null
+  },
+  "expected": {
+    "real": 21417,
+    "fake": 23481
+  },
+  "mismatches": [],
+  "rows": 44898,
+  "by_split": {
+    "all": 44898
+  },
+  "labels": {
+    "fake": 23481,
+    "real": 21417
+  },
+  "modality": {
+    "records": 44898,
+    "text_only": 44898,
+    "image_only": 0,
+    "both": 0,
+    "neither": 0,
+    "fractions": {
+      "text_only": 1.0,
+      "image_only": 0.0,
+      "both": 0.0,
+      "neither": 0.0
+    }
+  },
+  "dates": {
+    "field": null,
+    "items": 0,
+    "with_explicit_date": 0,
+    "with_url_derived_date": 0,
+    "explicit_coverage": 0.0,
+    "url_derived_coverage": 0.0,
+    "any_coverage": 0.0,
+    "range": null
+  },
+  "shortcut": {
+    "reuters_tag_real": 21247,
+    "reuters_tag_fake": 5,
+    "subjects_real": [
+      "politicsNews",
+      "worldnews"
+    ],
+    "subjects_fake": [
+      "Government News",
+      "Middle-east",
+      "News",
+      "US_News",
+      "left-news",
+      "politics"
+    ]
+  },
+  "notes": [
+    "NEGATIVE CONTROL ONLY: real news is Reuters, and `subject` alone separates the classes"
+  ]
+}

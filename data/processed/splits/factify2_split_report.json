@@ -1,0 +1,1583 @@
+{
+  "thin_classes": [
+    {
+      "split": "val",
+      "class": "Refute",
+      "records": 4,
+      "share_of_class": 0.0008,
+      "expected_share": 0.15
+    }
+  ],
+  "dataset": "factify2",
+  "mode": "predictive",
+  "purity_threshold": 0.9,
+  "seed": 20260901,
+  "ratios": {
+    "train": 0.7,
+    "val": 0.15,
+    "test": 0.15
+  },
+  "records_total": 38425,
+  "split_sizes": {
+    "train": 26784,
+    "val": 5021,
+    "test": 6620
+  },
+  "per_class_by_split": {
+    "train": {
+      "Insufficient_Multimodal": 5942,
+      "Insufficient_Text": 5915,
+      "Refute": 3372,
+      "Support_Multimodal": 5899,
+      "Support_Text": 5656
+    },
+    "val": {
+      "Insufficient_Multimodal": 1273,
+      "Insufficient_Text": 1268,
+      "Refute": 4,
+      "Support_Multimodal": 1264,
+      "Support_Text": 1212
+    },
+    "test": {
+      "Insufficient_Multimodal": 1273,
+      "Insufficient_Text": 1267,
+      "Refute": 1604,
+      "Support_Multimodal": 1264,
+      "Support_Text": 1212
+    }
+  },
+  "constrained_domains_count": 249,
+  "constrained_domains": [
+    {
+      "domain": "factly.in",
+      "records": 1787,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "boomlive.in",
+      "records": 1604,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "images.thequint.com",
+      "records": 901,
+      "purity": 0.9989,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "snopes.com",
+      "records": 669,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "cdn.factcheck.org",
+      "records": 19,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "media.newyorker.com",
+      "records": 16,
+      "purity": 0.9375,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "empirenews.net",
+      "records": 11,
+      "purity": 0.9091,
+      "dominant_class": "Support_Text"
+    },
+    {
+      "domain": "arc-anglerfish-washpost-prod-washpost.s3.amazonaws.com",
+      "records": 8,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "i2.wp.com",
+      "records": 7,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "image.cnbcfm.com",
+      "records": 7,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "i1.wp.com",
+      "records": 7,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "static.politifact.com",
+      "records": 7,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "washingtonpost.com",
+      "records": 6,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "factcheck.afp.com",
+      "records": 5,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "i.pinimg.com",
+      "records": 4,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "img.buzzfeed.com",
+      "records": 4,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "images.squarespace-cdn.com",
+      "records": 4,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "media.vanityfair.com",
+      "records": 4,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "media.wusa9.com",
+      "records": 4,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "image.isu.pub",
+      "records": 4,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "www-media.aap.com.au",
+      "records": 3,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "i.cbc.ca",
+      "records": 3,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "s3-prod.modernhealthcare.com",
+      "records": 3,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "dynaimage.cdn.cnn.com",
+      "records": 3,
+      "purity": 1.0,
+      "dominant_class": "Support_Text"
+    },
+    {
+      "domain": "media.king5.com",
+      "records": 3,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "variety.com",
+      "records": 3,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "d1y8sb8igg2f8e.cloudfront.net",
+      "records": 3,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "poynter.org",
+      "records": 3,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "abs.twimg.com",
+      "records": 2,
+      "purity": 1.0,
+      "dominant_class": "Support_Text"
+    },
+    {
+      "domain": "s.hdnux.com",
+      "records": 2,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "teachengineering.org",
+      "records": 2,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Text"
+    },
+    {
+      "domain": "hips.hearstapps.com",
+      "records": 2,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "brill.com",
+      "records": 2,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Text"
+    },
+    {
+      "domain": "images.seattletimes.com",
+      "records": 2,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "scitechdaily.com",
+      "records": 2,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Text"
+    },
+    {
+      "domain": "gumlet.assettype.com",
+      "records": 2,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Text"
+    },
+    {
+      "domain": "imagez.tmz.com",
+      "records": 2,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "akns-images.eonline.com",
+      "records": 2,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "pewresearch.org",
+      "records": 2,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "static.euronews.com",
+      "records": 2,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "cdn.siasat.com",
+      "records": 2,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Multimodal"
+    },
+    {
+      "domain": "hrw.org",
+      "records": 2,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "media.gq.com",
+      "records": 2,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "earnthenecklace.com",
+      "records": 2,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "newschecker.in",
+      "records": 2,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "hitc.com",
+      "records": 2,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "dhpikd1t89arn.cloudfront.net",
+      "records": 2,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "ktla.com",
+      "records": 2,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Multimodal"
+    },
+    {
+      "domain": "census.gov",
+      "records": 2,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "c.ndtvimg.com",
+      "records": 2,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "media.springernature.com",
+      "records": 2,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "media.babylonbee.com",
+      "records": 2,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "africacheck.org",
+      "records": 2,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "newslit.org",
+      "records": 2,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "worldnewsdailyreport.com",
+      "records": 2,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "arc-anglerfish-arc2-prod-bostonglobe.s3.amazonaws.com",
+      "records": 2,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "brookings.edu",
+      "records": 2,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "static.scientificamerican.com",
+      "records": 2,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "sb.scorecardresearch.com",
+      "records": 2,
+      "purity": 1.0,
+      "dominant_class": "Support_Text"
+    },
+    {
+      "domain": "x-default-stgec.uplynk.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "childtrends.org",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "images.everydayhealth.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "gdb.polygraph.info",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "obamawhitehouse.archives.gov",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "lshtm.ac.uk",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Text"
+    },
+    {
+      "domain": "cdn-prod.medicalnewstoday.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "bgr.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "viewfromthewing.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "healthcareitnews.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "assets1.cbsnewsstatic.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Support_Text"
+    },
+    {
+      "domain": "news.trendmicro.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "imgnew.outlookindia.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "theterminatorfans.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "sites.google.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "winnipegfreepress.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "aaqr.org",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "thenews.com.pk",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "d.ibtimes.co.uk",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "post.psychcentral.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "imgk.timesnownews.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Text"
+    },
+    {
+      "domain": "im.indiatimes.in",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Text"
+    },
+    {
+      "domain": "cdn.prodstatic.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "static.india.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Support_Text"
+    },
+    {
+      "domain": "cdn.geekwire.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "d1e00ek4ebabms.cloudfront.net",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Text"
+    },
+    {
+      "domain": "electrek.co",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Text"
+    },
+    {
+      "domain": "esa.int",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "images-prod.misbar.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "beta.ems.ladbiblegroup.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "images.newrepublic.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "doctorfarrah.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "deccanherald.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Text"
+    },
+    {
+      "domain": "allthatsinteresting.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "1.bp.blogspot.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "nraila.org",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "media.wbur.org",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "pbs.org",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "media.nbcphiladelphia.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "tvseriesfinale.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "marlerblog.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Text"
+    },
+    {
+      "domain": "si.wsj.net",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "s01.sgp1.cdn.digitaloceanspaces.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Support_Multimodal"
+    },
+    {
+      "domain": "freebeacon.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "cdn.shopify.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Text"
+    },
+    {
+      "domain": "i2-prod.irishmirror.ie",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Support_Text"
+    },
+    {
+      "domain": "st1.latestly.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "web.add.org",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Text"
+    },
+    {
+      "domain": "rappler.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "media.socastsrm.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "img.huffingtonpost.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Text"
+    },
+    {
+      "domain": "media.wcnc.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "whyy.org",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "assets.iflscience.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "i1.rgstatic.net",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Text"
+    },
+    {
+      "domain": "static.abplive.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Text"
+    },
+    {
+      "domain": "english.cdn.zeenews.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Support_Multimodal"
+    },
+    {
+      "domain": "cdn.lifehack.org",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "m3.healio.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "omar.house.gov",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "static1.moviewebimages.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "c1.thejournal.ie",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "gaurilankeshnews.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Support_Text"
+    },
+    {
+      "domain": "tvshowsace.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "thelist.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "thehill.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "worldhindunews.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Support_Text"
+    },
+    {
+      "domain": "marineinsight.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Text"
+    },
+    {
+      "domain": "s3-prod.crainsdetroit.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "images.firstpost.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "images.theconversation.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "ckn.org.au",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Text"
+    },
+    {
+      "domain": "bnblegal.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Multimodal"
+    },
+    {
+      "domain": "9to5mac.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Multimodal"
+    },
+    {
+      "domain": "taxoutreach.org",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "images.c-span.org",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "arc-anglerfish-arc2-prod-advancelocal.s3.amazonaws.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "pewtrusts.org",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Support_Text"
+    },
+    {
+      "domain": "hollywoodreporter.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "pulitzer.org",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "bioedge.org",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Text"
+    },
+    {
+      "domain": "wp-cpr.s3.amazonaws.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "foreignpolicy.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "wwd.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Text"
+    },
+    {
+      "domain": "nonprofitssource.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "openjaw.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "att.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Text"
+    },
+    {
+      "domain": "yfmghana.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Multimodal"
+    },
+    {
+      "domain": "aei.org",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "i2-prod.mirror.co.uk",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "nme.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "wpcdn.us-midwest-1.vip.tn-cloud.net",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "mashed.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "heart.org",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "fillmorecountyjournal.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Text"
+    },
+    {
+      "domain": "images.ctfassets.net",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Text"
+    },
+    {
+      "domain": "miro.medium.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "offthegridnews.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Support_Text"
+    },
+    {
+      "domain": "californiaglobe.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "media.firstcoastnews.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "a57.foxnews.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "deadline.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Multimodal"
+    },
+    {
+      "domain": "kff.org",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "thetimes.co.uk",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Text"
+    },
+    {
+      "domain": "goodtherapy.org",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Text"
+    },
+    {
+      "domain": "quotefancy.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "media.11alive.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "cdn.britannica.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "assets2.cbsnewsstatic.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Text"
+    },
+    {
+      "domain": "mcmscache.epapr.in",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Text"
+    },
+    {
+      "domain": "morungexpress.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "t4.ftcdn.net",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Text"
+    },
+    {
+      "domain": "elon.edu",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "static.dw.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "s1.nyt.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "cohenseglias.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "melmagazine.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "gdb.rferl.org",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "d25d2506sfb94s.cloudfront.net",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "appdupe.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Support_Text"
+    },
+    {
+      "domain": "unhcr.org",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "ccsa.ca",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Text"
+    },
+    {
+      "domain": "cloudfront-us-east-1.images.arcpublishing.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "pgurus.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Text"
+    },
+    {
+      "domain": "essentialcslewis.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "stlouisfed.org",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "cdn.sourceofthespring.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Text"
+    },
+    {
+      "domain": "cameroonconcordnews.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "idtheftcenter.org",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "healthychildren.org",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Multimodal"
+    },
+    {
+      "domain": "cheatsheet.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "firstdraftnews.org",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "img.youtube.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Support_Text"
+    },
+    {
+      "domain": "m.media-amazon.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Text"
+    },
+    {
+      "domain": "media.nature.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "img.ifunny.co",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "publichealth.uic.edu",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "politico.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "blogger.googleusercontent.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Multimodal"
+    },
+    {
+      "domain": "270towin.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "editorial01.shutterstock.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "makermask.org",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "eff.org",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "media.wkyc.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "lehren.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Text"
+    },
+    {
+      "domain": "pcrisk.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "ourfiniteworld.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "news.wttw.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "image.sciencenordic.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "thumbnails.cbc.ca",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Text"
+    },
+    {
+      "domain": "bsmedia.business-standard.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Text"
+    },
+    {
+      "domain": "kagc.us",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "image.shutterstock.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Text"
+    },
+    {
+      "domain": "southindiafashion.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Support_Text"
+    },
+    {
+      "domain": "c2.thejournal.ie",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "content.fortune.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "content.kens5.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "nida.nih.gov",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Text"
+    },
+    {
+      "domain": "allconnect.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Support_Text"
+    },
+    {
+      "domain": "fimgs.net",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Support_Text"
+    },
+    {
+      "domain": "namibiafactcheck.org.na",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "cdn.christianpost.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "assets.weforum.org",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Text"
+    },
+    {
+      "domain": "stopthesethings.files.wordpress.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "news.cancerresearchuk.org",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "jasperandsardine.files.wordpress.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "d3njjcbhbojbot.cloudfront.net",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Text"
+    },
+    {
+      "domain": "pagesix.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "images.jifo.co",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "media.13newsnow.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "static1.srcdn.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "cdn.punchng.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "azquotes.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "cdn3.volusion.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "metro.co.uk",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "cdn.who.int",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Text"
+    },
+    {
+      "domain": "archive.ph",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "npr.brightspotcdn.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Text"
+    },
+    {
+      "domain": "static.boredpanda.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "wisebread.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "images2.9c9media.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Text"
+    },
+    {
+      "domain": "files.taxfoundation.org",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "insidehook.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Text"
+    },
+    {
+      "domain": "tenney.house.gov",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "ychef.files.bbci.co.uk",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Refute"
+    },
+    {
+      "domain": "hazmatnation.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Multimodal"
+    },
+    {
+      "domain": "hbr.org",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Text"
+    },
+    {
+      "domain": "aamc.org",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Text"
+    },
+    {
+      "domain": "wfla.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Insufficient_Text"
+    },
+    {
+      "domain": "incimages.com",
+      "records": 1,
+      "purity": 1.0,
+      "dominant_class": "Support_Text"
+    }
+  ],
+  "component_sizes": {
+    "count": 33436,
+    "largest": 3367,
+    "largest_share": 0.0876,
+    "top_10": [
+      3367,
+      1604,
+      11,
+      3,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2
+    ],
+    "histogram": {
+      "3367": 1,
+      "1604": 1,
+      "11": 1,
+      "3": 1,
+      "2": 8,
+      "1": 33424
+    }
+  },
+  "leakage": {
+    "violations": 0,
+    "enforced": true,
+    "detail": []
+  },
+  "domain_only": {
+    "domain_only_test_accuracy": 0.2223,
+    "majority_baseline": 0.2171,
+    "uniform_baseline": 0.2,
+    "unseen_domain_rate": 0.2173,
+    "test_pairs": 7387
+  }
+}

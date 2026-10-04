@@ -1,0 +1,26 @@
+#!/bin/sh
+# Strip provenance trailers that would deanonymise this repository.
+#
+# This is an anonymised submission and review is double-blind, so a trailer
+# carrying a tool-session URL tied to an account is a deanonymisation vector
+# even though it reads as harmless provenance. Matched generically -- by trailer
+# SHAPE and by URL shape -- so the hook itself names nothing, and so a rename of
+# the trailer does not quietly defeat it.
+#
+# Enabled with:  git config core.hooksPath .githooks
+msg="$1"
+tmp="$msg.anon"
+
+# 1. any "<Word>-Session:" / "<Word>Session:" trailer line
+# 2. any URL containing a /session… path segment
+sed -E \
+  -e '/^[[:space:]]*[A-Za-z][A-Za-z0-9]*-?[Ss]ession[[:space:]]*:/d' \
+  -e '/https?:\/\/[^[:space:]]*\/session[_-]?[A-Za-z0-9]/d' \
+  "$msg" > "$tmp"
+
+# drop any trailing blank lines the removal left behind
+awk '{lines[NR]=$0}
+     END{last=NR
+         while (last>0 && lines[last] ~ /^[[:space:]]*$/) last--
+         for (i=1;i<=last;i++) print lines[i]}' "$tmp" > "$msg"
+rm -f "$tmp"

@@ -1,0 +1,85 @@
+{
+ "verite": {
+  "attempts": 516,
+  "bytes_in_GB": 0.028,
+  "hosts": 89,
+  "fetched_ok_by_route": {
+   "origin:refused_later": 1,
+   "origin:usable": 2,
+   "wayback:refused_later": 2,
+   "wayback:usable": 120
+  },
+  "items_now_usable_from_this_pass": 122,
+  "http_status_top": {
+   "200": 297,
+   "403": 108,
+   "null": 29,
+   "404": 29,
+   "301": 13,
+   "502": 12
+  }
+ },
+ "factify2": {
+  "attempts": 25389,
+  "bytes_in_GB": 1.913,
+  "hosts": 340,
+  "fetched_ok_by_route": {
+   "alternate:refused_later": 1,
+   "origin:refused_later": 410,
+   "origin:usable": 26,
+   "wayback:refused_later": 836,
+   "wayback:usable": 4152
+  },
+  "items_now_usable_from_this_pass": 4178,
+  "http_status_top": {
+   "200": 14247,
+   "403": 5368,
+   "301": 4930,
+   "null": 369,
+   "404": 293,
+   "502": 43
+  }
+ },
+ "fakeddit": {
+  "attempts": 34543,
+  "bytes_in_GB": 0.782,
+  "hosts": 292,
+  "fetched_ok_by_route": {
+   "origin:refused_later": 1038,
+   "origin:usable": 20,
+   "wayback:refused_later": 1339,
+   "wayback:usable": 4049
+  },
+  "items_now_usable_from_this_pass": 4069,
+  "http_status_top": {
+   "200": 20998,
+   "404": 7353,
+   "302": 2975,
+   "301": 2791,
+   "null": 233,
+   "503": 100
+  }
+ },
+ "m4fc": {
+  "attempts": 8016,
+  "bytes_in_GB": 1.255,
+  "hosts": 48,
+  "fetched_ok_by_route": {
+   "alternate:refused_later": 2,
+   "alternate:usable": 199,
+   "origin:refused_later": 12,
+   "origin:usable": 3962,
+   "wayback:refused_later": 6,
+   "wayback:usable": 759
+  },
+  "items_now_usable_from_this_pass": 4920,
+  "http_status_top": {
+   "200": 5810,
+   "403": 813,
+   "301": 402,
+   "302": 322,
+   "404": 317,
+   "null": 309
+  }
+ }
+}

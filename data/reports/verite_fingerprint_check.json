@@ -1,0 +1,65 @@
+{
+  "rows_resolved": 910,
+  "review_below": 0.9,
+  "by_source": {
+    "images": {
+      "rows": 713,
+      "median": 0.9904,
+      "min": 0.8191,
+      "below_review": 1
+    },
+    "images_wayback": {
+      "rows": 195,
+      "median": 0.9899,
+      "min": 0.8719,
+      "below_review": 1
+    },
+    "match:mocheg": {
+      "rows": 2,
+      "median": 0.996,
+      "min": 0.996,
+      "below_review": 0
+    }
+  },
+  "for_review": [
+    {
+      "row": 602,
+      "source": "images",
+      "cosine": 0.8191,
+      "file": "data/raw/verite/data/VERITE/images/rows-602.jpg"
+    },
+    {
+      "row": 266,
+      "source": "images_wayback",
+      "cosine": 0.8719,
+      "file": "data/raw/verite/data/VERITE/images_wayback/rows-266.jpg"
+    }
+  ],
+  "rejected": [
+    {
+      "dataset": "verite",
+      "file": "data/raw/verite/data/VERITE/images_wayback/rows-514.jpg",
+      "sha256": "74d5bdb3f372448e97312589865b764bb1ee2b1dad9ea71424e7e7b41bce7b8c",
+      "cosine_to_fingerprint": 0.591,
+      "rows": [
+        514
+      ],
+      "route": "wayback",
+      "reason": "an internet meme image, not the photograph the caption describes",
+      "identified_by": "VERITE fingerprint check 2026-10-03; visual inspection"
+    },
+    {
+      "dataset": "verite",
+      "file": "data/raw/verite/data/VERITE/images_wayback/rows-255-256.jpg",
+      "sha256": "a2c93cf36a9ae589bb9ba0fbab103de3f2b4434179b3d6002c8cd1a093168579",
+      "cosine_to_fingerprint": 0.671,
+      "rows": [
+        255,
+        256
+      ],
+      "route": "wayback",
+      "reason": "the described photograph with a meme caption overlaid; the authors' image is the photograph without it",
+      "identified_by": "VERITE fingerprint check 2026-10-03; visual inspection"
+    }
+  ]
+}

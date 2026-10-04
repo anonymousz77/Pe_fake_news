@@ -1,0 +1,102 @@
+{
+  "generated_at": "2026-09-10T23:51:35+00:00",
+  "as_of": "2020-06-15",
+  "plants": {
+    "prior": "2020-06-14",
+    "future": "2020-06-16",
+    "null": null
+  },
+  "index_rows_before": {
+    "docs_fts": 1368613,
+    "temporal_docs": 1368613
+  },
+  "index_rows_after": {
+    "docs_fts": 1368613,
+    "temporal_docs": 1368613
+  },
+  "index_bytes_before": {
+    "bm25.sqlite": 13387153408,
+    "temporal.sqlite": 439357440
+  },
+  "index_bytes_after": {
+    "bm25.sqlite": 13387153408,
+    "temporal.sqlite": 439357440
+  },
+  "ranking_fingerprint_unchanged": true,
+  "fingerprint_depth": 50,
+  "temporal_quick_check": "ok",
+  "probe_nonce": [
+    {
+      "k": 1,
+      "future_returned": false,
+      "null_returned": false,
+      "prior_returned": true,
+      "latest_published_at": "2020-06-14",
+      "returned": 1
+    },
+    {
+      "k": 10,
+      "future_returned": false,
+      "null_returned": false,
+      "prior_returned": true,
+      "latest_published_at": "2020-06-14",
+      "returned": 1
+    },
+    {
+      "k": 100,
+      "future_returned": false,
+      "null_returned": false,
+      "prior_returned": true,
+      "latest_published_at": "2020-06-14",
+      "returned": 1
+    },
+    {
+      "k": 1000,
+      "future_returned": false,
+      "null_returned": false,
+      "prior_returned": true,
+      "latest_published_at": "2020-06-14",
+      "returned": 1
+    },
+    {
+      "k": 100000,
+      "future_returned": false,
+      "null_returned": false,
+      "prior_returned": true,
+      "latest_published_at": "2020-06-14",
+      "returned": 1
+    },
+    {
+      "k": 2000000,
+      "future_returned": false,
+      "null_returned": false,
+      "prior_returned": true,
+      "latest_published_at": "2020-06-14",
+      "returned": 1
+    }
+  ],
+  "probe_bounded": {
+    "k": 880160,
+    "future_returned": false,
+    "null_returned": false,
+    "prior_returned": true,
+    "latest_published_at": "2020-06-14",
+    "term": "hospital",
+    "matches_ignoring_date": 88016,
+    "returned": 62380,
+    "seconds": 15.9
+  },
+  "probe_whole_corpus": {
+    "k": 2000000,
+    "future_returned": false,
+    "null_returned": false,
+    "prior_returned": true,
+    "latest_published_at": "2020-06-15",
+    "term": "a",
+    "matches_ignoring_date": 973757,
+    "returned": 703362,
+    "seconds": 112.4
+  },
+  "failures": [],
+  "passed": true
+}

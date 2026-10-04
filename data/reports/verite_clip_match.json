@@ -1,0 +1,194 @@
+{
+ "pools_searched": {
+  "mocheg": 137586,
+  "averimatec": 3452,
+  "dgm4_origin_only": "yes (manipulation/ excluded)"
+ },
+ "pools_pending": [
+  "factify2",
+  "fakeddit",
+  "m4fc (after the recovery crawl ends)"
+ ],
+ "calibration": {
+  "pairs": 713,
+  "same_image": {
+   "min": 0.8189593553543091,
+   "p01": 0.9204735159873962,
+   "median": 0.9903020262718201
+  },
+  "best_other_image": {
+   "max": 0.9661905169487,
+   "p99": 0.9311643552780151,
+   "median": 0.7355680465698242
+  }
+ },
+ "review_threshold": 0.85,
+ "acceptance_rule": "cosine >= 0.966 (above every different-image pair inside VERITE) AND visually the described image",
+ "candidates": [
+  {
+   "cosine": 0.996,
+   "path": "data/raw/mocheg/with_tweet_2023_03/images/11458-566241-04-ryan_blood.jpg",
+   "decision": "accepted",
+   "note": "bleeding Nolan Ryan, Rangers uniform: the described photograph",
+   "rows": [
+    "264",
+    "265"
+   ]
+  },
+  {
+   "cosine": 0.9458,
+   "path": "data/raw/mocheg/with_tweet_2023_03/images/119209-2535888-06-c4gp7cptnbubneu0vzpn.jpg",
+   "decision": "probable_not_accepted",
+   "note": "helicopter de-icing a wind turbine, as described; below the acceptance threshold",
+   "rows": [
+    "902",
+    "903"
+   ]
+  },
+  {
+   "cosine": 0.9375,
+   "path": "data/raw/mocheg/with_tweet_2023_03/images/08649-45081-00-AP291741579578.jpg",
+   "decision": "probable_not_accepted",
+   "note": "migrants on a freight train, as described; many near-identical photos of the scene exist",
+   "rows": [
+    "390",
+    "391"
+   ]
+  },
+  {
+   "cosine": 0.9184,
+   "path": "data/raw/dgm4/origin/usa_today.zip::usa_today/0565/486.jpg",
+   "decision": "rejected",
+   "note": "nearest was a DGM4 face-edited image; manipulated images are excluded from the pool",
+   "rows": [
+    "649"
+   ]
+  },
+  {
+   "cosine": 0.9158,
+   "path": "data/raw/mocheg/with_tweet_2023_03/images/106203-149208-01-picture-taken-from-the-top-of-the-arch-of-triumph-on-july-15-picture-id999547884.jpg",
+   "decision": "probable_not_accepted",
+   "note": "Champs-Elysees World Cup crowd from the Arc de Triomphe; could be another frame",
+   "rows": [
+    "893",
+    "894"
+   ]
+  },
+  {
+   "cosine": 0.9114,
+   "path": "data/raw/mocheg/with_tweet_2023_03/images/09642-50234-11-GettyImages-1219003777.jpg",
+   "decision": "rejected",
+   "note": "a different empty-shelves photograph (Getty 2020)",
+   "rows": [
+    "255",
+    "256"
+   ]
+  },
+  {
+   "cosine": 0.9082,
+   "path": "data/raw/mocheg/with_tweet_2023_03/images/13487-70723-02-04dorian-updates01sub-videoSixteenByNine3000.jpg",
+   "decision": "probable_not_accepted",
+   "note": "aerial hurricane damage; generic scene, OOC look-alike by design",
+   "rows": [
+    "263"
+   ]
+  },
+  {
+   "cosine": 0.8941,
+   "path": "data/raw/mocheg/with_tweet_2023_03/images/102725-121786-00--senators-sen-sheldon-whitehouse-sen-richard-blumenthal-and-picture-id1026662992.jpg",
+   "decision": "probable_not_accepted",
+   "note": "Whitehouse, Booker and Blumenthal at the Kavanaugh hearing; could be another frame",
+   "rows": [
+    "114",
+    "115"
+   ]
+  },
+  {
+   "cosine": 0.8912,
+   "path": "data/raw/mocheg/with_tweet_2023_03/images/03701-527308-02-blood_quran2.jpg",
+   "decision": "probable_not_accepted",
+   "note": "blood-stained Quran held open; could be a second photo of the same object",
+   "rows": [
+    "327",
+    "328"
+   ]
+  },
+  {
+   "cosine": 0.8807,
+   "path": "data/raw/mocheg/with_tweet_2023_03/images/00875-548394-07-trafficjam.jpg",
+   "decision": "rejected",
+   "note": "ordinary traffic jam, not abandoned white electric cars",
+   "rows": [
+    "12",
+    "13"
+   ]
+  },
+  {
+   "cosine": 0.8758,
+   "path": "data/raw/mocheg/with_tweet_2023_03/images/06630-34566-01-8688464145_f69df84441_z.jpg",
+   "decision": "rejected",
+   "note": "nearest was a DGM4 face-swapped image (0.883); next, a MOCHEG image at 0.876, is below the acceptance threshold",
+   "rows": [
+    "952",
+    "953"
+   ]
+  },
+  {
+   "cosine": 0.8703,
+   "path": "data/raw/mocheg/with_tweet_2023_03/images/03158-548402-07-hurricane-video-snopes.jpg",
+   "decision": "probable_not_accepted",
+   "note": "storm cell over a Miami-like shoreline, plausibly the artwork; cropped or a video still",
+   "rows": [
+    "739",
+    "740"
+   ]
+  },
+  {
+   "cosine": 0.8688,
+   "path": "data/raw/mocheg/with_tweet_2023_03/images/10898-529509-03-polarbearbus.jpg",
+   "decision": "probable_not_accepted",
+   "note": "polar-bear costume leaving a tram; OOC images are look-alikes by design",
+   "rows": [
+    "359"
+   ]
+  },
+  {
+   "cosine": 0.8664,
+   "path": "data/raw/mocheg/with_tweet_2023_03/images/04985-25996-13-uberti-1885-courteney-stalking-rifle-01.jpg",
+   "decision": "rejected",
+   "note": "a rifle on a log, no hunter or squirrel",
+   "rows": [
+    "957"
+   ]
+  },
+  {
+   "cosine": 0.8605,
+   "path": "data/raw/mocheg/with_tweet_2023_03/images/119304-2542166-03-AAERUD2IAFKXVFDFWBVLFKV6ZE.jpg",
+   "decision": "rejected",
+   "note": "flag-waving rally, not demonstrators in I Cant Breathe shirts",
+   "rows": [
+    "173"
+   ]
+  },
+  {
+   "cosine": 0.8602,
+   "path": "data/raw/mocheg/with_tweet_2023_03/images/111515-192023-01-hamiltonvan.jpg",
+   "decision": "rejected",
+   "note": "a wrecked minivan, not a Chevy Suburban",
+   "rows": [
+    "908",
+    "909"
+   ]
+  },
+  {
+   "cosine": 0.8555,
+   "path": "data/raw/mocheg/with_tweet_2023_03/images/01242-06504-08-16afghan-briefing-carousel3-square640.jpg",
+   "decision": "rejected",
+   "note": "Afghans waiting by an aircraft; no soldiers on guard; another photo",
+   "rows": [
+    "881",
+    "882"
+   ]
+  }
+ ]
+}

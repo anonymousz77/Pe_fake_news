@@ -1,0 +1,160 @@
+{
+ "what": "images that show a fact-checker's ruling (PolitiFact Truth-O-Meter, Snopes rating badge, Lead Stories stamp, FALSE / MISLEADING / SCAM stamps). Registry status `verdict`: counted as a missing image, never as evidence.",
+ "registry_version": 12,
+ "verdict_hashes": 2477,
+ "by_dataset_hashes": {
+  "mocheg": 926,
+  "factify2": 1565,
+  "m4fc": 14,
+  "fakeddit": 3
+ },
+ "how_found": {
+  "duplicate_groups_5plus_v7": 50,
+  "clip_neighbour_expansion_rounds_1_4": 122,
+  "clip_linear_probe": 724,
+  "random_tail_samples": 10
+ },
+ "probe_review_precision": {
+  "pass1_rank_0_599": {
+   "reviewed": 600,
+   "verdict": 523
+  },
+  "pass2_rank_0_419": {
+   "reviewed": 420,
+   "verdict": 201
+  }
+ },
+ "pools_swept": [
+  "mocheg",
+  "averimatec",
+  "factify2",
+  "m4fc",
+  "fakeddit (top 60 of the probe: 0 verdict images)"
+ ],
+ "pools_not_yet_swept": [],
+ "residual_unreviewed_estimate": {
+  "method": "CLIP ViT-B/32 linear probe (numpy logistic regression, seed 20260901) retrained on all reviewed labels; bands below the exhaustively reviewed top 420 were sampled at random and reviewed by eye",
+  "band_A_score_0_to_0.4": {
+   "sample": 60,
+   "verdicts": 6,
+   "population": 154,
+   "point_estimate": 15,
+   "ci95": [
+    4,
+    27
+   ]
+  },
+  "band_B_rank_574_to_2000": {
+   "sample": 60,
+   "verdicts": 4,
+   "population": 1426,
+   "point_estimate": 95,
+   "ci95": [
+    5,
+    185
+   ]
+  },
+  "band_C_rest": {
+   "sample": 100,
+   "verdicts": 0,
+   "population": 88066,
+   "point_estimate": 0,
+   "ci95": [
+    0,
+    2642
+   ]
+  }
+ },
+ "label_leak_measured": {
+  "with_verdict_image": {
+   "records": 1199,
+   "accuracy": 0.9166,
+   "majority_baseline": 0.3603,
+   "recall_per_class": {
+    "NEI": 0.861,
+    "refuted": 0.982,
+    "supported": 0.911
+   },
+   "class_counts": {
+    "refuted": 395,
+    "NEI": 432,
+    "supported": 372
+   }
+  },
+  "without_verdict_image": {
+   "records": 11470,
+   "accuracy": 0.4847,
+   "majority_baseline": 0.4571,
+   "recall_per_class": {
+    "NEI": 0.16,
+    "refuted": 0.743,
+    "supported": 0.342
+   },
+   "class_counts": {
+    "NEI": 2579,
+    "refuted": 5243,
+    "supported": 3648
+   }
+  }
+ },
+ "label_leak_method": "10-nearest-neighbour vote on the mean CLIP ViT-B/32 embedding of a MOCHEG record's evidence images, 5-fold, seed 20260901; images only, no text",
+ "full_size_recheck": {
+  "registered_entries_rechecked": 799,
+  "found_not_verdict_and_removed": 19,
+  "ocr_supported_entries_sampled": 60,
+  "ocr_supported_sample_precision": "59/60"
+ },
+ "residual_unreviewed_estimate_factify2_m4fc": {
+  "band_A_score_above_0": "reviewed in full",
+  "band_B_score_-2_to_0": {
+   "sample": 60,
+   "verdicts": 1,
+   "population": 5319,
+   "point_estimate": 89,
+   "ci95": [
+    0,
+    266
+   ]
+  },
+  "band_C_score_below_-2": {
+   "sample": 100,
+   "verdicts": 0,
+   "population": 46415,
+   "rule_of_three_upper_bound": 1392
+  }
+ },
+ "factify2_exposure": {
+  "records_with_a_verdict_image": {
+   "Insufficient_Multimodal": "2 of 8500",
+   "Insufficient_Text": "7 of 8500",
+   "Refute": "1486 of 8500",
+   "Support_Multimodal": "1 of 8500",
+   "Support_Text": "5 of 8500"
+  },
+  "image_refs_by_host": {
+   "boomlive.in": 984,
+   "snopes.com": 446,
+   "factly.in": 39,
+   "cdn.factcheck.org": 14,
+   "static.politifact.com": 13,
+   "images.thequint.com": 10,
+   "thelogicalindian.com": 9,
+   "factcheck.afp.com": 8
+  },
+  "by_class_role": {
+   "Refute/document": 1179,
+   "Refute/claim": 391,
+   "Support_Text/claim": 5,
+   "Insufficient_Text/claim": 4,
+   "Insufficient_Text/document": 3,
+   "Insufficient_Multimodal/claim": 1,
+   "Support_Multimodal/claim": 1,
+   "Insufficient_Multimodal/document": 1
+  }
+ },
+ "factify2_rule": {
+  "rule": "a record has a verdict image -> Refute",
+  "precision": 0.99,
+  "refute_recall": 0.1748
+ }
+}

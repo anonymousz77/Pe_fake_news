@@ -1,0 +1,438 @@
+{
+  "thin_classes": [],
+  "dataset": "factify2",
+  "mode": "none",
+  "purity_threshold": 0.9,
+  "seed": 20260901,
+  "ratios": {
+    "train": 0.7,
+    "val": 0.15,
+    "test": 0.15
+  },
+  "records_total": 38425,
+  "split_sizes": {
+    "train": 26898,
+    "val": 5763,
+    "test": 5764
+  },
+  "per_class_by_split": {
+    "train": {
+      "Insufficient_Multimodal": 5942,
+      "Insufficient_Text": 5915,
+      "Refute": 3486,
+      "Support_Multimodal": 5899,
+      "Support_Text": 5656
+    },
+    "val": {
+      "Insufficient_Multimodal": 1273,
+      "Insufficient_Text": 1267,
+      "Refute": 747,
+      "Support_Multimodal": 1264,
+      "Support_Text": 1212
+    },
+    "test": {
+      "Insufficient_Multimodal": 1273,
+      "Insufficient_Text": 1268,
+      "Refute": 747,
+      "Support_Multimodal": 1264,
+      "Support_Text": 1212
+    }
+  },
+  "constrained_domains_count": 0,
+  "constrained_domains": [],
+  "component_sizes": {
+    "count": 38425,
+    "largest": 1,
+    "largest_share": 0.0,
+    "top_10": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    "histogram": {
+      "1": 38425
+    }
+  },
+  "leakage": {
+    "violations": 35,
+    "enforced": false,
+    "detail": [
+      {
+        "domain": "abs.twimg.com",
+        "splits": [
+          "test",
+          "train"
+        ],
+        "purity": 1.0,
+        "records": 2,
+        "dominant_class": "Support_Text"
+      },
+      {
+        "domain": "arc-anglerfish-washpost-prod-washpost.s3.amazonaws.com",
+        "splits": [
+          "test",
+          "train",
+          "val"
+        ],
+        "purity": 1.0,
+        "records": 8,
+        "dominant_class": "Refute"
+      },
+      {
+        "domain": "boomlive.in",
+        "splits": [
+          "test",
+          "train",
+          "val"
+        ],
+        "purity": 1.0,
+        "records": 1604,
+        "dominant_class": "Refute"
+      },
+      {
+        "domain": "c.ndtvimg.com",
+        "splits": [
+          "train",
+          "val"
+        ],
+        "purity": 1.0,
+        "records": 2,
+        "dominant_class": "Refute"
+      },
+      {
+        "domain": "cdn.factcheck.org",
+        "splits": [
+          "test",
+          "train",
+          "val"
+        ],
+        "purity": 1.0,
+        "records": 19,
+        "dominant_class": "Refute"
+      },
+      {
+        "domain": "cdn.siasat.com",
+        "splits": [
+          "test",
+          "train"
+        ],
+        "purity": 1.0,
+        "records": 2,
+        "dominant_class": "Insufficient_Multimodal"
+      },
+      {
+        "domain": "d1y8sb8igg2f8e.cloudfront.net",
+        "splits": [
+          "train",
+          "val"
+        ],
+        "purity": 1.0,
+        "records": 3,
+        "dominant_class": "Refute"
+      },
+      {
+        "domain": "dynaimage.cdn.cnn.com",
+        "splits": [
+          "test",
+          "train"
+        ],
+        "purity": 1.0,
+        "records": 3,
+        "dominant_class": "Support_Text"
+      },
+      {
+        "domain": "empirenews.net",
+        "splits": [
+          "test",
+          "train",
+          "val"
+        ],
+        "purity": 0.9091,
+        "records": 11,
+        "dominant_class": "Support_Text"
+      },
+      {
+        "domain": "factcheck.afp.com",
+        "splits": [
+          "test",
+          "train",
+          "val"
+        ],
+        "purity": 1.0,
+        "records": 5,
+        "dominant_class": "Refute"
+      },
+      {
+        "domain": "factly.in",
+        "splits": [
+          "test",
+          "train",
+          "val"
+        ],
+        "purity": 1.0,
+        "records": 1787,
+        "dominant_class": "Refute"
+      },
+      {
+        "domain": "i.cbc.ca",
+        "splits": [
+          "test",
+          "train"
+        ],
+        "purity": 1.0,
+        "records": 3,
+        "dominant_class": "Refute"
+      },
+      {
+        "domain": "i.pinimg.com",
+        "splits": [
+          "test",
+          "train"
+        ],
+        "purity": 1.0,
+        "records": 4,
+        "dominant_class": "Refute"
+      },
+      {
+        "domain": "i1.wp.com",
+        "splits": [
+          "test",
+          "train"
+        ],
+        "purity": 1.0,
+        "records": 7,
+        "dominant_class": "Refute"
+      },
+      {
+        "domain": "i2.wp.com",
+        "splits": [
+          "train",
+          "val"
+        ],
+        "purity": 1.0,
+        "records": 7,
+        "dominant_class": "Refute"
+      },
+      {
+        "domain": "image.cnbcfm.com",
+        "splits": [
+          "test",
+          "train",
+          "val"
+        ],
+        "purity": 1.0,
+        "records": 7,
+        "dominant_class": "Refute"
+      },
+      {
+        "domain": "image.isu.pub",
+        "splits": [
+          "train",
+          "val"
+        ],
+        "purity": 1.0,
+        "records": 4,
+        "dominant_class": "Refute"
+      },
+      {
+        "domain": "images.squarespace-cdn.com",
+        "splits": [
+          "test",
+          "train"
+        ],
+        "purity": 1.0,
+        "records": 4,
+        "dominant_class": "Refute"
+      },
+      {
+        "domain": "images.thequint.com",
+        "splits": [
+          "test",
+          "train",
+          "val"
+        ],
+        "purity": 0.9989,
+        "records": 901,
+        "dominant_class": "Refute"
+      },
+      {
+        "domain": "img.buzzfeed.com",
+        "splits": [
+          "test",
+          "train",
+          "val"
+        ],
+        "purity": 1.0,
+        "records": 4,
+        "dominant_class": "Refute"
+      },
+      {
+        "domain": "media.newyorker.com",
+        "splits": [
+          "test",
+          "train",
+          "val"
+        ],
+        "purity": 0.9375,
+        "records": 16,
+        "dominant_class": "Refute"
+      },
+      {
+        "domain": "media.vanityfair.com",
+        "splits": [
+          "train",
+          "val"
+        ],
+        "purity": 1.0,
+        "records": 4,
+        "dominant_class": "Refute"
+      },
+      {
+        "domain": "media.wusa9.com",
+        "splits": [
+          "test",
+          "train"
+        ],
+        "purity": 1.0,
+        "records": 4,
+        "dominant_class": "Refute"
+      },
+      {
+        "domain": "newslit.org",
+        "splits": [
+          "train",
+          "val"
+        ],
+        "purity": 1.0,
+        "records": 2,
+        "dominant_class": "Refute"
+      },
+      {
+        "domain": "s.hdnux.com",
+        "splits": [
+          "train",
+          "val"
+        ],
+        "purity": 1.0,
+        "records": 2,
+        "dominant_class": "Refute"
+      },
+      {
+        "domain": "s3-prod.modernhealthcare.com",
+        "splits": [
+          "train",
+          "val"
+        ],
+        "purity": 1.0,
+        "records": 3,
+        "dominant_class": "Refute"
+      },
+      {
+        "domain": "sb.scorecardresearch.com",
+        "splits": [
+          "train",
+          "val"
+        ],
+        "purity": 1.0,
+        "records": 2,
+        "dominant_class": "Support_Text"
+      },
+      {
+        "domain": "snopes.com",
+        "splits": [
+          "test",
+          "train",
+          "val"
+        ],
+        "purity": 1.0,
+        "records": 669,
+        "dominant_class": "Refute"
+      },
+      {
+        "domain": "static.euronews.com",
+        "splits": [
+          "test",
+          "train"
+        ],
+        "purity": 1.0,
+        "records": 2,
+        "dominant_class": "Refute"
+      },
+      {
+        "domain": "static.politifact.com",
+        "splits": [
+          "test",
+          "train"
+        ],
+        "purity": 1.0,
+        "records": 7,
+        "dominant_class": "Refute"
+      },
+      {
+        "domain": "static.scientificamerican.com",
+        "splits": [
+          "train",
+          "val"
+        ],
+        "purity": 1.0,
+        "records": 2,
+        "dominant_class": "Refute"
+      },
+      {
+        "domain": "variety.com",
+        "splits": [
+          "train",
+          "val"
+        ],
+        "purity": 1.0,
+        "records": 3,
+        "dominant_class": "Refute"
+      },
+      {
+        "domain": "washingtonpost.com",
+        "splits": [
+          "test",
+          "train",
+          "val"
+        ],
+        "purity": 1.0,
+        "records": 6,
+        "dominant_class": "Refute"
+      },
+      {
+        "domain": "worldnewsdailyreport.com",
+        "splits": [
+          "test",
+          "train"
+        ],
+        "purity": 1.0,
+        "records": 2,
+        "dominant_class": "Refute"
+      },
+      {
+        "domain": "www-media.aap.com.au",
+        "splits": [
+          "train",
+          "val"
+        ],
+        "purity": 1.0,
+        "records": 3,
+        "dominant_class": "Refute"
+      }
+    ]
+  },
+  "domain_only": {
+    "domain_only_test_accuracy": 0.3748,
+    "majority_baseline": 0.2389,
+    "uniform_baseline": 0.2,
+    "unseen_domain_rate": 0.0053,
+    "test_pairs": 6638
+  }
+}

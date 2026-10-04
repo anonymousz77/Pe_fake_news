@@ -1,0 +1,352 @@
+{
+  "dataset": "factify2",
+  "label_field": "Category",
+  "source_filter": "all",
+  "excluded_domains": [],
+  "complete_cases": {
+    "images_per_record": 2.0,
+    "records_total": 42500,
+    "records_complete": 37807,
+    "records_lost": 4693,
+    "retained_overall": 0.8896,
+    "per_class": {
+      "Insufficient_Multimodal": {
+        "records_total": 8500,
+        "records_complete": 8454,
+        "records_lost": 46,
+        "retained": 0.9946
+      },
+      "Insufficient_Text": {
+        "records_total": 8500,
+        "records_complete": 8039,
+        "records_lost": 461,
+        "retained": 0.9458
+      },
+      "Refute": {
+        "records_total": 8500,
+        "records_complete": 5635,
+        "records_lost": 2865,
+        "retained": 0.6629
+      },
+      "Support_Multimodal": {
+        "records_total": 8500,
+        "records_complete": 8448,
+        "records_lost": 52,
+        "retained": 0.9939
+      },
+      "Support_Text": {
+        "records_total": 8500,
+        "records_complete": 7231,
+        "records_lost": 1269,
+        "retained": 0.8507
+      }
+    }
+  },
+  "records_with_recovered_media": 80006,
+  "records_total": 85000,
+  "distinct_domains": 836,
+  "single_image_domains": 553,
+  "class_totals": {
+    "Insufficient_Multimodal": 16954,
+    "Insufficient_Text": 16533,
+    "Refute": 13877,
+    "Support_Multimodal": 16944,
+    "Support_Text": 15698
+  },
+  "mutual_information_nats": 0.4683,
+  "entropy_domain_nats": 1.2888,
+  "entropy_label_nats": 1.6068,
+  "normalised_mutual_information": {
+    "sqrt": 0.3255,
+    "arithmetic": 0.3235,
+    "definition": "NMI = I(D;Y) / sqrt(H(D)*H(Y)); arithmetic uses (H(D)+H(Y))/2"
+  },
+  "domain_only_classifier": {
+    "majority_class_baseline": 0.2119,
+    "uniform_class_baseline": 0.2,
+    "resubstitution_accuracy": 0.412,
+    "heldout_accuracy": 0.4037,
+    "folds": 5,
+    "seed": 20260901,
+    "lift_over_baseline": 0.1917,
+    "note": "resubstitution is inflated by 553 single-image domains; heldout is the honest figure"
+  },
+  "top_domains": [
+    {
+      "domain": "pbs.twimg.com",
+      "images": 59374,
+      "share_of_corpus": 0.7421,
+      "class_distribution": {
+        "Insufficient_Multimodal": 14403,
+        "Insufficient_Text": 15043,
+        "Refute": 53,
+        "Support_Multimodal": 16089,
+        "Support_Text": 13786
+      },
+      "dominant_class": "Support_Multimodal",
+      "dominant_share": 0.271
+    },
+    {
+      "domain": "snopes.com",
+      "images": 4322,
+      "share_of_corpus": 0.054,
+      "class_distribution": {
+        "Refute": 4318,
+        "Support_Multimodal": 3,
+        "Support_Text": 1
+      },
+      "dominant_class": "Refute",
+      "dominant_share": 0.9991
+    },
+    {
+      "domain": "factly.in",
+      "images": 3523,
+      "share_of_corpus": 0.044,
+      "class_distribution": {
+        "Refute": 3521,
+        "Support_Text": 2
+      },
+      "dominant_class": "Refute",
+      "dominant_share": 0.9994
+    },
+    {
+      "domain": "images.hindustantimes.com",
+      "images": 3502,
+      "share_of_corpus": 0.0438,
+      "class_distribution": {
+        "Insufficient_Multimodal": 1040,
+        "Insufficient_Text": 1278,
+        "Refute": 6,
+        "Support_Multimodal": 266,
+        "Support_Text": 912
+      },
+      "dominant_class": "Insufficient_Text",
+      "dominant_share": 0.3649
+    },
+    {
+      "domain": "boomlive.in",
+      "images": 2230,
+      "share_of_corpus": 0.0279,
+      "class_distribution": {
+        "Refute": 2230
+      },
+      "dominant_class": "Refute",
+      "dominant_share": 1.0
+    },
+    {
+      "domain": "images.thequint.com",
+      "images": 1432,
+      "share_of_corpus": 0.0179,
+      "class_distribution": {
+        "Insufficient_Multimodal": 1,
+        "Refute": 1427,
+        "Support_Text": 4
+      },
+      "dominant_class": "Refute",
+      "dominant_share": 0.9965
+    },
+    {
+      "domain": "cdn.cnn.com",
+      "images": 1267,
+      "share_of_corpus": 0.0158,
+      "class_distribution": {
+        "Insufficient_Multimodal": 771,
+        "Refute": 14,
+        "Support_Multimodal": 246,
+        "Support_Text": 236
+      },
+      "dominant_class": "Insufficient_Multimodal",
+      "dominant_share": 0.6085
+    },
+    {
+      "domain": "s.abcnews.com",
+      "images": 1225,
+      "share_of_corpus": 0.0153,
+      "class_distribution": {
+        "Insufficient_Multimodal": 700,
+        "Insufficient_Text": 2,
+        "Refute": 49,
+        "Support_Multimodal": 240,
+        "Support_Text": 234
+      },
+      "dominant_class": "Insufficient_Multimodal",
+      "dominant_share": 0.5714
+    },
+    {
+      "domain": "static01.nyt.com",
+      "images": 248,
+      "share_of_corpus": 0.0031,
+      "class_distribution": {
+        "Insufficient_Text": 13,
+        "Refute": 217,
+        "Support_Multimodal": 3,
+        "Support_Text": 15
+      },
+      "dominant_class": "Refute",
+      "dominant_share": 0.875
+    },
+    {
+      "domain": "i0.wp.com",
+      "images": 212,
+      "share_of_corpus": 0.0026,
+      "class_distribution": {
+        "Insufficient_Multimodal": 2,
+        "Insufficient_Text": 11,
+        "Refute": 52,
+        "Support_Multimodal": 29,
+        "Support_Text": 118
+      },
+      "dominant_class": "Support_Text",
+      "dominant_share": 0.5566
+    },
+    {
+      "domain": "i.ytimg.com",
+      "images": 210,
+      "share_of_corpus": 0.0026,
+      "class_distribution": {
+        "Insufficient_Multimodal": 3,
+        "Insufficient_Text": 8,
+        "Refute": 180,
+        "Support_Multimodal": 4,
+        "Support_Text": 15
+      },
+      "dominant_class": "Refute",
+      "dominant_share": 0.8571
+    },
+    {
+      "domain": "gannett-cdn.com",
+      "images": 105,
+      "share_of_corpus": 0.0013,
+      "class_distribution": {
+        "Insufficient_Text": 4,
+        "Refute": 100,
+        "Support_Text": 1
+      },
+      "dominant_class": "Refute",
+      "dominant_share": 0.9524
+    },
+    {
+      "domain": "media.npr.org",
+      "images": 81,
+      "share_of_corpus": 0.001,
+      "class_distribution": {
+        "Insufficient_Text": 3,
+        "Refute": 68,
+        "Support_Text": 10
+      },
+      "dominant_class": "Refute",
+      "dominant_share": 0.8395
+    },
+    {
+      "domain": "empirenews.net",
+      "images": 72,
+      "share_of_corpus": 0.0009,
+      "class_distribution": {
+        "Refute": 2,
+        "Support_Multimodal": 14,
+        "Support_Text": 56
+      },
+      "dominant_class": "Support_Text",
+      "dominant_share": 0.7778
+    },
+    {
+      "domain": "cdn.factcheck.org",
+      "images": 56,
+      "share_of_corpus": 0.0007,
+      "class_distribution": {
+        "Refute": 56
+      },
+      "dominant_class": "Refute",
+      "dominant_share": 1.0
+    },
+    {
+      "domain": "media.newyorker.com",
+      "images": 52,
+      "share_of_corpus": 0.0006,
+      "class_distribution": {
+        "Insufficient_Text": 1,
+        "Refute": 46,
+        "Support_Multimodal": 1,
+        "Support_Text": 4
+      },
+      "dominant_class": "Refute",
+      "dominant_share": 0.8846
+    },
+    {
+      "domain": "ichef.bbci.co.uk",
+      "images": 52,
+      "share_of_corpus": 0.0006,
+      "class_distribution": {
+        "Insufficient_Text": 6,
+        "Refute": 38,
+        "Support_Text": 8
+      },
+      "dominant_class": "Refute",
+      "dominant_share": 0.7308
+    },
+    {
+      "domain": "upload.wikimedia.org",
+      "images": 48,
+      "share_of_corpus": 0.0006,
+      "class_distribution": {
+        "Insufficient_Text": 2,
+        "Refute": 40,
+        "Support_Multimodal": 1,
+        "Support_Text": 5
+      },
+      "dominant_class": "Refute",
+      "dominant_share": 0.8333
+    },
+    {
+      "domain": "media-cldnry.s-nbcnews.com",
+      "images": 47,
+      "share_of_corpus": 0.0006,
+      "class_distribution": {
+        "Insufficient_Multimodal": 1,
+        "Insufficient_Text": 1,
+        "Refute": 42,
+        "Support_Text": 3
+      },
+      "dominant_class": "Refute",
+      "dominant_share": 0.8936
+    },
+    {
+      "domain": "washingtonpost.com",
+      "images": 39,
+      "share_of_corpus": 0.0005,
+      "class_distribution": {
+        "Refute": 38,
+        "Support_Text": 1
+      },
+      "dominant_class": "Refute",
+      "dominant_share": 0.9744
+    }
+  ],
+  "per_class_most_common_domain": {
+    "Insufficient_Multimodal": {
+      "domain": "pbs.twimg.com",
+      "images": 14403,
+      "share_of_class": 0.8495
+    },
+    "Insufficient_Text": {
+      "domain": "pbs.twimg.com",
+      "images": 15043,
+      "share_of_class": 0.9099
+    },
+    "Refute": {
+      "domain": "snopes.com",
+      "images": 4318,
+      "share_of_class": 0.3112
+    },
+    "Support_Multimodal": {
+      "domain": "pbs.twimg.com",
+      "images": 16089,
+      "share_of_class": 0.9495
+    },
+    "Support_Text": {
+      "domain": "pbs.twimg.com",
+      "images": 13786,
+      "share_of_class": 0.8782
+    }
+  }
+}

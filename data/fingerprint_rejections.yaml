@@ -1,0 +1,33 @@
+# Files that decode and are not placeholders, but are provably NOT the image the dataset's
+# authors used. A dataset that ships a fingerprint of its images (VERITE: a CLIP ViT-B/32
+# embedding per row) lets us check the bytes we fetched against the bytes they had.
+#
+# Keyed by dataset AND sha256, never by hash alone: the same meme may be genuine content in
+# another corpus. Not keyed by path: VERITE names its images true_N / false_N, so a path is a
+# label. `rows` are record_ids (row indices); `file` is the label-free alias
+# (scripts/records.verite_alias); the real path is in data/interim/verite_private_map.json
+# (gitignored). A listed file has status `wrong_image` (scripts/images.py) and counts as missing.
+#
+# Threshold for review: cosine < 0.90 (1st percentile of same-image pairs 0.907). Every flagged file
+# was inspected; only those visibly not the described image are listed. Kept, not listed: the
+# image of row 602 (0.821, the right photo with a film-strip border) and the archive copy for
+# row 266 (0.872, the right photo as a 480x270 thumbnail).
+version: 2
+updated: 2026-10-04
+rejections:
+  - dataset: verite
+    file: data/raw/verite/data/VERITE/images_wayback/rows-514.jpg
+    sha256: 74d5bdb3f372448e97312589865b764bb1ee2b1dad9ea71424e7e7b41bce7b8c
+    cosine_to_fingerprint: 0.591
+    rows: [514]
+    route: wayback
+    reason: "an internet meme image, not the photograph the caption describes"
+    identified_by: "VERITE fingerprint check 2026-10-03; visual inspection"
+  - dataset: verite
+    file: data/raw/verite/data/VERITE/images_wayback/rows-255-256.jpg
+    sha256: a2c93cf36a9ae589bb9ba0fbab103de3f2b4434179b3d6002c8cd1a093168579
+    cosine_to_fingerprint: 0.671
+    rows: [255, 256]
+    route: wayback
+    reason: "the described photograph with a meme caption overlaid; the authors' image is the photograph without it"
+    identified_by: "VERITE fingerprint check 2026-10-03; visual inspection"
