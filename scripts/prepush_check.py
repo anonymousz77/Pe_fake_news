@@ -18,8 +18,8 @@ label is the annotation the licence exists to protect.
 
 Three refusals, any one of which stops the push:
 
-1. **Data bytes.** Anything under ``data/raw/``, or any image, archive or
-   columnar-data extension.
+1. **Data bytes.** Anything under ``data/raw/`` or ``models/``, or any image,
+   archive, columnar-data or model-weight extension.
 2. **Per-record labels.** A staged CSV/JSONL whose columns name a label, or a
    staged JSON that is a *list of records* carrying one. A JSON that is a
    mapping is an aggregate report and passes.
@@ -58,10 +58,12 @@ FORBIDDEN_SUFFIXES = {
     ".zip", ".7z", ".tar", ".gz", ".tgz",
     ".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp",
     ".parquet", ".npy", ".npz", ".pkl", ".pt", ".bin", ".arrow",
+    # model weights: the Qwen shards and EasyOCR's detector / recogniser
+    ".safetensors", ".pth", ".ckpt",
 }
 
 #: Path prefixes that hold data, never description.
-FORBIDDEN_PREFIXES = ("data/raw/", "data/bible/", "data/interim/")
+FORBIDDEN_PREFIXES = ("data/raw/", "data/bible/", "data/interim/", "models/")
 
 #: Column / key names that carry an annotation. Built from the same table
 #: hydrate.py uses to find label columns, so the two cannot drift apart.

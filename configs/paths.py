@@ -86,6 +86,28 @@ CROSS_CORPUS_YAML: Final[Path] = DATA / "cross_corpus_duplicates.yaml"
 #: Keyed by PATH, not hash: the same bytes elsewhere may be genuine content.
 FINGERPRINT_REJECTIONS_YAML: Final[Path] = DATA / "fingerprint_rejections.yaml"
 
+_MODELS_ENV_VAR: Final[str] = "PE_FAKE_NEWS_MODELS"
+
+
+def _resolve_models_dir() -> Path:
+    """MODELS from ``PE_FAKE_NEWS_MODELS`` (environment, then .env), else <root>/models."""
+    raw = os.environ.get(_MODELS_ENV_VAR)
+    if not raw:
+        try:
+            from dotenv import dotenv_values
+        except ImportError:
+            pass
+        else:
+            raw = dotenv_values(_REPO_ROOT / ".env").get(_MODELS_ENV_VAR)
+    return Path(raw).expanduser().resolve() if raw else PROJECT_ROOT / "models"
+
+
+#: Model weights: the Hugging Face cache and EasyOCR's detector and recogniser.
+#: Weights are not data, so not under data/; gitignored and refused by
+#: scripts/prepush_check.py. A server may point PE_FAKE_NEWS_MODELS at a
+#: shared cache. Created by `scripts/image_text.py fetch-models`, not here.
+MODELS: Final[Path] = _resolve_models_dir()
+
 #: Directories ensure_tree() creates. BIBLE is included: it is ignored by git,
 #: not absent from disk.
 _TREE: Final[tuple[Path, ...]] = (

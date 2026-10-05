@@ -35,6 +35,34 @@ Splits move whole duplicate groups (`scripts/split_all.py`), so they differ from
 the authors' splits where a group straddled them; the author's split is kept in
 `meta.official_split`.
 
+## Image-to-text work lists, 2026-10-05
+
+The unit of work for `scripts/image_text.py` is a **distinct image** (sha256)
+referenced by a **usable** processed row; identical bytes are processed once.
+Measured by `image_text.build_worklist()` from `data/processed/records/` and
+the image index; `tests/test_image_text.py` pins VERITE's set by identity, not
+by count.
+
+| Dataset | usable rows with an image | image paths | distinct images (work list) | files in the image index |
+| --- | ---: | ---: | ---: | ---: |
+| verite | 914 | 607 | **607** | 613 |
+| averimatec | 944 | 1,391 | **1,345** | 3,457 zip members |
+| factify2 | 37,807 | 75,613 | **45,186** | 84,647 |
+| fakeddit | 142,480 | 142,480 | **140,839** (the pool; a run takes a prefix of the nested stratified order) | 148,812 |
+
+- **verite**: 914 usable rows reference 607 paths because a `true` and a
+  `miscaptioned` row share one image. 607 = 606 VERITE files + 1 MOCHEG file
+  that two VERITE rows reach through the offline match. The index's 613 VERITE
+  files = 606 usable + 2 blank + 3 furniture + 2 wrong_image; all 606 usable
+  files are in the work list.
+- **factify2**: 75,613 paths are the images of the 37,807 usable rows (two per
+  row, less shared paths); 45,186 distinct contents among them.
+- The brief for the image-to-text block quoted VERITE 914, AVerImaTeC 1,392
+  and Factify2 77,505 images. **Those figures were wrong** (914 is VERITE's
+  usable rows; 1,392 and 77,505 match no measured quantity); the table above
+  supersedes them, and `data/reports/image_text_pilot.json` records the same
+  correction.
+
 ## Stage definitions
 
 | Stage | Location | Meaning |

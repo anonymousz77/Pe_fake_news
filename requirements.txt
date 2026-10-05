@@ -39,6 +39,23 @@ accelerate==1.15.0
 bitsandbytes==0.50.2
 qwen-vl-utils==0.0.14
 
+# --- image-to-text (scripts/image_text.py) ---
+# EasyOCR runs the OCR beside the VLM; its pins were captured on 2026-10-01 for
+# the placeholder audit (scripts/ocr_audit.py) and moved here unchanged when
+# OCR became part of the pipeline. The rest are its dependencies as resolved
+# on that date. Weights come from `scripts/image_text.py fetch-models`.
+easyocr==1.7.2
+opencv-python-headless==5.0.0.93
+scikit-image==0.26.0
+scipy==1.17.1
+shapely==2.1.2
+pyclipper==1.4.0
+python-bidi==0.6.11
+ninja==1.13.2
+ImageIO==2.38.0
+lazy-loader==0.6
+tifffile==2026.3.3
+
 # --- validation / diagnostics ---
 jsonschema==4.26.0
 psutil==7.2.2

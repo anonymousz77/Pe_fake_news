@@ -207,6 +207,7 @@ scripts/completion_report.py  assemble the completion report from stage reports
 scripts/bible.py           evidence-store build: fetch, date, quarantine, index, report
 scripts/retrieve.py        time-filtered retrieval; the date predicate lives in the SQL
 scripts/redtest.py         red-teams that predicate against the REAL index, then rolls back
+scripts/image_text.py      image-to-text: description, entities, OCR per distinct image; resumable
 tests/                     contract tests, offline
 data/sources.yaml          the register (tracked)
 data/placeholders.yaml     content hashes of evidence-free images (tracked, versioned)
@@ -223,6 +224,8 @@ data/processed/records/    the processed layer (ignored)
 data/processed/splits/     <name>_{train,val,test}.csv, record_id,split only
 data/reports/              generated tables and figures
 data/bible/                the evidence store (ignored)
+data/interim/image_text/<config_id>/<dataset>.jsonl  one row per distinct image (ignored)
+models/                    model weights, configs.paths.MODELS (ignored; refused by prepush_check)
 docs/                      hand-written prose (tracked)
 ```
 
@@ -351,6 +354,15 @@ python scripts/bible.py --report                          # data/reports/bible.j
 python scripts/retrieve.py --query "vaccine safety" --as-of 2020-01-01 -k 10
 python scripts/redtest.py                                 # time filter vs the real index
 python scripts/redtest.py --skip-corpus                   # same, without the slow probe
+
+python scripts/image_text.py fetch-models                 # once: pinned Qwen2.5-VL + EasyOCR weights (network)
+python scripts/image_text.py run --pilot 200              # measure (VERITE + Factify2 recognition probe), then stop
+python scripts/image_text.py run                          # VERITE: 607 distinct images, resumable
+python scripts/image_text.py run --through factify2       # + AVerImaTeC 1,345, Factify2 45,186
+python scripts/image_text.py run --through fakeddit --fakeddit-n N   # + nested stratified sample of 140,839
+python scripts/image_text.py recheck --n 3                # fresh process; finished rows must be byte-identical
+python scripts/image_text.py status                       # offline counts per ledger
+PE_FAKE_NEWS_GPU_TESTS=1 pytest -q tests/test_image_text.py   # the model-backed tests
 ```
 
 ### `--scan` before `--report`, on a small machine

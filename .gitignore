@@ -54,6 +54,12 @@ data/reports/*.jsonl
 data/bible/*
 !data/bible/.gitkeep
 
+# --- model weights ---
+# configs.paths.MODELS: the Hugging Face cache (Qwen2.5-VL, ~16.6 GB) and
+# EasyOCR's weights. Fetched by `scripts/image_text.py fetch-models`; never
+# committed (scripts/prepush_check.py refuses the prefix and the suffixes too).
+models/
+
 # --- os noise ---
 .DS_Store
 Thumbs.db

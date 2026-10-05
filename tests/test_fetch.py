@@ -1577,6 +1577,18 @@ def test_guard_refuses_an_image(tmp_path):
     assert any("data/media file" in r for r in found["docs/figure.png"])
 
 
+def test_guard_refuses_model_weights_wherever_they_sit(tmp_path):
+    """configs.paths.MODELS holds ~16.6 GB of Qwen shards and EasyOCR's .pth
+    files; neither the directory nor the suffixes may be published."""
+    from scripts import prepush_check as g
+
+    for name in ("models/hf/snapshots/x/model-00001-of-00005.safetensors",
+                 "models/easyocr/craft_mlt_25k.pth", "models/notes.txt",
+                 "elsewhere/model.safetensors", "elsewhere/english_g2.pth"):
+        _stage(tmp_path, name, "weights")
+        assert name in g.check(tmp_path, [name]), name
+
+
 def test_guard_refuses_anything_under_data_raw(tmp_path):
     from scripts import prepush_check as g
 
