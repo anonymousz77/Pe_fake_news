@@ -41,11 +41,31 @@ costs the others:
   OCR cannot find was not read. Nothing is dropped by a threshold; tag, OCR
   support and confidence stay visible for the consumer to judge.
 
+  The answer is held to its five lines while it is generated (``Skeleton``):
+  each line opens with its header, in order, and the answer may end only
+  after DATE's line. Where the model would break that form -- the first pilot
+  ended 63 of its 199 answers right after the PERSON line -- the skeleton puts
+  in the newline or the header, records the replacement, and marks every line
+  from there on ``forced``, on the category and on each of its items. A forced
+  line is weaker evidence than a free one: statistics are split by it, and
+  entities leave a row only through ``entities_of``, which makes the caller
+  say what to do with forced lines. Lines before the first replacement are
+  exactly what the model wrote unprompted. An answer that lost its lines
+  anyway stops the run instead of being written.
+
+  A VLM name is a candidate, never a verification. On the first pilot's
+  recognition probe most names produced from appearance alone were not the
+  figure the claim names, and confidence did not separate them; identity is
+  decided by an external gallery. The pilot report names both bars: the
+  precision a name needs to replace a gallery, and what it needs as a
+  candidate that a gallery then verifies.
+
 **Confidence** is the model's own and is not calibrated: the description's is
 the geometric-mean probability of its tokens, an entity's the minimum over the
 tokens of its name, OCR's EasyOCR's per region. Every emitted token is checked
-against the argmax of its step's scores, so "greedy" is verified, not assumed
-from a config.
+against the argmax of its step's scores -- except where the entity skeleton
+replaced it, and those steps are recorded and left out of every confidence --
+so "greedy" is verified, not assumed from a config.
 
 **Determinism.** NF4 via bitsandbytes, bf16 compute, greedy decoding, batch
 size 1, fixed seed, deterministic cuDNN/cuBLAS, and a resolution cap that is a
@@ -77,6 +97,7 @@ throughput, peak VRAM and projected wall-clock, and stops.
 from __future__ import annotations
 
 import argparse
+import copy
 import gc
 import hashlib
 import io
@@ -96,7 +117,7 @@ import zipfile
 from collections import Counter, defaultdict
 from dataclasses import asdict, dataclass, field, replace
 from pathlib import Path
-from typing import Any, Callable, Iterable, Sequence
+from typing import Any, Callable, Iterable, Iterator, Sequence
 
 # cuBLAS reads this when its first handle is created; without it some GEMM
 # reductions may change between runs. It must be set before torch touches CUDA.
@@ -113,12 +134,18 @@ from scripts import images  # noqa: E402
 from scripts.fetchlib import utcnow  # noqa: E402
 from scripts.placeholders import MISSING_STATUSES  # noqa: E402
 
-SCHEMA = "image_text/1"
-SCHEMA_VERSION = 1
+#: 2: every entity category, and every item in it, carries ``forced``. Rows of
+#: an earlier version stay readable under their own schema (ROW_SCHEMAS); only
+#: the current one is written.
+SCHEMA_VERSION = 2
+SCHEMA = f"image_text/{SCHEMA_VERSION}"
 #: Bump when parse_entities() or the content gates change: rows record it, and
 #: it is part of the config, so a new parser never writes into an old ledger.
 #: 2: a whole answer of "NONE" means none in every category (was: unparseable).
-PARSER_VERSION = 2
+#: 3: lines are split on "\n" only, the line the skeleton holds; skeleton
+#:    replacements are flags, forced lines are marked, and replaced tokens are
+#:    left out of every confidence.
+PARSER_VERSION = 3
 SEED = 20260901
 
 #: The order datasets are processed in. ``--through X`` runs ORDER up to X.
@@ -224,6 +251,10 @@ ENTITIES_PROMPT = (
 PROMPTS = {"description": DESCRIBE_PROMPT, "entities": ENTITIES_PROMPT}
 MAX_NEW_TOKENS = {"description": 256, "entities": 192}
 CATEGORIES = ("PERSON", "ORG", "GPE", "EVENT", "DATE")
+#: The entity answer's form: each line opens with its header, in this order.
+HEADERS = tuple(f"{c}:" for c in CATEGORIES)
+#: What a skeleton replacement did, as the prefix of its flag ("continued_after:PERSON").
+SKELETON_EVENTS = ("continued_after", "header_forced", "ended_after")
 
 # --------------------------------------------------------------------------
 # statuses and reason codes
@@ -281,6 +312,16 @@ PICTURED = re.compile(r"\b(photos?|photographs?|images?|pictures?|pics?|videos?|
 PROBE_N = 60
 #: Below this, PERSON-from-[seen] counts as near zero.
 NEAR_ZERO = 0.05
+#: Precision a name source needs to REPLACE a gallery: a name taken as the
+#: identity with nothing behind it. A candidate that a gallery then verifies
+#: needs far less (candidate_precision_needed); what must reach this bar there
+#: is the precision of the names the gallery accepts.
+VERIFIER_PRECISION = 0.90
+#: Confidence floors at which the probe's precision is reported: fixed, not tuned.
+CONFIDENCE_GRID = (0.5, 0.7, 0.9, 0.95, 0.99)
+#: Gallery operating points -- false-accept over true-accept rate -- at which the
+#: candidate bar is reported. Hypothetical: the gallery is not built yet.
+GALLERY_RATIOS = (0.1, 0.05, 0.01, 0.001)
 
 #: Image counts quoted in the brief for this block, reported beside the measured
 #: ones so the wrong set gets corrected rather than carried.
@@ -641,12 +682,18 @@ class Generation:
     ends: list[int]         # character offset in ``text`` where each token ends
     finish: str             # "eos" | "length"
     n_tokens: int
+    replaced: tuple[int, ...] = ()      # steps whose token the skeleton put in place of the model's
+    events: tuple[str, ...] = ()        # what those replacements did (Skeleton.events)
+    forced_lines: tuple[str, ...] = ()  # categories written from the first replacement on
 
 
 def _spans(gen: Generation) -> Iterable[tuple[float, int, int]]:
-    prev = 0
-    for lp, end in zip(gen.logprobs, gen.ends):
-        yield lp, prev, end
+    """(log-probability, start, end) of every token the model chose -- never of
+    one the skeleton put in its place."""
+    prev, replaced = 0, set(gen.replaced)
+    for i, (lp, end) in enumerate(zip(gen.logprobs, gen.ends)):
+        if i not in replaced:
+            yield lp, prev, end
         prev = end
 
 
@@ -662,12 +709,18 @@ def span_confidence(gen: Generation, start: int, end: int) -> float | None:
     return _r(math.exp(min(lps))) if lps else None
 
 
-def check_greedy(emitted: Sequence[int], argmax: Sequence[int]) -> None:
-    """Raise unless every emitted token is its step's argmax: greedy, verified."""
-    if list(emitted) != list(argmax):
+def check_greedy(emitted: Sequence[int], argmax: Sequence[int],
+                 chosen: Sequence[int] | None = None) -> list[int]:
+    """Raise unless every emitted token is the one chosen at its step -- by
+    default the step's argmax: greedy, verified. With ``chosen`` (the entity
+    skeleton's picks), return the steps whose choice was not the argmax: the
+    replacements, which the caller holds against the skeleton's own record."""
+    chosen = argmax if chosen is None else chosen
+    if list(emitted) != list(chosen) or len(chosen) != len(argmax):
         raise FatalError(
-            f"decoding was not greedy: {len(emitted)} tokens emitted, {len(argmax)} steps "
-            f"recorded, first difference at {next((i for i, (a, b) in enumerate(zip(emitted, argmax)) if a != b), min(len(emitted), len(argmax)))}")
+            f"decoding was not greedy: {len(emitted)} tokens emitted, {len(chosen)} steps "
+            f"recorded, first difference at {next((i for i, (a, b) in enumerate(zip(emitted, chosen)) if a != b), min(len(emitted), len(chosen)))}")
+    return [i for i, (a, c) in enumerate(zip(argmax, chosen)) if a != c]
 
 
 REFUSAL = re.compile(r"^\W*(i'?m sorry|i am sorry|sorry,|i cannot|i can'?t|i can not|"
@@ -692,6 +745,116 @@ def description_block(gen: Generation) -> dict[str, Any]:
         ["repetition"] if text and repetitive(text) else [])
     return {"text": text, "error": error, "flags": flags, "finish": gen.finish,
             "n_tokens": gen.n_tokens, "confidence": text_confidence(gen)}
+
+
+# --------------------------------------------------------------------------
+# the entity skeleton: the five lines, held while they are generated
+# --------------------------------------------------------------------------
+
+
+class Skeleton:
+    """Holds an entity answer to its five lines; the model writes every value.
+
+    ``choose`` is given each step's greedy token and returns the token to emit:
+    the model's own wherever the answer keeps its form, otherwise the next
+    piece of the form --
+
+    - a newline where the model would end before DATE's line
+      (``continued_after:<CAT>``; on the first pilot it ended 63 of 199
+      answers after PERSON, closing "[seen]" with "]" instead of "]\\n");
+    - the line's header where it wrote something else (``header_forced:<CAT>``);
+    - the end where it would go on after DATE's line (``ended_after:DATE``).
+
+    Values are never touched. Every replacement is recorded, and every line
+    from the first one that put something in is forced: the model would not
+    have written it unprompted. Lines before that are the unconstrained greedy
+    answer, token for token (every token there is its step's argmax, and
+    check_greedy verifies it). Pure Python, so it is tested without a model;
+    ``decode`` and ``encode`` are the tokenizer's.
+    """
+
+    def __init__(self, decode: Callable[[int], str], encode: Callable[[str], list[int]],
+                 newline: int, end: int, eos: Iterable[int]):
+        self.decode, self.encode = decode, encode
+        self.newline, self.end, self.eos = newline, end, frozenset(eos)
+        if end not in self.eos:
+            raise FatalError(f"the skeleton's end token {end} does not end generation")
+        self.line = 0        # index into HEADERS
+        self.pos = 0         # characters of the line's header written so far
+        self.value = False   # the header is written: the model is writing the value
+        self.done = False    # DATE's line has ended with a newline: only the end may follow
+        self.steps = 0
+        self.replaced: list[int] = []
+        self.events: list[str] = []
+        self._first_forced: int | None = None
+
+    @property
+    def complete(self) -> bool:
+        """Every header is written and DATE's line is begun."""
+        return self.done or (self.value and self.line == len(HEADERS) - 1)
+
+    @property
+    def forced_lines(self) -> tuple[str, ...]:
+        return () if self._first_forced is None else CATEGORIES[self._first_forced:]
+
+    def _after(self, text: str) -> tuple[int, int, bool, bool] | None:
+        """The state once ``text`` is written, or None if it breaks the form.
+        Whitespace may come before a header; in a value, only "\\n" matters."""
+        line, pos, value, done = self.line, self.pos, self.value, self.done
+        for ch in text:
+            if done:
+                return None
+            if value:
+                if ch == "\n":
+                    if line == len(HEADERS) - 1:
+                        done = True
+                    else:
+                        line, pos, value = line + 1, 0, False
+            elif pos == 0 and ch.isspace():
+                continue
+            elif ch == HEADERS[line][pos]:
+                pos += 1
+                value = pos == len(HEADERS[line])
+            else:
+                return None
+        return line, pos, value, done
+
+    def choose(self, want: int) -> int:
+        step = self.steps
+        self.steps += 1
+        if want in self.eos:
+            if self.complete:
+                return want
+            if self.value:  # the model would end before DATE's line
+                pick, kind, line = self.newline, "continued_after", self.line
+                first: int | None = self.line + 1
+            else:
+                pick, kind, line = self.encode(HEADERS[self.line][self.pos:])[0], "header_forced", self.line
+                first = self.line
+        else:
+            state = self._after(self.decode(want))
+            if state is not None:
+                self.line, self.pos, self.value, self.done = state
+                return want
+            if self.complete:
+                pick, kind, line, first = self.end, "ended_after", len(HEADERS) - 1, None
+            elif self.value:  # a newline, then something other than the next header
+                pick, kind, line, first = self.newline, "header_forced", self.line + 1, self.line + 1
+            else:
+                pick, kind, line = self.encode(HEADERS[self.line][self.pos:])[0], "header_forced", self.line
+                first = self.line
+        if pick not in self.eos:
+            state = self._after(self.decode(pick))
+            if state is None:
+                raise FatalError(f"the skeleton's own token {pick} breaks the form it holds")
+            self.line, self.pos, self.value, self.done = state
+        self.replaced.append(step)
+        event = f"{kind}:{CATEGORIES[line]}"
+        if event not in self.events:
+            self.events.append(event)
+        if first is not None and (self._first_forced is None or first < self._first_forced):
+            self._first_forced = first
+        return pick
 
 
 # --------------------------------------------------------------------------
@@ -763,16 +926,17 @@ def parse_entities(raw: str) -> dict[str, Any]:
     status: ``named`` (at least one name), ``unidentified`` (UNIDENTIFIED and no
     name), ``none``, or ``missing`` (no such line: the model broke the format
     for that category only). Items keep ``span`` -- offsets into ``raw`` -- for
-    the confidence of their tokens.
+    the confidence of their tokens. Lines are split on "\\n" only: the line the
+    skeleton holds.
     """
     cats: dict[str, dict[str, Any]] = {c: {"status": "missing", "unidentified": False, "items": []}
                                        for c in CATEGORIES}
     flags: list[str] = []
     seen_lines: set[str] = set()
     offset = 0
-    for line in raw.splitlines(keepends=True):
-        start, offset = offset, offset + len(line)
-        m = _LINE.match(line.rstrip("\r\n"))
+    for line in raw.split("\n"):
+        start, offset = offset, offset + len(line) + 1
+        m = _LINE.match(line.rstrip("\r"))
         if not m:
             continue
         cat = m.group(1).upper()
@@ -814,35 +978,113 @@ def parse_entities(raw: str) -> dict[str, Any]:
     return {"categories": cats, "flags": flags, "error": None if parsed else "unparseable"}
 
 
+#: A category header anywhere in a line: two on one line is a collapsed answer.
+_HEADER_IN_LINE = re.compile(r"\b(?:PERSON|ORG|GPE|EVENT|DATE)\b\s*\**\s*[:：]", re.I)
+#: Forms an entity row may be written with. Anything else means the skeleton
+#: did not hold, and the run stops (process).
+ENTITY_FORMS_WRITTEN = ("complete", "truncated", "failed")
+
+
+def entity_format(block: dict[str, Any] | None) -> str:
+    """How an entity answer kept, or lost, its five lines.
+
+    ``complete``; ``truncated`` (max_new_tokens cut it); ``stopped_after:<CAT>``
+    (it ended after CAT's line: stopping early); ``collapsed`` (several headers
+    on one line), ``lines_missing``, ``none_for_all`` or ``unparseable``
+    (another format); ``failed`` (no answer: the call itself errored).
+    """
+    if block is None or block.get("raw") is None:
+        return "failed"
+    if "answered_none_for_all" in block["flags"]:
+        return "none_for_all"
+    present = [c for c in CATEGORIES if block[c]["status"] != "missing"]
+    if len(present) == len(CATEGORIES):
+        return "complete"
+    if block["finish"] == "length":
+        return "truncated"
+    if any(len(_HEADER_IN_LINE.findall(line)) > 1 for line in block["raw"].split("\n")):
+        return "collapsed"
+    if not present:
+        return "unparseable"
+    if present == list(CATEGORIES[:len(present)]):
+        return f"stopped_after:{present[-1]}"
+    return "lines_missing"
+
+
 def _normalise(text: str) -> str:
     return re.sub(r"[^0-9a-z]+", " ", unicodedata.normalize("NFKC", text).casefold()).strip()
+
+
+def _ocr_words(name: str, ocr_text: str) -> tuple[int, int]:
+    """(words of ``name`` found in the OCR text, words of two characters or
+    more) -- found as a word, or for longer words inside a run OCR glued together."""
+    words = [w for w in _normalise(name).split() if len(w) >= 2]
+    hay = f" {_normalise(ocr_text)} "
+    glued = hay.replace(" ", "")
+    return sum(1 for w in words if f" {w} " in hay or (len(w) >= 4 and w in glued)), len(words)
 
 
 def name_in_ocr(name: str, ocr_text: str) -> bool:
     """Every word of ``name`` (two characters or more) is in the OCR text --
     as a word, or for longer words inside a run OCR glued together."""
-    words = [w for w in _normalise(name).split() if len(w) >= 2]
-    if not words:
-        return False
-    hay = f" {_normalise(ocr_text)} "
-    glued = hay.replace(" ", "")
-    return all(f" {w} " in hay or (len(w) >= 4 and w in glued) for w in words)
+    found, total = _ocr_words(name, ocr_text)
+    return total > 0 and found == total
 
 
 def entities_block(gen: Generation, ocr_text: str | None) -> dict[str, Any]:
+    """The parsed answer. A line the skeleton forced is marked ``forced`` on the
+    category and on every item in it, so the mark travels with the entity."""
     parsed = parse_entities(gen.text)
+    forced = set(gen.forced_lines)
     out: dict[str, Any] = {"raw": gen.text}
     for cat in CATEGORIES:
-        c = parsed["categories"][cat]
-        out[cat] = {"status": c["status"], "unidentified": c["unidentified"], "items": [
+        c, line_forced = parsed["categories"][cat], cat in forced
+        out[cat] = {"status": c["status"], "unidentified": c["unidentified"], "forced": line_forced,
+                    "items": [
             {"name": it["name"], "basis": it["basis"],
              "confidence": span_confidence(gen, *it["span"]),
-             "in_ocr": None if ocr_text is None else name_in_ocr(it["name"], ocr_text)}
+             "in_ocr": None if ocr_text is None else name_in_ocr(it["name"], ocr_text),
+             "forced": line_forced}
             for it in c["items"]]}
     out.update(error=parsed["error"],
-               flags=parsed["flags"] + (["truncated"] if gen.finish == "length" else []),
+               flags=parsed["flags"] + list(gen.events)
+               + (["truncated"] if gen.finish == "length" else []),
                finish=gen.finish, n_tokens=gen.n_tokens, confidence=text_confidence(gen))
     return out
+
+
+#: What a caller of entities_of must choose for entities on forced lines.
+FORCED_CHOICES = ("exclude", "mark")
+
+
+def entities_of(row: dict[str, Any], *, forced: str) -> Iterator[dict[str, Any]]:
+    """The named entities of one row: the only sanctioned way to read them out.
+
+    A line the skeleton forced is weaker evidence than one the model wrote
+    unprompted, so the caller must say what to do with it -- there is no
+    default. ``forced="exclude"`` drops every entity on a forced line;
+    ``forced="mark"`` keeps them. Either way each entity carries ``forced``, so
+    the distinction survives the trip into a training set. A row whose lines
+    are not marked (written under image_text/1) cannot tell the two apart and
+    is refused. Splits and evaluation-only corpora (VERITE, AVerImaTeC) are the
+    training loader's to enforce, as for every other supervision
+    (processed_loader).
+    """
+    from scripts.processed_loader import SupervisionError
+
+    if forced not in FORCED_CHOICES:
+        raise ValueError(f"forced must be one of {FORCED_CHOICES}, not {forced!r}")
+    entities = row.get("entities")
+    if row.get("status") not in ("ok", "partial") or not entities or entities.get("error"):
+        return iter(())
+    if any("forced" not in entities[c] for c in CATEGORIES):
+        raise SupervisionError(
+            f"{row['dataset']}/{row['sha256'][:12]}: its entity lines are not marked forced or "
+            "free (written under image_text/1), so a forced line cannot be told from a free one")
+    return ({"dataset": row["dataset"], "sha256": row["sha256"],
+             "record_ids": list(row["record_ids"]), "category": cat, **item}
+            for cat in CATEGORIES if not (forced == "exclude" and entities[cat]["forced"])
+            for item in entities[cat]["items"])
 
 
 def ocr_block(regions: list[dict[str, Any]], size: tuple[int, int]) -> dict[str, Any]:
@@ -862,7 +1104,7 @@ def _failed_component(name: str, error: str) -> dict[str, Any]:
                 "confidence": None}
     block: dict[str, Any] = {"raw": None}
     for cat in CATEGORIES:
-        block[cat] = {"status": "missing", "unidentified": False, "items": []}
+        block[cat] = {"status": "missing", "unidentified": False, "forced": False, "items": []}
     block.update(error=error, flags=[], finish=None, n_tokens=0, confidence=None)
     return block
 
@@ -888,7 +1130,11 @@ def prompt_config(rendered: dict[str, str]) -> dict[str, Any]:
 def decoding_config(eos: list[int]) -> dict[str, Any]:
     return {"strategy": "greedy", "do_sample": False, "num_beams": 1, "temperature": 0.0,
             "repetition_penalty": 1.0, "max_new_tokens": dict(MAX_NEW_TOKENS),
-            "batch_size": 1, "eos_token_id": list(eos), "argmax_verified": True}
+            "batch_size": 1, "eos_token_id": list(eos), "argmax_verified": True,
+            "entities_skeleton": {
+                "headers": list(HEADERS), "order": "fixed", "end": "only after the last line",
+                "replaced_tokens": "recorded in the entity flags; left out of every confidence",
+                "forced_lines": "every line from the first replacement that puts something in"}}
 
 
 def deterministic_torch(torch) -> None:
@@ -929,6 +1175,8 @@ class QwenVLM:
         self.rendered: dict[str, str] = {}
         self.eos: list[int] = []
         self.pad: int | None = None
+        self.newline: int | None = None
+        self.end: int | None = None
 
     def snapshot(self) -> Path:
         snap = (self.cache_dir / ("models--" + MODEL_ID.replace("/", "--")) / "snapshots"
@@ -952,6 +1200,14 @@ class QwenVLM:
         eos = hub.get("eos_token_id")
         self.eos = sorted(eos if isinstance(eos, list) else [eos])
         self.pad = hub.get("pad_token_id")
+        # What the skeleton puts in, verified on this tokenizer, not assumed.
+        tok = self.processor.tokenizer
+        newline = tok.encode("\n", add_special_tokens=False)
+        end = tok.convert_tokens_to_ids("<|im_end|>")
+        if len(newline) != 1 or tok.decode(newline) != "\n" or end not in self.eos:
+            raise FatalError("the tokenizer gives the entity skeleton no single newline token, "
+                             "or its end-of-turn token does not end generation")
+        self.newline, self.end = newline[0], end
 
     def config(self) -> dict[str, Any]:
         return {"id": MODEL_ID, "revision": self.revision, "licence": MODEL_LICENCE,
@@ -984,16 +1240,32 @@ class QwenVLM:
                     for which in PROMPTS}
 
         class Recorder(LogitsProcessor):
-            """Records each step's argmax and its log-probability; changes nothing."""
+            """Records each step's argmax and its log-probability, changing
+            nothing -- unless it holds a skeleton (the entity call). Then the
+            skeleton may replace the step's token: every other token is pushed
+            to -inf, so generate's own argmax emits the replacement, and the
+            argmax, the pick and the pick's log-probability are all recorded."""
 
-            def __init__(self):
-                self.ids, self.lps = [], []
+            def __init__(self, skeleton: Skeleton | None = None):
+                self.skeleton = skeleton
+                self.ids, self.lps, self.chosen = [], [], []
 
             def __call__(self, input_ids, scores):
-                top = torch.log_softmax(scores.float(), dim=-1).max(dim=-1)
-                self.lps.append(top.values)
-                self.ids.append(top.indices)
-                return scores
+                if self.skeleton is None:
+                    top = torch.log_softmax(scores.float(), dim=-1).max(dim=-1)
+                    self.lps.append(top.values)
+                    self.ids.append(top.indices)
+                    return scores
+                want = int(scores[0].argmax())  # what generate would emit
+                pick = self.skeleton.choose(want)
+                self.ids.append(want)
+                self.chosen.append(pick)
+                self.lps.append(float(torch.log_softmax(scores[0].float(), dim=-1)[pick]))
+                if pick == want:
+                    return scores
+                steered = torch.full_like(scores, float("-inf"))
+                steered[0, pick] = 0.0
+                return steered
 
         self._recorder = Recorder
         torch.cuda.reset_peak_memory_stats()
@@ -1043,23 +1315,40 @@ class QwenVLM:
             raise FatalError(f"the processor fed grid {grid}, not {want}: the recorded "
                              "resolution would be false")
         inputs = inputs.to(self.model.device)
-        recorder = self._recorder()
+        tok = self.processor.tokenizer
+        skeleton = (Skeleton(lambda i: tok.decode([i]),
+                             lambda s: tok.encode(s, add_special_tokens=False),
+                             self.newline, self.end, self.eos)
+                    if which == "entities" else None)
+        recorder = self._recorder(skeleton)
         torch.manual_seed(SEED)
         with torch.inference_mode():
             out = self.model.generate(**inputs, generation_config=self.gen[which],
                                       logits_processor=LogitsProcessorList([recorder]))
         new = out[0, inputs["input_ids"].shape[1]:].tolist()
-        chosen = torch.stack(recorder.ids).view(-1).tolist() if recorder.ids else []
-        lps = torch.stack(recorder.lps).view(-1).tolist() if recorder.lps else []
-        check_greedy(new, chosen)
-        tok = self.processor.tokenizer
+        if skeleton is None:
+            chosen = torch.stack(recorder.ids).view(-1).tolist() if recorder.ids else []
+            lps = torch.stack(recorder.lps).view(-1).tolist() if recorder.lps else []
+            check_greedy(new, chosen)
+            replaced: list[int] = []
+        else:
+            lps = list(recorder.lps)
+            replaced = check_greedy(new, recorder.ids, recorder.chosen)
+            if replaced != skeleton.replaced:
+                raise FatalError(f"generate emitted replacements at {replaced}, the skeleton made "
+                                 f"them at {skeleton.replaced}")
         text = tok.decode(new, skip_special_tokens=True)
         ends, last = [], 0
         for i in range(1, len(new) + 1):
             last = max(last, len(tok.decode(new[:i], skip_special_tokens=True)))
             ends.append(min(last, len(text)))
         finish = "eos" if new and new[-1] in self.eos else "length"
-        return Generation(text, lps, ends, finish, len(new))
+        if skeleton is None:
+            return Generation(text, lps, ends, finish, len(new))
+        if finish == "eos" and not skeleton.complete:
+            raise FatalError("the entity answer ended before its five lines: the skeleton did not hold")
+        return Generation(text, lps, ends, finish, len(new), tuple(replaced),
+                          tuple(skeleton.events), skeleton.forced_lines)
 
     def recover_oom(self) -> None:
         import torch
@@ -1318,17 +1607,27 @@ _ERROR = {"anyOf": [{"type": "null"}, {"type": "string",
                                        "pattern": r"^(empty|refusal|unparseable|cuda_oom|"
                                                   r"exception:[A-Za-z_][A-Za-z0-9_.]*)$"}]}
 _FINISH = {"enum": ["eos", "length", None]}
-_CATEGORY = {
-    "type": "object", "additionalProperties": False, "required": ["status", "unidentified", "items"],
-    "properties": {
-        "status": {"enum": ["named", "unidentified", "none", "missing"]},
-        "unidentified": {"type": "boolean"},
-        "items": {"type": "array", "items": {
-            "type": "object", "additionalProperties": False,
-            "required": ["name", "basis", "confidence", "in_ocr"],
-            "properties": {"name": {"type": "string", "minLength": 1},
-                           "basis": {"enum": ["text", "seen", "unstated"]},
-                           "confidence": _P01, "in_ocr": {"type": ["boolean", "null"]}}}}}}
+
+
+def _category(forced: bool) -> dict[str, Any]:
+    """One entity category. From image_text/2 the category and each of its
+    items carry ``forced``: the line was written after a skeleton replacement."""
+    mark = {"forced": {"type": "boolean"}} if forced else {}
+    return {
+        "type": "object", "additionalProperties": False,
+        "required": ["status", "unidentified", *mark, "items"],
+        "properties": {
+            "status": {"enum": ["named", "unidentified", "none", "missing"]},
+            "unidentified": {"type": "boolean"}, **mark,
+            "items": {"type": "array", "items": {
+                "type": "object", "additionalProperties": False,
+                "required": ["name", "basis", "confidence", "in_ocr", *mark],
+                "properties": {"name": {"type": "string", "minLength": 1},
+                               "basis": {"enum": ["text", "seen", "unstated"]},
+                               "confidence": _P01, "in_ocr": {"type": ["boolean", "null"]},
+                               **mark}}}}}
+
+
 _NULLABLE_STR = {"type": ["string", "null"]}
 
 ROW_SCHEMA: dict[str, Any] = {
@@ -1386,7 +1685,7 @@ ROW_SCHEMA: dict[str, Any] = {
         "entities": {"anyOf": [{"type": "null"}, {
             "type": "object", "additionalProperties": False,
             "required": ["raw", *CATEGORIES, "error", "flags", "finish", "n_tokens", "confidence"],
-            "properties": {"raw": _NULLABLE_STR, **{c: _CATEGORY for c in CATEGORIES},
+            "properties": {"raw": _NULLABLE_STR, **{c: _category(forced=True) for c in CATEGORIES},
                            "error": _ERROR, "flags": _FLAGS, "finish": _FINISH,
                            "n_tokens": {"type": "integer", "minimum": 0}, "confidence": _P01}}]},
         "confidence": {"anyOf": [{"type": "null"}, {
@@ -1439,17 +1738,32 @@ ROW_SCHEMA: dict[str, Any] = {
     },
 }
 
-_VALIDATOR = None
+
+def _first_schema() -> dict[str, Any]:
+    """image_text/1: the current schema without the forced marks."""
+    old = copy.deepcopy(ROW_SCHEMA)
+    old["properties"]["schema"] = {"const": "image_text/1"}
+    old["properties"]["provenance"]["properties"]["schema_version"] = {"const": 1}
+    entities = old["properties"]["entities"]["anyOf"][1]["properties"]
+    for cat in CATEGORIES:
+        entities[cat] = _category(forced=False)
+    return old
 
 
-def _validator():
-    global _VALIDATOR
-    if _VALIDATOR is None:
+#: Every row is validated against the schema it declares, so a ledger written
+#: before a schema change stays readable; only SCHEMA is ever written.
+ROW_SCHEMAS: dict[str, dict[str, Any]] = {"image_text/1": _first_schema(), SCHEMA: ROW_SCHEMA}
+
+_VALIDATORS: dict[str, Any] = {}
+
+
+def _validator(schema: str = SCHEMA):
+    if schema not in _VALIDATORS:
         from jsonschema import Draft202012Validator
 
-        Draft202012Validator.check_schema(ROW_SCHEMA)
-        _VALIDATOR = Draft202012Validator(ROW_SCHEMA)
-    return _VALIDATOR
+        Draft202012Validator.check_schema(ROW_SCHEMAS[schema])
+        _VALIDATORS[schema] = Draft202012Validator(ROW_SCHEMAS[schema])
+    return _VALIDATORS[schema]
 
 
 def _keys(obj: Any) -> Iterable[str]:
@@ -1473,13 +1787,22 @@ def row_problems(row: Any, *, schema: bool = True) -> list[str]:
         return ["not an object"]
     problems = []
     if schema:
+        declared = row.get("schema")
+        if declared not in ROW_SCHEMAS:
+            return [f"schema: {declared!r} is not one of {sorted(ROW_SCHEMAS)}"]
         problems += [f"{'/'.join(map(str, e.path)) or '<row>'}: {e.message}"
-                     for e in sorted(_validator().iter_errors(row), key=lambda e: list(e.path))]
+                     for e in sorted(_validator(declared).iter_errors(row),
+                                     key=lambda e: list(e.path))]
         if problems:
             return problems
     bad = sorted(set(_keys(row)) & FORBIDDEN_KEYS)
     if bad:
         problems.append(f"carries forbidden key(s) {bad}: rows name no file, label or host")
+    for cat in CATEGORIES:  # the mark travels with the entity, and says what its line says
+        block = (row.get("entities") or {}).get(cat)
+        if isinstance(block, dict) and "forced" in block and any(
+                item.get("forced") != block["forced"] for item in block.get("items") or []):
+            problems.append(f"entities/{cat}: an item's forced mark is not its line's")
     status, reason = row.get("status"), row.get("reason")
     present = [c for c in COMPONENTS if row.get(c) is not None]
     if status == "skipped" and reason not in SKIP_REASONS:
@@ -1540,7 +1863,11 @@ def seal(row: dict[str, Any], ctx: Context, seconds: dict[str, float], attempt: 
 
 
 def process(item: WorkItem, vlm, ocr, ctx: Context, *, attempt: int = 1) -> dict[str, Any]:
-    """One image -> one row. Never raises for a bad image: a bad image is a row."""
+    """One image -> one row. Never raises for a bad image: a bad image is a row.
+
+    It raises FatalError only when the run's own guarantees break -- among them
+    an entity answer that lost its lines, which means the skeleton did not hold:
+    such a row is never written, as ``ok`` or otherwise."""
     from PIL import Image
 
     t0 = time.perf_counter()
@@ -1599,6 +1926,10 @@ def process(item: WorkItem, vlm, ocr, ctx: Context, *, attempt: int = 1) -> dict
     row["entities"] = (entities_block(gen, row["ocr"]["text"]) if gen is not None
                        else _failed_component("entities", error))
     seconds["entities"] = time.perf_counter() - t
+    form = entity_format(row["entities"])
+    if form not in ENTITY_FORMS_WRITTEN:
+        raise FatalError(f"an entity answer lost its five lines ({form}): "
+                         f"{(row['entities']['raw'] or '')[:200]!r}; the skeleton did not hold")
 
     row["confidence"] = {"description": row["description"]["confidence"],
                          "entities": row["entities"]["confidence"],
@@ -1779,6 +2110,8 @@ class Ledger:
 
     def append(self, row: dict[str, Any]) -> None:
         problems = row_problems(row)
+        if row.get("schema") != SCHEMA:
+            problems.append(f"schema {row.get('schema')!r}: only {SCHEMA} is written")
         if problems:
             raise FatalError(f"refusing to write an invalid row: {problems[:3]}")
         self._fh.write(canonical(row) + b"\n")
@@ -1933,9 +2266,58 @@ def per_class(rows: Iterable[dict[str, Any]], labels: dict[str, str]) -> dict[st
     return {k: dict(sorted(v.items())) for k, v in sorted(out.items())}
 
 
-def _evidence(item: dict[str, Any]) -> str:
-    """Whether the independent OCR found the name: the evidence for reading vs recognising."""
-    return {True: "written", False: "not_written"}.get(item["in_ocr"], "no_ocr")
+def _evidence(item: dict[str, Any], ocr_text: str | None) -> str:
+    """Whether the independent OCR found the name: the evidence for reading vs
+    recognising. ``partly_written``: some of its words are in the image
+    ("Narendra Modi" where it reads "MODI"), so it may have been read;
+    ``not_written``: none are, so it was produced from appearance alone."""
+    if item["in_ocr"] is None:
+        return "no_ocr"
+    if item["in_ocr"]:
+        return "written"
+    return "partly_written" if _ocr_words(item["name"], ocr_text or "")[0] else "not_written"
+
+
+#: The evidence a name can have, in the order reports list it.
+EVIDENCE = ("written", "partly_written", "not_written")
+
+
+def entity_stats(seen: Sequence[dict[str, Any]], forced: bool) -> dict[str, Any]:
+    """Entity statistics over the lines that were -- or were not -- forced.
+
+    A forced line is weaker evidence than a free one, so the two are never
+    pooled: every figure here is over one kind of line only."""
+    lines: Counter = Counter()
+    status: dict[str, Counter] = defaultdict(Counter)
+    names: list[tuple[dict[str, Any], str]] = []
+    people: list[tuple[dict[str, Any], str]] = []
+    naming_unwritten = 0
+    for r in seen:
+        ocr = r["ocr"]["text"]
+        for cat in CATEGORIES:
+            block = r["entities"][cat]
+            if block["forced"] != forced:
+                continue
+            lines[cat] += 1
+            status[cat][block["status"]] += 1
+            found = [(i, _evidence(i, ocr)) for i in block["items"]]
+            names += found
+            if cat == "PERSON":
+                people += found
+                naming_unwritten += any(ev == "not_written" for _i, ev in found)
+    return {"lines": {c: lines[c] for c in CATEGORIES if lines[c]},
+            "status": {c: dict(sorted(status[c].items())) for c in CATEGORIES if status[c]},
+            # the model's own tag, against the OCR's evidence: [seen] on a
+            # written name means the tag cannot be trusted on its own
+            "names_tag_vs_ocr": dict(sorted(Counter(f"{i['basis']}:{ev}" for i, ev in names).items())),
+            "person_names_tag_vs_ocr": dict(sorted(Counter(f"{i['basis']}:{ev}"
+                                                           for i, ev in people).items())),
+            "images_naming_a_person_not_written": naming_unwritten,
+            "person_name_confidence": {ev: _stats([i["confidence"] for i, e in people
+                                                   if e == ev and i["confidence"] is not None])
+                                       for ev in EVIDENCE},
+            "person_names_below_0_5": sum(1 for i, _ev in people
+                                          if i["confidence"] is not None and i["confidence"] < 0.5)}
 
 
 def quality(rows: Sequence[dict[str, Any]]) -> dict[str, Any]:
@@ -1944,87 +2326,158 @@ def quality(rows: Sequence[dict[str, Any]]) -> dict[str, Any]:
     ent_flags = Counter(f.split(":")[0] for r in seen for f in r["entities"]["flags"])
     missing = Counter(f.split(":")[1] for r in seen for f in r["entities"]["flags"]
                       if f.startswith("category_missing:"))
-    person = Counter(r["entities"]["PERSON"]["status"] for r in seen)
-    names = [i for r in seen for c in CATEGORIES for i in r["entities"][c]["items"]]
-    people = [i for r in seen for i in r["entities"]["PERSON"]["items"]]
+    events = Counter(f for r in seen for f in r["entities"]["flags"]
+                     if f.split(":")[0] in SKELETON_EVENTS)
     errors = Counter(f"{c}:{r[c]['error']}" for r in seen for c in COMPONENTS if r[c]["error"])
-    conf = {ev: _stats([i["confidence"] for i in people
-                        if _evidence(i) == ev and i["confidence"] is not None])
-            for ev in ("written", "not_written")}
     return {"images_seen_by_model": len(seen),
             "component_errors": dict(sorted(errors.items())),
             "description_flags": dict(sorted(desc_flags.items())),
+            "entity_format": dict(sorted(Counter(entity_format(r["entities"]) for r in seen).items())),
+            "entity_skeleton_events": dict(sorted(events.items())),
             "entity_flags": dict(sorted(ent_flags.items())),
             "entity_lines_missing": dict(sorted(missing.items())),
             "entities_fully_parsed": sum(1 for r in seen if not any(
                 f.startswith("category_missing:") for f in r["entities"]["flags"])),
-            "person_status": dict(sorted(person.items())),
-            # the model's own tag, against the OCR's evidence: [seen] on a
-            # written name means the tag cannot be trusted on its own
-            "names_tag_vs_ocr": dict(sorted(Counter(f"{i['basis']}:{_evidence(i)}"
-                                                    for i in names).items())),
-            "person_names_tag_vs_ocr": dict(sorted(Counter(f"{i['basis']}:{_evidence(i)}"
-                                                           for i in people).items())),
-            "images_naming_a_person_not_written": sum(
-                1 for r in seen if any(i["in_ocr"] is False for i in r["entities"]["PERSON"]["items"])),
-            "person_name_confidence": conf,
-            "person_names_below_0_5": sum(1 for i in people
-                                          if i["confidence"] is not None and i["confidence"] < 0.5),
+            # what the model finished unprompted: all five lines, none forced
+            "entities_complete_free": sum(
+                1 for r in seen if entity_format(r["entities"]) == "complete"
+                and not any(r["entities"][c]["forced"] for c in CATEGORIES)),
+            "entities": {"free": entity_stats(seen, False), "forced": entity_stats(seen, True)},
             "images_with_ocr_text": sum(1 for r in seen if (r["ocr"]["text"] or "").strip()),
             "generated_tokens": {"description": _stats([r["description"]["n_tokens"] for r in seen]),
                                  "entities": _stats([r["entities"]["n_tokens"] for r in seen])}}
 
 
+def candidate_precision_needed(ratio: float, target: float = VERIFIER_PRECISION) -> float:
+    """Precision a candidate name needs for the names a gallery ACCEPTS to be
+    right ``target`` of the time, when the gallery accepts a wrong name
+    ``ratio`` times as often as a right one (FMR / TAR). Accepted names are
+    right p*TAR / (p*TAR + (1-p)*FMR) of the time; this is that, solved for p."""
+    return target * ratio / (target * ratio + (1 - target))
+
+
+def max_false_accept_ratio(precision: float, target: float = VERIFIER_PRECISION) -> float | None:
+    """The largest FMR / TAR a gallery may have for candidates of this
+    precision to give accepted names right ``target`` of the time -- the
+    inverse of candidate_precision_needed. None when every candidate is right."""
+    if precision >= 1:
+        return None
+    return precision / (1 - precision) * (1 - target) / target
+
+
 def probe_summary(probe: Sequence[WorkItem], rows: dict[str, dict[str, Any]]) -> dict[str, Any]:
-    """Does the entity call recognise public figures from their appearance?
+    """Does the entity call recognise public figures from their appearance --
+    and when it names someone, how often is it right?
 
     Recognition is measured on EVIDENCE, not on the model's tag (which, tested
     on Factify2 train images, says [seen] for printed names too): a PERSON name
-    the independent OCR does not find in the image cannot have been read. The
-    headline is the claimed figure named on images where the figure's name is
-    not written. A claim naming a figure does not guarantee the image shows
-    them, so every rate is a LOWER bound; names other than the claimed figure
-    may be correct (someone else is pictured) or invented, and their
-    confidence is reported apart.
+    none of whose words the independent OCR finds in the image cannot have
+    been read; it was produced from appearance alone. A name the OCR holds in
+    part ("Narendra Modi" where the image reads "MODI") may have been read, and
+    is not counted as recognition.
+
+    Two rates. The recall-style rate -- the claimed figure named on images
+    whose figure's name is not written -- counts hits and is silent on wrong
+    names. PRECISION counts both: of the names produced from appearance alone,
+    the share that are the figure the claim names. Its reference is the claim,
+    not a hand label: a correctly named bystander counts against it, and the
+    figure named on an image that does not show them counts for it.
+
+    Two thresholds. VERIFIER_PRECISION is what a name needs to replace a
+    gallery. As a candidate that a gallery then verifies -- the role a VLM name
+    plays -- it needs less, by how rarely the gallery accepts a wrong name
+    (candidate_precision_needed); the report gives the largest false-accept
+    rate the measured precision allows. Headline figures are over free PERSON
+    lines; a PERSON line the skeleton forced is weaker evidence and counted
+    apart.
     """
     token = {name: re.compile(tok) for name, _claim, tok in PUBLIC_FIGURES}
     tally: Counter = Counter()
+    forced_tally: Counter = Counter()
     per_figure: dict[str, Counter] = defaultdict(Counter)
     conf: dict[str, list[float]] = defaultdict(list)
+    loose_conf: dict[str, list[float]] = defaultdict(list)
+    scored: list[tuple[float | None, bool]] = []
     tags: Counter = Counter()
     for item in probe:
         row = rows.get(item.sha256)
         if row is None or row["status"] not in ("ok", "partial"):
             tally["not_seen_by_model"] += 1
             continue
-        tally["images"] += 1
         person = row["entities"]["PERSON"]
-        tally[f"person_{person['status']}"] += 1
         pattern = token[item.probe]
-        written = bool(pattern.search(_normalise(row["ocr"]["text"] or "")))
-        claimed = [i for i in person["items"] if pattern.search(_normalise(i["name"]))]
-        recognised = [i for i in person["items"] if i["in_ocr"] is False]
-        tags.update(f"{i['basis']}:{_evidence(i)}" for i in person["items"])
+        ocr = row["ocr"]["text"] or ""
+        found = [(i, _evidence(i, ocr), bool(pattern.search(_normalise(i["name"]))))
+                 for i in person["items"]]
+        if person["forced"]:
+            forced_tally["images"] += 1
+            for _i, ev, claimed in found:
+                if ev == "not_written":
+                    forced_tally["names_from_appearance"] += 1
+                    forced_tally["claimed_figure" if claimed else "someone_else"] += 1
+            continue
+        tally["images"] += 1
+        tally[f"person_{person['status']}"] += 1
+        written = bool(pattern.search(_normalise(ocr)))
+        named_claimed = any(claimed for _i, _ev, claimed in found)
+        recognised = [(i, claimed) for i, ev, claimed in found if ev == "not_written"]
+        tags.update(f"{i['basis']}:{ev}" for i, ev, _claimed in found)
         tally["name_written" if written else "name_not_written"] += 1
-        tally["names_claimed_figure"] += bool(claimed)
+        tally["names_claimed_figure"] += named_claimed
         tally["any_person_tagged_seen"] += any(i["basis"] == "seen" for i in person["items"])
         if not written:
-            tally["name_not_written_names_claimed_figure"] += bool(claimed)
+            tally["name_not_written_names_claimed_figure"] += named_claimed
             tally["name_not_written_names_someone"] += bool(recognised)
             tally["name_not_written_unidentified_or_none"] += not person["items"]
-        for i in recognised:
-            key = "claimed_figure" if i in claimed else "someone_else"
+        for i, claimed in recognised:
+            key = "claimed_figure" if claimed else "someone_else"
             tally[f"recognised_names_{key}"] += 1
+            scored.append((i["confidence"], claimed))
             if i["confidence"] is not None:
                 conf[key].append(i["confidence"])
+        for i, _ev, claimed in found:  # as first counted: every name the OCR lacks in full
+            if i["in_ocr"] is False:
+                key = "claimed_figure" if claimed else "someone_else"
+                tally[f"not_fully_written_names_{key}"] += 1
+                if i["confidence"] is not None:
+                    loose_conf[key].append(i["confidence"])
         f = per_figure[item.probe]
         f["images"] += 1
         f["name_not_written"] += not written
-        f["recognised_claimed_figure"] += bool(not written and claimed)
+        f["recognised_claimed_figure"] += bool(not written and named_claimed)
     n, k = tally["images"], tally["name_not_written"]
     key = tally["name_not_written_names_claimed_figure"] / k if k else None
     anyone = tally["name_not_written_names_someone"] / k if k else None
     near_zero = key is not None and key < NEAR_ZERO
+    c, w = tally["recognised_names_claimed_figure"], tally["recognised_names_someone_else"]
+    precision = c / (c + w) if c + w else None
+    ratio = None if precision is None else max_false_accept_ratio(precision)
+    lc, lw = tally["not_fully_written_names_claimed_figure"], tally["not_fully_written_names_someone_else"]
+    by_confidence = []
+    for floor in CONFIDENCE_GRID:
+        kept = [hit for cf, hit in scored if cf is not None and cf >= floor]
+        by_confidence.append({"min_confidence": floor, "names": len(kept), "claimed_figure": sum(kept),
+                              "precision": _r(sum(kept) / len(kept), 4) if kept else None})
+    thresholds = {
+        "verifier": {
+            "role": "a name taken as the identity, with no gallery behind it: replacing the gallery",
+            "precision_needed": VERIFIER_PRECISION,
+            "met": None if precision is None else precision >= VERIFIER_PRECISION},
+        "candidate": {
+            "role": "a name proposed to a gallery that then verifies it: the role a VLM name plays",
+            "rule": (f"what must reach {VERIFIER_PRECISION} is the precision of the names the "
+                     "gallery accepts. With candidate precision p, a gallery accepting a right name "
+                     "at rate TAR and a wrong one at rate FMR accepts names that are right "
+                     "p*TAR / (p*TAR + (1-p)*FMR) of the time, so p must be at least "
+                     f"{VERIFIER_PRECISION}*r / ({VERIFIER_PRECISION}*r + {1 - VERIFIER_PRECISION:.2f}), "
+                     "r = FMR/TAR"),
+            "precision_needed_at_ratio": {str(r): _r(candidate_precision_needed(r), 4)
+                                          for r in GALLERY_RATIOS},
+            "ratios_are": "hypothetical gallery operating points (r = FMR/TAR): the gallery is not built yet",
+            "max_gallery_false_accept_ratio": _r(ratio, 4),
+            "caveat": ("FMR here is the gallery's false-accept rate on the VLM's own wrong names, "
+                       "which are look-alikes more often than random impostors: measure it on them, "
+                       "not on random pairs")}}
     if key is None:
         verdict = None
     elif near_zero:
@@ -2034,24 +2487,75 @@ def probe_summary(probe: Sequence[WorkItem], rows: dict[str, dict[str, Any]]) ->
                    "doing recognition; the entity gallery in the next block has to carry the "
                    "whole recognition load.")
     else:
-        verdict = (f"non-trivial: on {k} public-figure images whose figure's name is not written "
-                   f"in them, the entity call named that figure from appearance on "
-                   f"{tally['name_not_written_names_claimed_figure']} ({key:.1%}), and named "
-                   f"someone not written in the image on {tally['name_not_written_names_someone']} "
-                   f"({anyone:.1%}). A lower bound: not every such image shows the figure. Names "
-                   "that are not the claimed figure may be correct or invented; their confidence "
-                   "is reported apart. The model's [seen]/[text] tag is not evidence (see "
-                   "person_tag_vs_ocr); in_ocr is.")
+        verdict = (f"PRECISION {precision:.1%}: of {c + w} PERSON names produced from appearance "
+                   f"alone (no word of them in the OCR text), {c} are the figure the claim names and "
+                   f"{w} someone else. " if precision is not None else
+                   "PRECISION undefined: no PERSON name was produced from appearance alone. ")
+        verdict += (f"The recall-style rate -- the figure named on "
+                    f"{tally['name_not_written_names_claimed_figure']} of {k} images whose figure's "
+                    f"name is not written ({key:.1%}) -- counts hits and is silent on wrong names. ")
+        if conf.get("claimed_figure") and conf.get("someone_else"):
+            top = max(conf["someone_else"])
+            verdict += (f"Confidence: mean {statistics.fmean(conf['claimed_figure']):.3f} for the "
+                        f"claimed figure, {statistics.fmean(conf['someone_else']):.3f} for someone else; "
+                        f"the most confident name of someone else is at {top:.3f}, above "
+                        f"{sum(1 for x in conf['claimed_figure'] if x < top)} of the "
+                        f"{len(conf['claimed_figure'])} names of the claimed figure. ")
+        verdict += "The model's [seen]/[text] tag is not evidence (see person_tag_vs_ocr); the OCR is."
+    if precision is not None and precision < VERIFIER_PRECISION:
+        conclusion = (f"Entity verification cannot come from the VLM: at {precision:.1%} precision "
+                      f"its names fall short of the {VERIFIER_PRECISION:.0%} a name needs to replace a "
+                      "gallery. ")
+        conclusion += (f"As candidates that a gallery then verifies -- the role they play -- they are "
+                       f"usable if the gallery accepts a wrong VLM name at most {ratio:.3f} times as "
+                       "often as a right one (FMR/TAR), measured on the VLM's own wrong names. "
+                       if c else "None of them was the claimed figure, so they are not worth "
+                       "proposing to a gallery either. ")
+        conclusion += "Identity is decided by an external gallery."
+        decision, role = "external_gallery", ("candidate" if c else None)
+    elif precision is None and near_zero:
+        conclusion = ("Entity verification cannot come from the VLM: it names almost no one from "
+                      "appearance, so an external gallery carries the whole recognition load and "
+                      "the VLM proposes no candidates.")
+        decision, role = "external_gallery", None
+    elif precision is not None:
+        conclusion = (f"At {precision:.1%} precision the VLM's names meet the "
+                      f"{VERIFIER_PRECISION:.0%} a name needs to replace a gallery on this probe, "
+                      "whose reference is the claim, not a hand label: check by hand before "
+                      "relying on it.")
+        decision, role = None, None
+    else:
+        conclusion, decision, role = None, None, None
     return {"source": "factify2 TRAIN claims naming exactly one public figure and saying an "
                       "image or video shows them; the claim image",
             "requested": len(probe), "counts": dict(sorted(tally.items())),
+            "precision": {
+                "value": _r(precision, 4), "names": c + w, "claimed_figure": c, "someone_else": w,
+                "population": ("PERSON names produced from appearance alone -- no word of the name "
+                               "is in the independent OCR text -- on free PERSON lines"),
+                "reference": ("the figure the claim names, not a hand label: a correctly named "
+                              "bystander counts against it, and the figure named on an image that "
+                              "does not show them counts for it"),
+                "by_confidence": by_confidence,
+                "not_fully_written": {
+                    "population": ("as first counted: names the OCR does not contain in full "
+                                   "(in_ocr false), including names it contains in part"),
+                    "names": lc + lw, "claimed_figure": lc, "someone_else": lw,
+                    "value": _r(lc / (lc + lw), 4) if lc + lw else None,
+                    "confidence": {k_: _stats(v) for k_, v in sorted(loose_conf.items())}}},
             "rate_claimed_figure_named_where_name_not_written": _r(key, 4),
             "rate_someone_named_from_appearance_where_name_not_written": _r(anyone, 4),
             "rate_any_person_tagged_seen": _r(tally["any_person_tagged_seen"] / n if n else None, 4),
+            "rates_are": ("recall-style: the share of images on which a name was given; they count "
+                          "hits and are silent on wrong names -- precision is in `precision`"),
             "person_tag_vs_ocr": dict(sorted(tags.items())),
             "recognised_name_confidence": {k_: _stats(v) for k_, v in sorted(conf.items())},
+            "forced_person_lines": dict(sorted(forced_tally.items())),
             "per_figure": {k_: dict(sorted(v.items())) for k_, v in sorted(per_figure.items())},
-            "near_zero": near_zero, "near_zero_threshold": NEAR_ZERO, "verdict": verdict}
+            "thresholds": thresholds,
+            "near_zero": near_zero, "near_zero_threshold": NEAR_ZERO,
+            "verdict": verdict, "conclusion": conclusion,
+            "entity_verification": decision, "vlm_role": role}
 
 
 def count_corrections(stats: dict[str, dict[str, int]],
@@ -2167,19 +2671,33 @@ def print_pilot(report: dict[str, Any]) -> None:
     d = report["determinism"]
     log(f"  determinism: {d['identical']}/{d['checked']} byte-identical ({d['kind']})")
     q = report["quality"]
-    log(f"  quality: PERSON {q['person_status']}; person names, model tag vs OCR "
-        f"{q['person_names_tag_vs_ocr']}; images naming a person not written in them "
-        f"{q['images_naming_a_person_not_written']}; entity lines missing "
-        f"{q['entity_lines_missing']}; description flags {q['description_flags']}; errors "
-        f"{q['component_errors']}")
+    free, forced = q["entities"]["free"], q["entities"]["forced"]
+    log(f"  entity answers {q['entity_format']}; complete and free {q['entities_complete_free']} "
+        f"of {q['images_seen_by_model']}; skeleton replacements {q['entity_skeleton_events']}")
+    log(f"  entity lines: free {free['lines']}, forced {forced['lines']}")
+    log(f"  quality, free lines: PERSON {free['status'].get('PERSON', {})}; person names, model "
+        f"tag vs OCR {free['person_names_tag_vs_ocr']}; images naming a person not written in "
+        f"them {free['images_naming_a_person_not_written']}; description flags "
+        f"{q['description_flags']}; errors {q['component_errors']}")
+    log(f"  quality, forced lines: status {forced['status']}; names, model tag vs OCR "
+        f"{forced['names_tag_vs_ocr']}")
     probe = report["recognition_probe"]
     if probe:
-        c = probe["counts"]
+        c, p, th = probe["counts"], probe["precision"], probe["thresholds"]
         log(f"  recognition probe: {c.get('images', 0)} Factify2 train images of public figures; "
             f"figure's name not written in {c.get('name_not_written', 0)}, figure named from "
-            f"appearance in {c.get('name_not_written_names_claimed_figure', 0)}; model tag vs "
-            f"OCR {probe['person_tag_vs_ocr']}")
+            f"appearance in {c.get('name_not_written_names_claimed_figure', 0)} (recall-style "
+            f"{probe['rate_claimed_figure_named_where_name_not_written']}); model tag vs OCR "
+            f"{probe['person_tag_vs_ocr']}")
+        log(f"    precision {p['value']}: {p['claimed_figure']} of {p['names']} names from appearance "
+            f"alone (as first counted: {p['not_fully_written']['claimed_figure']} of "
+            f"{p['not_fully_written']['names']}); forced PERSON lines {probe['forced_person_lines']}")
+        log(f"    to replace a gallery: precision {th['verifier']['precision_needed']} (met: "
+            f"{th['verifier']['met']}); as a candidate a gallery verifies: gallery FMR/TAR at most "
+            f"{th['candidate']['max_gallery_false_accept_ratio']}")
         log(f"    {probe['verdict']}")
+        if probe["conclusion"]:
+            log(f"    {probe['conclusion']}")
     log("  projected wall-clock on this machine (naive / token-adjusted hours):")
     for ds, info in report["projection"]["datasets"].items():
         extra = (f"; per 10k {info.get('hours_per_10k_naive')} / "
@@ -2399,16 +2917,45 @@ def cmd_status(args) -> int:
             if ledger.name.endswith(".torn.jsonl"):
                 continue
             machines: Counter = Counter()
-            summaries, _, torn = scan_ledger(
-                ledger, schema=args.verify,
-                keep=lambda r: machines.update([f"{r['provenance']['machine']['host_id']} "
-                                                f"{r['provenance']['machine']['gpu']}"]) and False)
+            # per image, its last row's entity answer: (form, finish, tokens, forced lines or
+            # None when the row's lines are not marked)
+            answers: dict[str, tuple[str, str, int, tuple[str, ...] | None]] = {}
+
+            def tally(r: dict[str, Any]) -> bool:
+                machines.update([f"{r['provenance']['machine']['host_id']} "
+                                 f"{r['provenance']['machine']['gpu']}"])
+                block = r.get("entities")
+                if block is None:
+                    answers.pop(r["sha256"], None)
+                else:
+                    marked = all("forced" in block[c] for c in CATEGORIES)
+                    answers[r["sha256"]] = (
+                        entity_format(block), str(block["finish"]), block["n_tokens"],
+                        tuple(c for c in CATEGORIES if block[c]["forced"]) if marked else None)
+                return False
+
+            summaries, _, torn = scan_ledger(ledger, schema=args.verify, keep=tally)
+            forms: dict[str, dict[str, Any]] = {}
+            for form, finish, tokens, _forced in answers.values():
+                f = forms.setdefault(form, {"images": 0, "finish": Counter(), "tokens": []})
+                f["images"] += 1
+                f["finish"][finish] += 1
+                f["tokens"].append(tokens)
+            marked = [lines for *_rest, lines in answers.values() if lines is not None]
             entry[ledger.stem] = {
                 "images": len(summaries),
                 "status": dict(Counter(s["status"] for s in summaries.values())),
                 "reasons": dict(Counter(s["reason"] for s in summaries.values() if s["reason"])),
                 "component_errors": dict(Counter(e for s in summaries.values() for e in s["errors"])),
                 "retried": sum(1 for s in summaries.values() if s["attempt"] > 1),
+                # how each entity answer kept or lost its five lines: truncated
+                # (finish "length"), another format, or stopped early
+                "entity_format": {form: {"images": f["images"], "finish": dict(f["finish"]),
+                                         "tokens": _stats(f["tokens"])}
+                                  for form, f in sorted(forms.items())},
+                # lines the skeleton forced, per category; null when no row is marked
+                "forced_lines": (dict(Counter(c for lines in marked for c in lines))
+                                 if marked else None),
                 "machines": dict(machines), "torn_tail_bytes": torn}
         out[cfg_dir.name] = entry
     log(json.dumps(out, indent=2))

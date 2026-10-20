@@ -18,6 +18,7 @@ import io
 import json
 import math
 import os
+import re
 import socket
 import subprocess
 import sys
@@ -34,8 +35,9 @@ sys.path.insert(0, str(REPO))
 from configs.paths import PROCESSED  # noqa: E402
 from scripts import image_text, images, placeholders  # noqa: E402
 from scripts.image_text import (  # noqa: E402
-    FatalError, Generation, Ledger, LedgerError, LockHeld, StubOCR, StubVLM, WorkItem,
+    CATEGORIES, FatalError, Generation, Ledger, LedgerError, LockHeld, StubOCR, StubVLM, WorkItem,
 )
+from scripts.processed_loader import SupervisionError  # noqa: E402
 
 SCRIPT = REPO / "scripts" / "image_text.py"
 
@@ -354,7 +356,14 @@ def _mutations():
     def sampled(r):
         r["provenance"]["decoding"]["do_sample"] = True
 
-    return [drop_revision, bad_status, add_path, add_hostname, add_label, sampled]
+    def unmarked(r):
+        del r["entities"]["ORG"]["forced"]
+
+    def mark_disagrees(r):
+        r["entities"]["ORG"]["items"][0]["forced"] = not r["entities"]["ORG"]["forced"]
+
+    return [drop_revision, bad_status, add_path, add_hostname, add_label, sampled, unmarked,
+            mark_disagrees]
 
 
 @pytest.mark.parametrize("mutate", _mutations(), ids=lambda f: f.__name__)
@@ -491,11 +500,15 @@ def test_confidence_is_the_models_own_token_probability():
 
 
 def test_greedy_is_verified_token_by_token_not_assumed():
-    image_text.check_greedy([5, 7, 9], [5, 7, 9])
+    assert image_text.check_greedy([5, 7, 9], [5, 7, 9]) == []
     with pytest.raises(FatalError, match="not greedy"):
         image_text.check_greedy([5, 8, 9], [5, 7, 9])
     with pytest.raises(FatalError):
         image_text.check_greedy([5, 7], [5, 7, 9])
+    # with the skeleton's picks: the steps it replaced come back, anything else still stops
+    assert image_text.check_greedy([5, 4, 9], [5, 0, 9], chosen=[5, 4, 9]) == [1]
+    with pytest.raises(FatalError, match="not greedy"):
+        image_text.check_greedy([5, 3, 9], [5, 0, 9], chosen=[5, 4, 9])
 
 
 def test_content_gates_on_a_generation():
@@ -514,6 +527,258 @@ def test_the_prompts_split_reading_from_recognition():
     assert "identities are recorded separately" in d
     assert "[seen]" in e and "recognise" in e and "face" in e
     assert "UNIDENTIFIED" in e and "a wrong name is worse than no name" in e
+
+
+# --------------------------------------------------------------------------
+# the skeleton: five lines held while they are generated, forced lines marked
+# --------------------------------------------------------------------------
+
+
+class ToyTokenizer:
+    """Just enough of Qwen2.5-VL's tokenizer for the skeleton, with its quirks
+    where they matter: "]\\n" is one token (Qwen's 921) and "GPE" is two ("G",
+    "PE"). Id 0 ends the turn."""
+
+    VOCAB = ("<|im_end|>", "PERSON", ":", " UN", "IDENT", "IFIED", " [", "seen", "]", "]\n",
+             "\n", "ORG", " NONE", "G", "PE", "EVENT", "DATE", "NONE", "ORGAN", " CNN", " Note",
+             " Joe", " Biden")
+    END = 0
+    EOS = (0,)
+
+    def decode(self, i: int) -> str:
+        return "" if i == self.END else self.VOCAB[i]
+
+    def encode(self, text: str) -> list[int]:
+        out = []
+        while text:
+            piece = max((v for v in self.VOCAB[1:] if text.startswith(v)), key=len)
+            out.append(self.VOCAB.index(piece))
+            text = text[len(piece):]
+        return out
+
+    def skeleton(self) -> image_text.Skeleton:
+        return image_text.Skeleton(self.decode, self.encode, self.encode("\n")[0], self.END, self.EOS)
+
+
+class QwenTokenizer(ToyTokenizer):
+    """The real tokenizer, from the pinned snapshot on disk -- never the network."""
+
+    def __init__(self):
+        try:
+            snapshot = image_text.QwenVLM().snapshot()
+        except image_text.ModelMissing:
+            pytest.skip("the Qwen2.5-VL snapshot is not on disk")
+        transformers = pytest.importorskip("transformers")
+        self.tok = transformers.AutoTokenizer.from_pretrained(str(snapshot), local_files_only=True)
+        self.END = self.tok.convert_tokens_to_ids("<|im_end|>")
+        self.EOS = (self.tok.convert_tokens_to_ids("<|endoftext|>"), self.END)
+
+    def decode(self, i: int) -> str:
+        return self.tok.decode([i])
+
+    def encode(self, text: str) -> list[int]:
+        return self.tok.encode(text, add_special_tokens=False)
+
+
+@pytest.fixture(scope="module", params=["toy", "qwen"])
+def tokenizer(request):
+    return ToyTokenizer() if request.param == "toy" else QwenTokenizer()
+
+
+def _drive(tok, script: list[int]) -> tuple[image_text.Skeleton, list[int]]:
+    """Feed a skeleton the model's wishes one step at a time, as generate does,
+    until it emits an end of turn."""
+    skeleton, emitted = tok.skeleton(), []
+    for want in script:
+        emitted.append(skeleton.choose(want))
+        if emitted[-1] in skeleton.eos:
+            break
+    return skeleton, emitted
+
+
+def _held(tok, script: list[int], logprobs: list[float] | None = None) -> Generation:
+    """A Generation as QwenVLM.generate builds it, from a skeleton driven by ``script``."""
+    skeleton, emitted = _drive(tok, script)
+    pieces = [tok.decode(i) for i in emitted]
+    ends, total = [], 0
+    for piece in pieces:
+        total += len(piece)
+        ends.append(total)
+    return Generation("".join(pieces), logprobs or [math.log(0.9)] * len(emitted), ends,
+                      "eos" if emitted[-1] in skeleton.eos else "length", len(emitted),
+                      tuple(skeleton.replaced), tuple(skeleton.events), skeleton.forced_lines)
+
+
+def test_an_answer_that_ends_after_person_is_held_to_five_lines(tokenizer):
+    """What the model did on 63 of the first pilot's 199 images: the PERSON
+    line, "]" where a continuing answer writes "]\\n", then the end of its turn
+    -- 9 tokens. Held, that end becomes a newline and the model writes the rest."""
+    first = tokenizer.encode("PERSON: UNIDENTIFIED [seen]")
+    rest = tokenizer.encode("ORG: NONE\nGPE: NONE\nEVENT: NONE\nDATE: NONE")
+    assert len(first) + 1 == 9, "the stored answers were 9 tokens, the end of turn included"
+    skeleton, emitted = _drive(tokenizer, first + [tokenizer.END] + rest + [tokenizer.END])
+    text = "".join(tokenizer.decode(i) for i in emitted if i not in skeleton.eos)
+    assert text == "PERSON: UNIDENTIFIED [seen]\nORG: NONE\nGPE: NONE\nEVENT: NONE\nDATE: NONE"
+    assert emitted[:len(first)] == first, "before the first replacement, the model's own tokens"
+    assert skeleton.replaced == [len(first)] and skeleton.events == ["continued_after:PERSON"]
+    assert skeleton.forced_lines == ("ORG", "GPE", "EVENT", "DATE") and skeleton.complete
+    parsed = image_text.parse_entities(text)
+    assert parsed["error"] is None
+    assert all(c["status"] != "missing" for c in parsed["categories"].values())
+
+
+def test_the_skeleton_replaces_only_what_breaks_the_form():
+    tok = ToyTokenizer()
+    full = tok.encode(FIVE.format("NONE"))
+    # a complete answer passes untouched, every line free
+    skeleton, emitted = _drive(tok, full + [tok.END])
+    assert emitted == full + [tok.END] and skeleton.replaced == [] and skeleton.forced_lines == ()
+    # an answer that does not start with PERSON's header gets it, and every line is forced
+    skeleton, emitted = _drive(tok, tok.encode("NONE: NONE\nORG: NONE\nGPE: NONE\nEVENT: NONE\n"
+                                               "DATE: NONE") + [tok.END])
+    assert "".join(map(tok.decode, emitted)) == FIVE.format("NONE")
+    assert (skeleton.replaced, skeleton.events) == ([0], ["header_forced:PERSON"])
+    assert skeleton.forced_lines == CATEGORIES
+    # "ORGANIZATION" where ORG's header goes: the header is put in, PERSON stays free
+    head = tok.encode("PERSON: NONE\n")
+    skeleton, emitted = _drive(tok, head + [tok.VOCAB.index("ORGAN")]
+                               + tok.encode(": CNN\nGPE: NONE\nEVENT: NONE\nDATE: NONE") + [tok.END])
+    assert "".join(map(tok.decode, emitted)).startswith("PERSON: NONE\nORG: CNN\nGPE: NONE")
+    assert (skeleton.replaced, skeleton.events) == ([len(head)], ["header_forced:ORG"])
+    assert skeleton.forced_lines == ("ORG", "GPE", "EVENT", "DATE")
+    # going on after DATE's line: the answer is ended there, and no line is forced
+    skeleton, emitted = _drive(tok, full + tok.encode("\n") + [tok.VOCAB.index(" Note")])
+    assert emitted[-1] == tok.END and skeleton.events == ["ended_after:DATE"]
+    assert skeleton.forced_lines == ()
+    with pytest.raises(FatalError, match="does not end generation"):
+        image_text.Skeleton(tok.decode, tok.encode, tok.encode("\n")[0], 5, tok.EOS)
+
+
+def test_forced_lines_are_marked_on_the_line_and_on_every_entity():
+    tok = ToyTokenizer()
+    first = tok.encode("PERSON: Joe Biden [seen]")
+    script = first + [tok.END] + tok.encode("ORG: CNN\nGPE: NONE\nEVENT: NONE\nDATE: NONE") + [tok.END]
+    logprobs = [math.log(0.9)] * len(script)
+    logprobs[len(first)] = math.log(1e-6)  # the newline put in where the model would have ended
+    block = image_text.entities_block(_held(tok, script, logprobs), ocr_text="")
+    assert [c for c in CATEGORIES if block[c]["forced"]] == ["ORG", "GPE", "EVENT", "DATE"]
+    (biden,), (cnn,) = block["PERSON"]["items"], block["ORG"]["items"]
+    assert (biden["name"], biden["forced"]) == ("Joe Biden", False)
+    assert (cnn["name"], cnn["forced"]) == ("CNN", True), "the mark travels with the entity"
+    assert "continued_after:PERSON" in block["flags"]
+    assert block["confidence"] == 0.9, "a replaced token is not the model's: it leaves confidence"
+
+
+def _gen(raw: str, finish: str = "eos") -> Generation:
+    ends = [m.end() for m in re.finditer(r"\S+\s*", raw)]
+    return Generation(raw, [0.0] * len(ends), ends, finish, len(ends))
+
+
+@pytest.mark.parametrize("raw, finish, form", [
+    ("PERSON: UNIDENTIFIED [seen]", "eos", "stopped_after:PERSON"),  # the first pilot's 63
+    (FIVE.format("NONE"), "eos", "complete"),
+    ("PERSON: NONE\nORG: CNN [text]\nGPE: Tex", "length", "truncated"),
+    ("PERSON: NONE ORG: NONE GPE: NONE EVENT: NONE DATE: NONE", "eos", "collapsed"),
+    ("PERSON: NONE\nORG: NONE\nDATE: NONE", "eos", "lines_missing"),
+    ("NONE [seen]", "eos", "none_for_all"),
+    ("I'm sorry, I can't help with that.", "eos", "unparseable"),
+])
+def test_an_entity_answer_is_classified_by_how_it_lost_its_form(raw, finish, form):
+    """Truncated, another format, or stopped early: the diagnosis, per answer."""
+    assert image_text.entity_format(image_text.entities_block(_gen(raw, finish), None)) == form
+
+
+def test_a_failed_entity_call_is_failed_not_malformed():
+    assert image_text.entity_format(image_text._failed_component("entities", "cuda_oom")) == "failed"
+
+
+class _EndsAfterPerson(StubVLM):
+    """What the model did on 63 of the first pilot's 199 images, before the
+    skeleton: the PERSON line, then the end of its turn."""
+
+    def generate(self, image, which):
+        if which != "entities":
+            return super().generate(image, which)
+        self.calls += 1
+        return Generation("PERSON: UNIDENTIFIED [seen]", [-0.1] * 9,
+                          [6, 7, 10, 15, 20, 22, 26, 27, 27], "eos", 9)
+
+
+@pytest.mark.parametrize("pilot", [False, True], ids=["run", "pilot"])
+def test_an_entity_answer_that_lost_its_lines_stops_the_run_unwritten(fake_root, tmp_path,
+                                                                      monkeypatch, capsys, pilot):
+    """Whatever produces it -- a prompt, a model, a decoding change -- an answer
+    missing lines is never written, as ok or otherwise: the run stops."""
+    monkeypatch.setattr(image_text, "OUT_ROOT", tmp_path / "out")
+    monkeypatch.setattr(image_text, "StubVLM", _EndsAfterPerson)
+    lines = [json.dumps(_put(fake_root, f"data/raw/verite/s{i}.png", _png((i, 6, 6)), rid=str(i)).as_json())
+             for i in range(2)]
+    worklist = tmp_path / "wl.jsonl"
+    worklist.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    argv = ["run", "--stub", "--worklist", str(worklist)] + (["--pilot", "2"] if pilot else [])
+    assert image_text.main(argv) == 2
+    err = capsys.readouterr().err
+    assert "STOPPED" in err and "stopped_after:PERSON" in err
+    (ledger,) = (tmp_path / "out").glob("*/verite.jsonl")
+    assert ledger.read_bytes() == b"", "a row whose entity answer lost its lines was written"
+
+
+def test_a_row_of_the_first_schema_still_validates_but_is_never_written(fake_root):
+    """A ledger written before lines were marked stays readable (status
+    --verify checks every ledger); a row of that shape is never appended."""
+    vlm, ocr, ctx = _ctx(fake_root)
+    row = image_text.process(_put(fake_root, "data/raw/verite/old.png", _png()), vlm, ocr, ctx)
+    old = json.loads(json.dumps(row))
+    old["schema"], old["provenance"]["schema_version"] = "image_text/1", 1
+    for cat in CATEGORIES:
+        del old["entities"][cat]["forced"]
+        for item in old["entities"][cat]["items"]:
+            del item["forced"]
+    old["result_sha256"] = image_text.result_sha256(old)
+    assert image_text.row_problems(old) == []
+    assert image_text.row_problems({**old, "schema": "image_text/9"})[0].startswith("schema:")
+    ledger = Ledger(ctx.out_dir / "verite.jsonl", dataset="verite", config_id=ctx.config_id)
+    ledger.open()
+    with pytest.raises(FatalError, match="only image_text/2 is written"):
+        ledger.append(old)
+    ledger.close()
+
+
+def test_entities_leave_a_row_only_with_their_line_marked(fake_root):
+    """The sanctioned way out of a row: the caller must choose what forced
+    lines mean to it, and every entity it gets says which kind it is."""
+    vlm, ocr, ctx = _ctx(fake_root)
+    row = image_text.process(_put(fake_root, "data/raw/verite/e.png", _png()), vlm, ocr, ctx)
+    org = row["entities"]["ORG"]  # the stub names "Stub Labs" there; make it a forced line
+    org["forced"] = org["items"][0]["forced"] = True
+    with pytest.raises(TypeError):
+        image_text.entities_of(row)  # no default
+    with pytest.raises(ValueError):
+        image_text.entities_of(row, forced="keep")
+    assert list(image_text.entities_of(row, forced="exclude")) == []
+    (entity,) = image_text.entities_of(row, forced="mark")
+    assert (entity["category"], entity["name"], entity["forced"]) == ("ORG", "Stub Labs", True)
+    assert set(entity) >= {"dataset", "sha256", "record_ids", "basis", "in_ocr", "confidence"}
+    for cat in CATEGORIES:  # a row from before the marks cannot tell forced from free
+        del row["entities"][cat]["forced"]
+    with pytest.raises(SupervisionError):
+        image_text.entities_of(row, forced="mark")
+
+
+def test_entity_statistics_are_split_by_forced_and_free(fake_root):
+    vlm, ocr, ctx = _ctx(fake_root)
+    free = image_text.process(_put(fake_root, "data/raw/verite/f1.png", _png((1, 2, 3))), vlm, ocr, ctx)
+    held = image_text.process(_put(fake_root, "data/raw/verite/f2.png", _png((3, 2, 1))), vlm, ocr, ctx)
+    for cat in ("ORG", "GPE", "EVENT", "DATE"):  # as if the model had ended after PERSON
+        held["entities"][cat]["forced"] = True
+        for item in held["entities"][cat]["items"]:
+            item["forced"] = True
+    q = image_text.quality([free, held])
+    by = q["entities"]
+    assert by["free"]["lines"] == {"PERSON": 2, "ORG": 1, "GPE": 1, "EVENT": 1, "DATE": 1}
+    assert by["forced"]["lines"] == {"ORG": 1, "GPE": 1, "EVENT": 1, "DATE": 1}
+    assert by["free"]["names_tag_vs_ocr"] == by["forced"]["names_tag_vs_ocr"] == {"text:written": 1}
+    assert (q["entities_complete_free"], q["entity_format"]) == (1, {"complete": 2})
 
 
 # --------------------------------------------------------------------------
@@ -588,14 +853,18 @@ def test_the_probe_takes_train_claims_naming_one_pictured_figure(tmp_path):
     assert probe[0].probe == "Narendra Modi" and probe[1].probe == "Donald Trump", "round-robin"
 
 
+def _probe_row(person_items, ocr_text, forced=False):
+    return {"status": "ok", "ocr": {"text": ocr_text}, "entities": {"PERSON": {
+        "status": "named" if person_items else "unidentified", "forced": forced,
+        "items": person_items}}}
+
+
+def _probe_name(text, basis, in_ocr, confidence=0.9):
+    return {"name": text, "basis": basis, "in_ocr": in_ocr, "confidence": confidence}
+
+
 def test_the_probe_verdict_says_near_zero_out_loud():
-    def row(person_items, ocr_text):
-        return {"status": "ok", "ocr": {"text": ocr_text}, "entities": {"PERSON": {
-            "status": "named" if person_items else "unidentified", "items": person_items}}}
-
-    def name(text, basis, in_ocr, confidence=0.9):
-        return {"name": text, "basis": basis, "in_ocr": in_ocr, "confidence": confidence}
-
+    row, name = _probe_row, _probe_name
     probe = [WorkItem("factify2", str(i) * 64, "x", ("r",), 1, probe="Narendra Modi") for i in range(4)]
     blank = {it.sha256: row([], "") for it in probe}
     out = image_text.probe_summary(probe, blank)
@@ -613,13 +882,66 @@ def test_the_probe_verdict_says_near_zero_out_loud():
     named[probe[1].sha256] = row([name("Narendra Modi", "text", True)], "MODI SAYS")
     named[probe[2].sha256] = row([name("Amit Shah", "seen", False, 0.3)], "")
     out = image_text.probe_summary(probe, named)
-    assert not out["near_zero"] and out["verdict"].startswith("non-trivial")
+    assert not out["near_zero"] and out["verdict"].startswith("PRECISION 50.0%")
     c = out["counts"]
     assert (c["name_written"], c["name_not_written"]) == (1, 3)
     assert c["name_not_written_names_claimed_figure"] == 1
     assert c["name_not_written_names_someone"] == 2
     assert (c["recognised_names_claimed_figure"], c["recognised_names_someone_else"]) == (1, 1)
     assert out["recognised_name_confidence"]["someone_else"]["max"] == 0.3
+
+
+def test_the_probe_reports_precision_and_names_both_thresholds():
+    """Shaped like the first pilot's probe: 71 names produced from appearance
+    alone, 23 of them the claimed figure, and a wrong name as sure as 0.989."""
+    right = [0.95] * 12 + [0.6] * 11
+    wrong = [0.989] + [0.5] * 47
+    probe = [WorkItem("factify2", f"{i:064x}", "x", ("r",), 1, probe="Narendra Modi") for i in range(71)]
+    rows = {it.sha256: _probe_row([_probe_name("Narendra Modi" if n < 23 else "Amit Shah", "seen",
+                                               False, right[n] if n < 23 else wrong[n - 23])], "")
+            for n, it in enumerate(probe)}
+    out = image_text.probe_summary(probe, rows)
+    p = out["precision"]
+    assert (p["names"], p["claimed_figure"], p["someone_else"], p["value"]) == (71, 23, 48, 0.3239)
+    assert p["not_fully_written"]["value"] == 0.3239
+    assert [r["names"] for r in p["by_confidence"]] == [71, 13, 13, 13, 0]
+    assert out["verdict"].startswith("PRECISION 32.4%: of 71 PERSON names produced from appearance")
+    assert "recall-style" in out["verdict"] and "recall-style" in out["rates_are"]
+    verifier, candidate = out["thresholds"]["verifier"], out["thresholds"]["candidate"]
+    assert (verifier["precision_needed"], verifier["met"]) == (0.9, False)
+    assert candidate["max_gallery_false_accept_ratio"] == 0.0532
+    assert candidate["precision_needed_at_ratio"] == {"0.1": 0.4737, "0.05": 0.3103,
+                                                      "0.01": 0.0826, "0.001": 0.0089}
+    assert "replace a gallery" in out["conclusion"] and "0.053 times as often" in out["conclusion"]
+    assert (out["entity_verification"], out["vlm_role"]) == ("external_gallery", "candidate")
+    assert out["recognised_name_confidence"]["someone_else"]["max"] == 0.989
+
+
+def test_the_candidate_bar_follows_from_the_gallerys_error_rates():
+    need, ratio = image_text.candidate_precision_needed, image_text.max_false_accept_ratio
+    assert (round(need(0.1), 4), round(need(0.01), 4)) == (0.4737, 0.0826)
+    assert round(ratio(23 / 71), 4) == 0.0532 and ratio(1.0) is None and ratio(0.0) == 0.0
+    for p in (0.05, 23 / 71, 0.6):
+        assert math.isclose(need(ratio(p)), p), "one rule, read both ways"
+    # at exactly that ratio, the names a gallery accepts are right VERIFIER_PRECISION of the time
+    p, tar = 23 / 71, 0.9
+    fmr = ratio(p) * tar
+    assert math.isclose(p * tar / (p * tar + (1 - p) * fmr), image_text.VERIFIER_PRECISION)
+
+
+def test_a_name_partly_in_the_ocr_was_read_and_a_forced_person_line_stands_apart():
+    probe = [WorkItem("factify2", str(i) * 64, "x", ("r",), 1, probe="Narendra Modi") for i in range(3)]
+    rows = {probe[0].sha256: _probe_row([_probe_name("Narendra Modi", "seen", False)],
+                                        "PM MODI ADDRESSES THE NATION"),
+            probe[1].sha256: _probe_row([_probe_name("Amit Shah", "seen", False)], ""),
+            probe[2].sha256: _probe_row([_probe_name("Narendra Modi", "seen", False)], "", forced=True)}
+    out = image_text.probe_summary(probe, rows)
+    assert out["person_tag_vs_ocr"] == {"seen:not_written": 1, "seen:partly_written": 1}
+    p = out["precision"]
+    assert (p["names"], p["claimed_figure"]) == (1, 0), "a name partly in the image may have been read"
+    assert (p["not_fully_written"]["names"], p["not_fully_written"]["claimed_figure"]) == (2, 1)
+    assert out["counts"]["images"] == 2, "a forced PERSON line is not in the headline"
+    assert out["forced_person_lines"] == {"claimed_figure": 1, "images": 1, "names_from_appearance": 1}
 
 
 def test_a_stub_pilot_stops_after_n_and_reports_what_was_asked(fake_root, tmp_path, monkeypatch):
@@ -736,6 +1058,14 @@ def _names(row, cat):
     return [(i["name"].casefold(), i["basis"]) for i in row["entities"][cat]["items"]]
 
 
+def _five_lines(row):
+    """All five lines, and a line marked forced only where a replacement says so."""
+    entities = row["entities"]
+    assert image_text.entity_format(entities) == "complete", entities["raw"]
+    replaced = [f for f in entities["flags"] if f.split(":")[0] in image_text.SKELETON_EVENTS]
+    assert replaced or not any(entities[c]["forced"] for c in CATEGORIES), entities["flags"]
+
+
 @gpu
 def test_the_same_image_twice_is_byte_identical(real):
     """A, then B, then A again: nothing carried over from B changes A's bytes."""
@@ -752,6 +1082,7 @@ def test_the_same_image_twice_is_byte_identical(real):
 def test_a_cnn_projection_graphic_is_read_and_named(real):
     row = image_text.process(_factify2(CNN_TEXAS), *real)
     assert row["status"] == "ok", row
+    _five_lines(row)
     ocr = " ".join(r["text"] for r in row["ocr"]["regions"]).upper()
     assert "TRUMP" in ocr and "TEXAS" in ocr
     assert all(0 <= r["confidence"] <= 1 for r in row["ocr"]["regions"])
@@ -770,6 +1101,7 @@ def test_a_cnn_projection_graphic_is_read_and_named(real):
 def test_the_who_sign_names_the_organisation_and_no_person(real):
     row = image_text.process(_factify2(WHO_SIGN), *real)
     assert row["status"] == "ok", row
+    _five_lines(row)
     who = [i for i in row["entities"]["ORG"]["items"]
            if "world health organization" in i["name"].casefold()]
     assert who and who[0]["in_ocr"] is True

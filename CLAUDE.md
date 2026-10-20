@@ -179,6 +179,34 @@ corpora (VERITE, AVerImaTeC) for training, and never yields weak-supervision
 rows for evaluation. `media_mismatch` and `wrong_image` have **no training
 source**: Fakeddit and DGM4 both failed their shortcut audits.
 
+## Image-to-text: standing rules
+
+`scripts/image_text.py` writes one row per distinct image: OCR, an
+appearance-only description, and five entity lines (PERSON / ORG / GPE /
+EVENT / DATE).
+
+- **The entity answer is held to its five lines while it is generated.**
+  Unconstrained, the model ended 63 of the first pilot's 199 answers right
+  after the PERSON line. Where it would break the form, the skeleton puts in
+  the newline or the header, records the replacement, and marks every line
+  from there on `forced`, on the category and on each of its items. An answer
+  that loses lines anyway stops the run; it is never written.
+- **A forced line is weaker evidence than a free one.** Entity statistics are
+  reported split by forced and free, and **forced-line entities never become
+  supervision without that distinction visible**:
+  `image_text.entities_of(row, forced=...)` is the only sanctioned way to read
+  entities out of a row, and it has no default. Splits and evaluation-only
+  corpora are enforced by the training loader, as for every other supervision.
+- **A VLM name is a candidate, never a verification.** On the first pilot's
+  recognition probe most names produced from appearance alone were not the
+  figure the claim names, and confidence did not separate them. Identity is
+  decided by an external gallery. The pilot report
+  (`data/reports/image_text_pilot.json`, `recognition_probe.thresholds`) names
+  both bars: the precision a name needs to replace a gallery (0.90), and what
+  it needs as a candidate the gallery verifies -- which depends on how often
+  the gallery accepts a wrong name (FMR / TAR), measured on the VLM's own
+  wrong names.
+
 ## Layout
 
 ```
