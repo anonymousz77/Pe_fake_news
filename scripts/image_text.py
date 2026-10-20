@@ -28,7 +28,10 @@ costs the others:
   confidence and polygon (original-image coordinates).
 - **description**: Qwen2.5-VL-7B-Instruct, one appearance-only paragraph. It
   names no one unless the name is written in the image -- an invented name in
-  a description a human reads is worse than none.
+  a description a human reads is worse than none. One cut at max_new_tokens
+  is an error, ``truncated`` (the flag stays), and its row partial: it feeds
+  the consistency check and an explanation a person reads, and half a
+  description is not a description.
 - **entities**: a second, separate generate call, five lines (PERSON / ORG /
   GPE / EVENT / DATE). Here recognition is the point -- the downstream check is
   "the caption claims this is X; the image is not X" -- so a person may be
@@ -51,7 +54,12 @@ costs the others:
   entities leave a row only through ``entities_of``, which makes the caller
   say what to do with forced lines. Lines before the first replacement are
   exactly what the model wrote unprompted. An answer that lost its lines
-  anyway stops the run instead of being written.
+  anyway stops the run instead of being written. Two answers are written, but
+  as errors: one cut at max_new_tokens (``truncated``: the skeleton ends an
+  answer that goes on past DATE's line, not one that runs on inside a line),
+  and one whose every line was forced (``no_free_line``: the model began
+  outside the form, as the 13 bare "NONE" answers of the first pilot did).
+  Their row is partial, never ok, and no entity leaves it.
 
   A VLM name is a candidate, never a verification. On the first pilot's
   recognition probe most names produced from appearance alone were not the
@@ -134,10 +142,14 @@ from scripts import images  # noqa: E402
 from scripts.fetchlib import utcnow  # noqa: E402
 from scripts.placeholders import MISSING_STATUSES  # noqa: E402
 
-#: 2: every entity category, and every item in it, carries ``forced``. Rows of
-#: an earlier version stay readable under their own schema (ROW_SCHEMAS); only
-#: the current one is written.
-SCHEMA_VERSION = 2
+#: 2: every entity category, and every item in it, carries ``forced``.
+#: 3: an answer cut at max_new_tokens -- a description or the entities -- and
+#:    an entity answer with no line the model wrote unprompted carry that as
+#:    their error (DESCRIPTION_ANSWER_ERRORS, ENTITY_ANSWER_ERRORS), so their
+#:    row is partial, never ok.
+#: Rows of an earlier version stay readable under their own schema
+#: (ROW_SCHEMAS); only the current one is written.
+SCHEMA_VERSION = 3
 SCHEMA = f"image_text/{SCHEMA_VERSION}"
 #: Bump when parse_entities() or the content gates change: rows record it, and
 #: it is part of the config, so a new parser never writes into an old ledger.
@@ -145,7 +157,11 @@ SCHEMA = f"image_text/{SCHEMA_VERSION}"
 #: 3: lines are split on "\n" only, the line the skeleton holds; skeleton
 #:    replacements are flags, forced lines are marked, and replaced tokens are
 #:    left out of every confidence.
-PARSER_VERSION = 3
+#: 4: a cut answer is an error, ``truncated``, whatever it holds: an entity
+#:    answer (was: ``complete`` when all five headers made it) and a
+#:    description (was: a flag only; the flag stays). An entity answer whose
+#:    every line was forced is an error too, ``no_free_line``.
+PARSER_VERSION = 4
 SEED = 20260901
 
 #: The order datasets are processed in. ``--through X`` runs ORDER up to X.
@@ -738,13 +754,29 @@ def repetitive(text: str, times: int = 4) -> bool:
     return False
 
 
+#: Descriptions that are written, but as errors: their row is partial, never ok.
+DESCRIPTION_ANSWER_ERRORS = ("truncated",)
+
+
+def description_answer_error(block: dict[str, Any]) -> str | None:
+    """``truncated`` if max_new_tokens cut the description, else None. A
+    description cut mid-sentence feeds the consistency check and an
+    explanation a person reads, and half a description is not a description;
+    read off the answer itself, as entity_answer_error is."""
+    return "truncated" if block.get("finish") == "length" else None
+
+
 def description_block(gen: Generation) -> dict[str, Any]:
+    """The description. One that was cut is an error, ``truncated``, whatever
+    it holds -- and keeps the flag; otherwise an empty one or a refusal is."""
     text = gen.text.strip()
     error = "empty" if not text else "refusal" if REFUSAL.match(text) else None
     flags = (["truncated"] if gen.finish == "length" else []) + (
         ["repetition"] if text and repetitive(text) else [])
-    return {"text": text, "error": error, "flags": flags, "finish": gen.finish,
-            "n_tokens": gen.n_tokens, "confidence": text_confidence(gen)}
+    block = {"text": text, "error": error, "flags": flags, "finish": gen.finish,
+             "n_tokens": gen.n_tokens, "confidence": text_confidence(gen)}
+    block["error"] = description_answer_error(block) or error
+    return block
 
 
 # --------------------------------------------------------------------------
@@ -988,20 +1020,21 @@ ENTITY_FORMS_WRITTEN = ("complete", "truncated", "failed")
 def entity_format(block: dict[str, Any] | None) -> str:
     """How an entity answer kept, or lost, its five lines.
 
-    ``complete``; ``truncated`` (max_new_tokens cut it); ``stopped_after:<CAT>``
-    (it ended after CAT's line: stopping early); ``collapsed`` (several headers
-    on one line), ``lines_missing``, ``none_for_all`` or ``unparseable``
-    (another format); ``failed`` (no answer: the call itself errored).
+    ``complete``; ``truncated`` (max_new_tokens cut it, whatever lines it
+    holds: the line it was cut in is cut); ``stopped_after:<CAT>`` (it ended
+    after CAT's line: stopping early); ``collapsed`` (several headers on one
+    line), ``lines_missing``, ``none_for_all`` or ``unparseable`` (another
+    format); ``failed`` (no answer: the call itself errored).
     """
     if block is None or block.get("raw") is None:
         return "failed"
+    if block["finish"] == "length":
+        return "truncated"
     if "answered_none_for_all" in block["flags"]:
         return "none_for_all"
     present = [c for c in CATEGORIES if block[c]["status"] != "missing"]
     if len(present) == len(CATEGORIES):
         return "complete"
-    if block["finish"] == "length":
-        return "truncated"
     if any(len(_HEADER_IN_LINE.findall(line)) > 1 for line in block["raw"].split("\n")):
         return "collapsed"
     if not present:
@@ -1009,6 +1042,29 @@ def entity_format(block: dict[str, Any] | None) -> str:
     if present == list(CATEGORIES[:len(present)]):
         return f"stopped_after:{present[-1]}"
     return "lines_missing"
+
+
+#: Entity answers that are written, but as errors: their row is partial, never
+#: ok, and no entity leaves it (entities_of).
+ENTITY_ANSWER_ERRORS = ("truncated", "no_free_line")
+
+
+def entity_answer_error(block: dict[str, Any]) -> str | None:
+    """Why a written entity answer is not an answer, or None.
+
+    ``truncated``: max_new_tokens cut it -- a runaway; the skeleton ends an
+    answer that goes on past DATE's line, but not one that runs on inside a
+    line (on the first pilot, 2 Factify2 answers ran to the full 192 tokens).
+    ``no_free_line``: the skeleton forced every line, because the model's own
+    answer began outside the form (on the first pilot, 13 answers were a bare
+    "NONE"), so nothing in it was written unprompted. Rows from before this
+    was an error carry neither, so it is read off the answer itself.
+    """
+    if block.get("finish") == "length":
+        return "truncated"
+    if all((block.get(c) or {}).get("forced") for c in CATEGORIES):
+        return "no_free_line"
+    return None
 
 
 def _normalise(text: str) -> str:
@@ -1033,7 +1089,9 @@ def name_in_ocr(name: str, ocr_text: str) -> bool:
 
 def entities_block(gen: Generation, ocr_text: str | None) -> dict[str, Any]:
     """The parsed answer. A line the skeleton forced is marked ``forced`` on the
-    category and on every item in it, so the mark travels with the entity."""
+    category and on every item in it, so the mark travels with the entity. An
+    answer that was cut, or has no free line, is kept with that as its error
+    (entity_answer_error): written, but never as an ok row."""
     parsed = parse_entities(gen.text)
     forced = set(gen.forced_lines)
     out: dict[str, Any] = {"raw": gen.text}
@@ -1050,6 +1108,7 @@ def entities_block(gen: Generation, ocr_text: str | None) -> dict[str, Any]:
                flags=parsed["flags"] + list(gen.events)
                + (["truncated"] if gen.finish == "length" else []),
                finish=gen.finish, n_tokens=gen.n_tokens, confidence=text_confidence(gen))
+    out["error"] = entity_answer_error(out) or out["error"]
     return out
 
 
@@ -1066,9 +1125,10 @@ def entities_of(row: dict[str, Any], *, forced: str) -> Iterator[dict[str, Any]]
     ``forced="mark"`` keeps them. Either way each entity carries ``forced``, so
     the distinction survives the trip into a training set. A row whose lines
     are not marked (written under image_text/1) cannot tell the two apart and
-    is refused. Splits and evaluation-only corpora (VERITE, AVerImaTeC) are the
-    training loader's to enforce, as for every other supervision
-    (processed_loader).
+    is refused. An answer that was cut, or has no free line, gives nothing --
+    also from a row written before that was an error (entity_answer_error).
+    Splits and evaluation-only corpora (VERITE, AVerImaTeC) are the training
+    loader's to enforce, as for every other supervision (processed_loader).
     """
     from scripts.processed_loader import SupervisionError
 
@@ -1081,6 +1141,8 @@ def entities_of(row: dict[str, Any], *, forced: str) -> Iterator[dict[str, Any]]
         raise SupervisionError(
             f"{row['dataset']}/{row['sha256'][:12]}: its entity lines are not marked forced or "
             "free (written under image_text/1), so a forced line cannot be told from a free one")
+    if entity_answer_error(entities):
+        return iter(())
     return ({"dataset": row["dataset"], "sha256": row["sha256"],
              "record_ids": list(row["record_ids"]), "category": cat, **item}
             for cat in CATEGORIES if not (forced == "exclude" and entities[cat]["forced"])
@@ -1606,6 +1668,10 @@ _FLAGS = {"type": "array", "items": {"type": "string"}}
 _ERROR = {"anyOf": [{"type": "null"}, {"type": "string",
                                        "pattern": r"^(empty|refusal|unparseable|cuda_oom|"
                                                   r"exception:[A-Za-z_][A-Za-z0-9_.]*)$"}]}
+#: From image_text/3 an answer can also be an error by its shape: cut (a
+#: description, or the entities), or with no free line (the entities).
+_DESCRIPTION_ERROR = {"anyOf": [*_ERROR["anyOf"], {"enum": list(DESCRIPTION_ANSWER_ERRORS)}]}
+_ENTITY_ERROR = {"anyOf": [*_ERROR["anyOf"], {"enum": list(ENTITY_ANSWER_ERRORS)}]}
 _FINISH = {"enum": ["eos", "length", None]}
 
 
@@ -1679,14 +1745,14 @@ ROW_SCHEMA: dict[str, Any] = {
         "description": {"anyOf": [{"type": "null"}, {
             "type": "object", "additionalProperties": False,
             "required": ["text", "error", "flags", "finish", "n_tokens", "confidence"],
-            "properties": {"text": _NULLABLE_STR, "error": _ERROR, "flags": _FLAGS,
+            "properties": {"text": _NULLABLE_STR, "error": _DESCRIPTION_ERROR, "flags": _FLAGS,
                            "finish": _FINISH, "n_tokens": {"type": "integer", "minimum": 0},
                            "confidence": _P01}}]},
         "entities": {"anyOf": [{"type": "null"}, {
             "type": "object", "additionalProperties": False,
             "required": ["raw", *CATEGORIES, "error", "flags", "finish", "n_tokens", "confidence"],
             "properties": {"raw": _NULLABLE_STR, **{c: _category(forced=True) for c in CATEGORIES},
-                           "error": _ERROR, "flags": _FLAGS, "finish": _FINISH,
+                           "error": _ENTITY_ERROR, "flags": _FLAGS, "finish": _FINISH,
                            "n_tokens": {"type": "integer", "minimum": 0}, "confidence": _P01}}]},
         "confidence": {"anyOf": [{"type": "null"}, {
             "type": "object", "additionalProperties": False,
@@ -1739,20 +1805,26 @@ ROW_SCHEMA: dict[str, Any] = {
 }
 
 
-def _first_schema() -> dict[str, Any]:
-    """image_text/1: the current schema without the forced marks."""
+def _earlier_schema(version: int) -> dict[str, Any]:
+    """image_text/<version> as it was written: 2 without the answer errors (a
+    cut description or entity answer, an entity answer with no free line), 1
+    without the forced marks as well."""
     old = copy.deepcopy(ROW_SCHEMA)
-    old["properties"]["schema"] = {"const": "image_text/1"}
-    old["properties"]["provenance"]["properties"]["schema_version"] = {"const": 1}
+    old["properties"]["schema"] = {"const": f"image_text/{version}"}
+    old["properties"]["provenance"]["properties"]["schema_version"] = {"const": version}
+    old["properties"]["description"]["anyOf"][1]["properties"]["error"] = _ERROR
     entities = old["properties"]["entities"]["anyOf"][1]["properties"]
-    for cat in CATEGORIES:
-        entities[cat] = _category(forced=False)
+    entities["error"] = _ERROR
+    if version < 2:
+        for cat in CATEGORIES:
+            entities[cat] = _category(forced=False)
     return old
 
 
 #: Every row is validated against the schema it declares, so a ledger written
 #: before a schema change stays readable; only SCHEMA is ever written.
-ROW_SCHEMAS: dict[str, dict[str, Any]] = {"image_text/1": _first_schema(), SCHEMA: ROW_SCHEMA}
+ROW_SCHEMAS: dict[str, dict[str, Any]] = {
+    **{f"image_text/{v}": _earlier_schema(v) for v in range(1, SCHEMA_VERSION)}, SCHEMA: ROW_SCHEMA}
 
 _VALIDATORS: dict[str, Any] = {}
 
@@ -1803,6 +1875,18 @@ def row_problems(row: Any, *, schema: bool = True) -> list[str]:
         if isinstance(block, dict) and "forced" in block and any(
                 item.get("forced") != block["forced"] for item in block.get("items") or []):
             problems.append(f"entities/{cat}: an item's forced mark is not its line's")
+    if row.get("schema") == SCHEMA:
+        # a cut answer -- or an entity answer with no free line -- says so in its
+        # error, and an ok row carries no error: none is ever written as ok
+        for name, shape_error, kinds in (
+                ("description", description_answer_error, DESCRIPTION_ANSWER_ERRORS),
+                ("entities", entity_answer_error, ENTITY_ANSWER_ERRORS)):
+            block = row.get(name)
+            if not isinstance(block, dict):
+                continue
+            want, have = shape_error(block), block.get("error")
+            if (want or have in kinds) and have != want:
+                problems.append(f"{name}: the answer is {want or 'whole'}, but its error is {have!r}")
     status, reason = row.get("status"), row.get("reason")
     present = [c for c in COMPONENTS if row.get(c) is not None]
     if status == "skipped" and reason not in SKIP_REASONS:
@@ -1867,7 +1951,8 @@ def process(item: WorkItem, vlm, ocr, ctx: Context, *, attempt: int = 1) -> dict
 
     It raises FatalError only when the run's own guarantees break -- among them
     an entity answer that lost its lines, which means the skeleton did not hold:
-    such a row is never written, as ``ok`` or otherwise."""
+    such a row is never written, as ``ok`` or otherwise. An answer that was cut,
+    or has no free line, is written as an entity error: the row is partial."""
     from PIL import Image
 
     t0 = time.perf_counter()
@@ -2202,23 +2287,38 @@ def _stats(values: Sequence[float]) -> dict[str, float] | None:
             "p90": round(q(0.9), 3), "max": round(ordered[-1], 3)}
 
 
+def _ratio(num: float, den: float, digits: int | None = None) -> float | None:
+    """``num / den`` (rounded to ``digits``), or None where the denominator is
+    zero: every rate and fit in the pilot report divides through here, unit
+    conversions by a constant aside. Durations are rounded to the millisecond,
+    and on a fast machine the stub finishes an image in less, so every
+    duration, and their sum, can be 0.0."""
+    if not den:
+        return None
+    return num / den if digits is None else round(num / den, digits)
+
+
 def _fit(rows: Sequence[dict[str, Any]]) -> dict[str, float] | None:
-    """Least squares: seconds = a + b * visual_tokens, over images the model saw."""
+    """Least squares: seconds = a + b * visual_tokens, over images the model saw.
+
+    None where there is no fit: fewer than three images, or every image the same
+    size in visual tokens (the slope's denominator is zero). r2 is None where
+    every image took the same time (its denominator is zero)."""
     pts = [(r["model_input"]["visual_tokens"], r["run"]["seconds"]["total"]) for r in rows
            if r["status"] in ("ok", "partial")]
     if len(pts) < 3:
         return None
     xs, ys = [p[0] for p in pts], [p[1] for p in pts]
     mx, my = statistics.fmean(xs), statistics.fmean(ys)
-    sxx = sum((x - mx) ** 2 for x in xs)
-    if sxx == 0:
-        return {"a": round(my, 4), "b": 0.0, "r2": 0.0, "n": len(pts)}
-    b = sum((x - mx) * (y - my) for x, y in pts) / sxx
+    b = _ratio(sum((x - mx) * (y - my) for x, y in pts), sum((x - mx) ** 2 for x in xs))
+    if b is None:
+        return None
     a = my - b * mx
     ss_tot = sum((y - my) ** 2 for y in ys)
     ss_res = sum((y - (a + b * x)) ** 2 for x, y in pts)
-    return {"a": round(a, 4), "b": round(b, 6), "r2": round(1 - ss_res / ss_tot, 3) if ss_tot else 0.0,
-            "n": len(pts)}
+    unexplained = _ratio(ss_res, ss_tot)
+    return {"a": round(a, 4), "b": round(b, 6),
+            "r2": None if unexplained is None else round(1 - unexplained, 3), "n": len(pts)}
 
 
 def sizes_of(items: Sequence[WorkItem]) -> list[tuple[str, int | None]]:
@@ -2322,6 +2422,11 @@ def entity_stats(seen: Sequence[dict[str, Any]], forced: bool) -> dict[str, Any]
 
 def quality(rows: Sequence[dict[str, Any]]) -> dict[str, Any]:
     seen = [r for r in rows if r["status"] in ("ok", "partial")]
+    # Entity statistics are over whole answers: a cut answer's last line is cut,
+    # and a failed call has none. Those are counted by entity_format and
+    # component_errors; an answer whose every line was forced is whole, and its
+    # lines count with the forced ones.
+    whole = [r for r in seen if entity_format(r["entities"]) == "complete"]
     desc_flags = Counter(f for r in seen for f in r["description"]["flags"])
     ent_flags = Counter(f.split(":")[0] for r in seen for f in r["entities"]["flags"])
     missing = Counter(f.split(":")[1] for r in seen for f in r["entities"]["flags"]
@@ -2342,18 +2447,18 @@ def quality(rows: Sequence[dict[str, Any]]) -> dict[str, Any]:
             "entities_complete_free": sum(
                 1 for r in seen if entity_format(r["entities"]) == "complete"
                 and not any(r["entities"][c]["forced"] for c in CATEGORIES)),
-            "entities": {"free": entity_stats(seen, False), "forced": entity_stats(seen, True)},
+            "entities": {"free": entity_stats(whole, False), "forced": entity_stats(whole, True)},
             "images_with_ocr_text": sum(1 for r in seen if (r["ocr"]["text"] or "").strip()),
             "generated_tokens": {"description": _stats([r["description"]["n_tokens"] for r in seen]),
                                  "entities": _stats([r["entities"]["n_tokens"] for r in seen])}}
 
 
-def candidate_precision_needed(ratio: float, target: float = VERIFIER_PRECISION) -> float:
+def candidate_precision_needed(ratio: float, target: float = VERIFIER_PRECISION) -> float | None:
     """Precision a candidate name needs for the names a gallery ACCEPTS to be
     right ``target`` of the time, when the gallery accepts a wrong name
     ``ratio`` times as often as a right one (FMR / TAR). Accepted names are
     right p*TAR / (p*TAR + (1-p)*FMR) of the time; this is that, solved for p."""
-    return target * ratio / (target * ratio + (1 - target))
+    return _ratio(target * ratio, target * ratio + (1 - target))
 
 
 def max_false_accept_ratio(precision: float, target: float = VERIFIER_PRECISION) -> float | None:
@@ -2362,7 +2467,8 @@ def max_false_accept_ratio(precision: float, target: float = VERIFIER_PRECISION)
     inverse of candidate_precision_needed. None when every candidate is right."""
     if precision >= 1:
         return None
-    return precision / (1 - precision) * (1 - target) / target
+    odds = _ratio(precision, 1 - precision)
+    return None if odds is None else _ratio(odds * (1 - target), target)
 
 
 def probe_summary(probe: Sequence[WorkItem], rows: dict[str, dict[str, Any]]) -> dict[str, Any]:
@@ -2388,8 +2494,9 @@ def probe_summary(probe: Sequence[WorkItem], rows: dict[str, dict[str, Any]]) ->
     plays -- it needs less, by how rarely the gallery accepts a wrong name
     (candidate_precision_needed); the report gives the largest false-accept
     rate the measured precision allows. Headline figures are over free PERSON
-    lines; a PERSON line the skeleton forced is weaker evidence and counted
-    apart.
+    lines of whole answers; a PERSON line the skeleton forced is weaker
+    evidence and counted apart, and a cut answer or a failed call is counted
+    (``entity_answer_<form>``) and nothing more.
     """
     token = {name: re.compile(tok) for name, _claim, tok in PUBLIC_FIGURES}
     tally: Counter = Counter()
@@ -2403,6 +2510,10 @@ def probe_summary(probe: Sequence[WorkItem], rows: dict[str, dict[str, Any]]) ->
         row = rows.get(item.sha256)
         if row is None or row["status"] not in ("ok", "partial"):
             tally["not_seen_by_model"] += 1
+            continue
+        form = entity_format(row["entities"])
+        if form != "complete":  # cut -- its PERSON line may be the one cut -- or failed: no evidence
+            tally[f"entity_answer_{form}"] += 1
             continue
         person = row["entities"]["PERSON"]
         pattern = token[item.probe]
@@ -2446,18 +2557,18 @@ def probe_summary(probe: Sequence[WorkItem], rows: dict[str, dict[str, Any]]) ->
         f["name_not_written"] += not written
         f["recognised_claimed_figure"] += bool(not written and named_claimed)
     n, k = tally["images"], tally["name_not_written"]
-    key = tally["name_not_written_names_claimed_figure"] / k if k else None
-    anyone = tally["name_not_written_names_someone"] / k if k else None
+    key = _ratio(tally["name_not_written_names_claimed_figure"], k)
+    anyone = _ratio(tally["name_not_written_names_someone"], k)
     near_zero = key is not None and key < NEAR_ZERO
     c, w = tally["recognised_names_claimed_figure"], tally["recognised_names_someone_else"]
-    precision = c / (c + w) if c + w else None
+    precision = _ratio(c, c + w)
     ratio = None if precision is None else max_false_accept_ratio(precision)
     lc, lw = tally["not_fully_written_names_claimed_figure"], tally["not_fully_written_names_someone_else"]
     by_confidence = []
     for floor in CONFIDENCE_GRID:
         kept = [hit for cf, hit in scored if cf is not None and cf >= floor]
         by_confidence.append({"min_confidence": floor, "names": len(kept), "claimed_figure": sum(kept),
-                              "precision": _r(sum(kept) / len(kept), 4) if kept else None})
+                              "precision": _ratio(sum(kept), len(kept), 4)})
     thresholds = {
         "verifier": {
             "role": "a name taken as the identity, with no gallery behind it: replacing the gallery",
@@ -2541,11 +2652,11 @@ def probe_summary(probe: Sequence[WorkItem], rows: dict[str, dict[str, Any]]) ->
                     "population": ("as first counted: names the OCR does not contain in full "
                                    "(in_ocr false), including names it contains in part"),
                     "names": lc + lw, "claimed_figure": lc, "someone_else": lw,
-                    "value": _r(lc / (lc + lw), 4) if lc + lw else None,
+                    "value": _ratio(lc, lc + lw, 4),
                     "confidence": {k_: _stats(v) for k_, v in sorted(loose_conf.items())}}},
             "rate_claimed_figure_named_where_name_not_written": _r(key, 4),
             "rate_someone_named_from_appearance_where_name_not_written": _r(anyone, 4),
-            "rate_any_person_tagged_seen": _r(tally["any_person_tagged_seen"] / n if n else None, 4),
+            "rate_any_person_tagged_seen": _ratio(tally["any_person_tagged_seen"], n, 4),
             "rates_are": ("recall-style: the share of images on which a name was given; they count "
                           "hits and are silent on wrong names -- precision is in `precision`"),
             "person_tag_vs_ocr": dict(sorted(tags.items())),
@@ -2628,7 +2739,7 @@ def build_pilot_report(*, ctx: Context, vlm, target: str | None, requested: int,
                   "per_class": per_class(pilot_rows, labels)},
         "throughput": {"model_load_seconds": round(load_seconds, 1),
                        "wall_seconds": round(wall_seconds, 1),
-                       "images_per_second": round(len(pilot_rows) / sum(totals), 4) if totals else None,
+                       "images_per_second": _ratio(len(pilot_rows), sum(totals), 4),
                        "seconds_per_image": stage["total"], "stage_seconds": stage,
                        "mean_visual_tokens": round(statistics.fmean(
                            [r["model_input"]["visual_tokens"] for r in pilot_rows

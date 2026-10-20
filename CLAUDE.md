@@ -191,6 +191,14 @@ EVENT / DATE).
   the newline or the header, records the replacement, and marks every line
   from there on `forced`, on the category and on each of its items. An answer
   that loses lines anyway stops the run; it is never written.
+- **A runaway or an empty answer is an error, never `ok`.** An entity answer
+  cut at `max_new_tokens` (`truncated`; the first pilot had 2) or with every
+  line forced (`no_free_line`: the model began outside the form, like the
+  first pilot's 13 bare "NONE" answers) is written with that as the entity
+  error: the row is `partial`, no entity leaves it, and neither is in the
+  probe's headline. A description cut at `max_new_tokens` is an error too,
+  `truncated`, with the flag kept: half a description is not a description.
+  `row_problems` refuses every one of these as `ok`.
 - **A forced line is weaker evidence than a free one.** Entity statistics are
   reported split by forced and free, and **forced-line entities never become
   supervision without that distinction visible**:

@@ -362,8 +362,27 @@ def _mutations():
     def mark_disagrees(r):
         r["entities"]["ORG"]["items"][0]["forced"] = not r["entities"]["ORG"]["forced"]
 
+    def cut_but_ok(r):
+        r["entities"]["finish"] = "length"
+
+    def every_line_forced_but_ok(r):
+        for cat in CATEGORIES:
+            r["entities"][cat]["forced"] = True
+            for item in r["entities"][cat]["items"]:
+                item["forced"] = True
+
+    def an_answer_error_with_no_cause(r):
+        r["status"], r["entities"]["error"] = "partial", "truncated"
+
+    def description_cut_but_ok(r):
+        r["description"]["finish"] = "length"
+
+    def a_description_error_with_no_cause(r):
+        r["status"], r["description"]["error"] = "partial", "truncated"
+
     return [drop_revision, bad_status, add_path, add_hostname, add_label, sampled, unmarked,
-            mark_disagrees]
+            mark_disagrees, cut_but_ok, every_line_forced_but_ok, an_answer_error_with_no_cause,
+            description_cut_but_ok, a_description_error_with_no_cause]
 
 
 @pytest.mark.parametrize("mutate", _mutations(), ids=lambda f: f.__name__)
@@ -516,7 +535,11 @@ def test_content_gates_on_a_generation():
     assert image_text.description_block(
         Generation("I'm sorry, I can't describe this.", [0.0], [33], "eos", 1))["error"] == "refusal"
     looped = image_text.description_block(Generation("a dog " * 40, [0.0], [240], "length", 256))
-    assert looped["error"] is None and {"truncated", "repetition"} <= set(looped["flags"])
+    assert looped["error"] == "truncated", "half a description is not a description"
+    assert {"truncated", "repetition"} <= set(looped["flags"]), "the flag stays"
+    cut = image_text.description_block(Generation("A photograph of a man in a dark suit at a",
+                                                  [0.0], [41], "length", 256))
+    assert (cut["error"], cut["flags"]) == ("truncated", ["truncated"])
 
 
 def test_the_prompts_split_reading_from_recognition():
@@ -541,7 +564,7 @@ class ToyTokenizer:
 
     VOCAB = ("<|im_end|>", "PERSON", ":", " UN", "IDENT", "IFIED", " [", "seen", "]", "]\n",
              "\n", "ORG", " NONE", "G", "PE", "EVENT", "DATE", "NONE", "ORGAN", " CNN", " Note",
-             " Joe", " Biden")
+             " Joe", " Biden", " ;")
     END = 0
     EOS = (0,)
 
@@ -585,21 +608,22 @@ def tokenizer(request):
     return ToyTokenizer() if request.param == "toy" else QwenTokenizer()
 
 
-def _drive(tok, script: list[int]) -> tuple[image_text.Skeleton, list[int]]:
+def _drive(tok, script: list[int], limit: int | None = None) -> tuple[image_text.Skeleton, list[int]]:
     """Feed a skeleton the model's wishes one step at a time, as generate does,
-    until it emits an end of turn."""
+    until it emits an end of turn -- or, like max_new_tokens, ``limit`` steps."""
     skeleton, emitted = tok.skeleton(), []
-    for want in script:
+    for want in script[:limit]:
         emitted.append(skeleton.choose(want))
         if emitted[-1] in skeleton.eos:
             break
     return skeleton, emitted
 
 
-def _held(tok, script: list[int], logprobs: list[float] | None = None) -> Generation:
+def _held(tok, script: list[int], logprobs: list[float] | None = None,
+          limit: int | None = None) -> Generation:
     """A Generation as QwenVLM.generate builds it, from a skeleton driven by ``script``."""
-    skeleton, emitted = _drive(tok, script)
-    pieces = [tok.decode(i) for i in emitted]
+    skeleton, emitted = _drive(tok, script, limit)
+    pieces = ["" if i in skeleton.eos else tok.decode(i) for i in emitted]  # skip_special_tokens
     ends, total = [], 0
     for piece in pieces:
         total += len(piece)
@@ -678,6 +702,7 @@ def _gen(raw: str, finish: str = "eos") -> Generation:
     ("PERSON: UNIDENTIFIED [seen]", "eos", "stopped_after:PERSON"),  # the first pilot's 63
     (FIVE.format("NONE"), "eos", "complete"),
     ("PERSON: NONE\nORG: CNN [text]\nGPE: Tex", "length", "truncated"),
+    (FIVE.format("NONE ; NONE ; NONE"), "length", "truncated"),  # every header, cut in DATE's line
     ("PERSON: NONE ORG: NONE GPE: NONE EVENT: NONE DATE: NONE", "eos", "collapsed"),
     ("PERSON: NONE\nORG: NONE\nDATE: NONE", "eos", "lines_missing"),
     ("NONE [seen]", "eos", "none_for_all"),
@@ -692,25 +717,32 @@ def test_a_failed_entity_call_is_failed_not_malformed():
     assert image_text.entity_format(image_text._failed_component("entities", "cuda_oom")) == "failed"
 
 
-class _EndsAfterPerson(StubVLM):
-    """What the model did on 63 of the first pilot's 199 images, before the
-    skeleton: the PERSON line, then the end of its turn."""
+class _Unheld(StubVLM):
+    """An entity answer as the model gave it before the skeleton, unconstrained."""
+
+    answer = "PERSON: UNIDENTIFIED [seen]"
 
     def generate(self, image, which):
         if which != "entities":
             return super().generate(image, which)
         self.calls += 1
-        return Generation("PERSON: UNIDENTIFIED [seen]", [-0.1] * 9,
-                          [6, 7, 10, 15, 20, 22, 26, 27, 27], "eos", 9)
+        ends = [m.end() for m in re.finditer(r"\S+\s*", self.answer)]
+        return Generation(self.answer, [-0.1] * len(ends), ends, "eos", len(ends))
 
 
 @pytest.mark.parametrize("pilot", [False, True], ids=["run", "pilot"])
-def test_an_entity_answer_that_lost_its_lines_stops_the_run_unwritten(fake_root, tmp_path,
-                                                                      monkeypatch, capsys, pilot):
+@pytest.mark.parametrize("answer, form", [
+    ("PERSON: UNIDENTIFIED [seen]", "stopped_after:PERSON"),  # the first pilot's 63, 9 tokens
+    ("NONE [seen]", "none_for_all"),                          # its 13, 4.5 tokens on average
+], ids=["stopped_after_person", "none_for_all"])
+def test_an_entity_answer_that_lost_its_lines_stops_the_run_unwritten(fake_root, tmp_path, monkeypatch,
+                                                                      capsys, pilot, answer, form):
     """Whatever produces it -- a prompt, a model, a decoding change -- an answer
-    missing lines is never written, as ok or otherwise: the run stops."""
+    missing lines is never written, as ok or otherwise: the run stops. Under
+    the skeleton neither can arise (the next test); this is the guard behind it."""
     monkeypatch.setattr(image_text, "OUT_ROOT", tmp_path / "out")
-    monkeypatch.setattr(image_text, "StubVLM", _EndsAfterPerson)
+    monkeypatch.setattr(image_text, "StubVLM", _Unheld)
+    monkeypatch.setattr(_Unheld, "answer", answer)
     lines = [json.dumps(_put(fake_root, f"data/raw/verite/s{i}.png", _png((i, 6, 6)), rid=str(i)).as_json())
              for i in range(2)]
     worklist = tmp_path / "wl.jsonl"
@@ -718,30 +750,149 @@ def test_an_entity_answer_that_lost_its_lines_stops_the_run_unwritten(fake_root,
     argv = ["run", "--stub", "--worklist", str(worklist)] + (["--pilot", "2"] if pilot else [])
     assert image_text.main(argv) == 2
     err = capsys.readouterr().err
-    assert "STOPPED" in err and "stopped_after:PERSON" in err
+    assert "STOPPED" in err and f"({form})" in err
     (ledger,) = (tmp_path / "out").glob("*/verite.jsonl")
     assert ledger.read_bytes() == b"", "a row whose entity answer lost its lines was written"
 
 
-def test_a_row_of_the_first_schema_still_validates_but_is_never_written(fake_root):
-    """A ledger written before lines were marked stays readable (status
-    --verify checks every ledger); a row of that shape is never appended."""
-    vlm, ocr, ctx = _ctx(fake_root)
-    row = image_text.process(_put(fake_root, "data/raw/verite/old.png", _png()), vlm, ocr, ctx)
-    old = json.loads(json.dumps(row))
-    old["schema"], old["provenance"]["schema_version"] = "image_text/1", 1
-    for cat in CATEGORIES:
-        del old["entities"][cat]["forced"]
-        for item in old["entities"][cat]["items"]:
-            del item["forced"]
-    old["result_sha256"] = image_text.result_sha256(old)
-    assert image_text.row_problems(old) == []
-    assert image_text.row_problems({**old, "schema": "image_text/9"})[0].startswith("schema:")
+class _Held(StubVLM):
+    """The stub, with its entity answer generated under the real skeleton from
+    a scripted model, max_new_tokens included -- as QwenVLM.generate does."""
+
+    def __init__(self, tok, script):
+        super().__init__()
+        self.tok, self.script = tok, script
+
+    def generate(self, image, which):
+        if which != "entities":
+            return super().generate(image, which)
+        self.calls += 1
+        return _held(self.tok, self.script, limit=image_text.MAX_NEW_TOKENS["entities"])
+
+
+def _script(tok, case: str) -> list[int]:
+    """What the model wants at each step, whatever was emitted before."""
+    end = [tok.END]
+    if case == "ends_after_person":  # the first pilot's 63
+        return (tok.encode("PERSON: UNIDENTIFIED [seen]") + end
+                + tok.encode("ORG: NONE\nGPE: NONE\nEVENT: NONE\nDATE: NONE") + end)
+    if case == "answers_nothing":  # its 13 bare "NONE"s, and then nothing at every step
+        return tok.encode("NONE") + end * 40
+    if case == "runs_away_in_a_line":  # its 2 runaways: on inside PERSON's line, past 192 tokens
+        return tok.encode("PERSON: Joe Biden [seen]") + tok.encode(" ; Joe Biden [seen]") * 40
+    if case == "goes_on_after_date":
+        return tok.encode(FIVE.format("NONE") + "\n") + tok.encode(" Note") * 10
+    raise ValueError(case)
+
+
+@pytest.mark.parametrize("case, status, error, form, forced", [
+    ("ends_after_person", "ok", None, "complete", ("ORG", "GPE", "EVENT", "DATE")),
+    ("answers_nothing", "partial", "no_free_line", "complete", CATEGORIES),
+    ("runs_away_in_a_line", "partial", "truncated", "truncated", ()),
+    ("goes_on_after_date", "ok", None, "complete", ()),
+])
+def test_each_way_the_model_lost_its_form_is_written_as_what_it_is(tokenizer, fake_root, case,
+                                                                    status, error, form, forced):
+    """Through the pipeline, under the real skeleton. An answer the model began
+    and stopped early is an answer, its forced lines marked. One it never began
+    (every line forced) or never ended (cut at max_new_tokens) is written as an
+    entity error -- partial, never ok, no entity out of it -- and the ledger
+    refuses it as ok. Going on past DATE's line is ended by the skeleton."""
+    vlm = _Held(tokenizer, _script(tokenizer, case))
+    _, ocr, ctx = _ctx(fake_root, vlm=vlm)
+    row = image_text.process(_put(fake_root, "data/raw/verite/h.png", _png()), vlm, ocr, ctx)
+    entities = row["entities"]
+    assert (row["status"], entities["error"], image_text.entity_format(entities)) == (status, error, form)
+    assert tuple(c for c in CATEGORIES if entities[c]["forced"]) == forced
+    assert image_text.row_problems(row) == []
     ledger = Ledger(ctx.out_dir / "verite.jsonl", dataset="verite", config_id=ctx.config_id)
     ledger.open()
-    with pytest.raises(FatalError, match="only image_text/2 is written"):
-        ledger.append(old)
+    ledger.append(row)
+    if case == "answers_nothing":
+        assert entities["flags"][:2] == ["empty_value:PERSON", "empty_value:ORG"]
+        assert "header_forced:PERSON" in entities["flags"] and entities["n_tokens"] < 30
+    if case == "runs_away_in_a_line":
+        assert entities["n_tokens"] == 192 and entities["finish"] == "length"
+        assert entities["PERSON"]["items"][0]["name"] == "Joe Biden"
+        assert {f"category_missing:{c}" for c in CATEGORIES[1:]} <= set(entities["flags"])
+    if case == "goes_on_after_date":
+        assert "ended_after:DATE" in entities["flags"]
+    if error:
+        assert list(image_text.entities_of(row, forced="mark")) == []
+        as_ok = json.loads(json.dumps(row))
+        as_ok["status"], as_ok["entities"]["error"] = "ok", None
+        as_ok["result_sha256"] = image_text.result_sha256(as_ok)
+        assert any(error in p for p in image_text.row_problems(as_ok))
+        with pytest.raises(FatalError, match="invalid row"):
+            ledger.append(as_ok)
     ledger.close()
+
+
+class _CutDescription(StubVLM):
+    """The stub, with its description cut at max_new_tokens."""
+
+    def generate(self, image, which):
+        gen = super().generate(image, which)
+        if which != "description":
+            return gen
+        return Generation(gen.text, gen.logprobs, gen.ends, "length",
+                          image_text.MAX_NEW_TOKENS["description"])
+
+
+def test_a_cut_description_is_an_error_and_its_row_partial(fake_root):
+    """Half a description is not a description: it would feed the consistency
+    check and an explanation a person reads. The flag stays, the ledger refuses
+    the row as ok, and the entities -- a separate call -- are untouched."""
+    vlm = _CutDescription()
+    _, ocr, ctx = _ctx(fake_root, vlm=vlm)
+    row = image_text.process(_put(fake_root, "data/raw/verite/d.png", _png()), vlm, ocr, ctx)
+    description = row["description"]
+    assert (row["status"], description["error"], description["flags"]) == ("partial", "truncated",
+                                                                          ["truncated"])
+    assert image_text.row_problems(row) == []
+    assert [e["name"] for e in image_text.entities_of(row, forced="mark")] == ["Stub Labs"]
+    as_ok = json.loads(json.dumps(row))
+    as_ok["status"], as_ok["description"]["error"] = "ok", None
+    as_ok["result_sha256"] = image_text.result_sha256(as_ok)
+    assert any(p.startswith("description:") and "truncated" in p for p in image_text.row_problems(as_ok))
+    ledger = Ledger(ctx.out_dir / "verite.jsonl", dataset="verite", config_id=ctx.config_id)
+    ledger.open()
+    ledger.append(row)
+    with pytest.raises(FatalError, match="invalid row"):
+        ledger.append(as_ok)
+    ledger.close()
+
+
+def test_rows_of_earlier_schemas_still_validate_but_are_never_written(fake_root):
+    """A ledger written before lines were marked (1), or before a cut answer
+    was an error (2), stays readable -- status --verify checks every ledger --
+    and a row of either shape is never appended. A cut answer from 2 gives no
+    entities, though it never said so."""
+    vlm, ocr, ctx = _ctx(fake_root)
+    row = image_text.process(_put(fake_root, "data/raw/verite/old.png", _png()), vlm, ocr, ctx)
+    first = json.loads(json.dumps(row))
+    first["schema"], first["provenance"]["schema_version"] = "image_text/1", 1
+    for cat in CATEGORIES:
+        del first["entities"][cat]["forced"]
+        for item in first["entities"][cat]["items"]:
+            del item["forced"]
+    second = json.loads(json.dumps(row))
+    second["schema"], second["provenance"]["schema_version"] = "image_text/2", 2
+    second["entities"]["finish"] = "length"  # written ok, as 2 wrote a cut answer
+    second["description"]["finish"] = "length"  # and a cut description
+    ledger = Ledger(ctx.out_dir / "verite.jsonl", dataset="verite", config_id=ctx.config_id)
+    ledger.open()
+    for old in (first, second):
+        old["result_sha256"] = image_text.result_sha256(old)
+        assert image_text.row_problems(old) == []
+        with pytest.raises(FatalError, match=re.escape(f"only {image_text.SCHEMA} is written")):
+            ledger.append(old)
+    ledger.close()
+    assert image_text.row_problems({**first, "schema": "image_text/9"})[0].startswith("schema:")
+    assert (second["status"], list(image_text.entities_of(second, forced="mark"))) == ("ok", [])
+    second["entities"]["error"] = "truncated"  # an error 2 did not have
+    second["result_sha256"] = image_text.result_sha256(second)
+    assert image_text.row_problems(second)
 
 
 def test_entities_leave_a_row_only_with_their_line_marked(fake_root):
@@ -773,12 +924,17 @@ def test_entity_statistics_are_split_by_forced_and_free(fake_root):
         held["entities"][cat]["forced"] = True
         for item in held["entities"][cat]["items"]:
             item["forced"] = True
-    q = image_text.quality([free, held])
+    cut = image_text.process(_put(fake_root, "data/raw/verite/f3.png", _png((2, 2, 2))), vlm, ocr, ctx)
+    cut["status"], cut["entities"]["finish"], cut["entities"]["error"] = "partial", "length", "truncated"
+    q = image_text.quality([free, held, cut])
     by = q["entities"]
-    assert by["free"]["lines"] == {"PERSON": 2, "ORG": 1, "GPE": 1, "EVENT": 1, "DATE": 1}
+    assert by["free"]["lines"] == {"PERSON": 2, "ORG": 1, "GPE": 1, "EVENT": 1, "DATE": 1}, \
+        "a cut answer's lines are in neither count"
     assert by["forced"]["lines"] == {"ORG": 1, "GPE": 1, "EVENT": 1, "DATE": 1}
     assert by["free"]["names_tag_vs_ocr"] == by["forced"]["names_tag_vs_ocr"] == {"text:written": 1}
-    assert (q["entities_complete_free"], q["entity_format"]) == (1, {"complete": 2})
+    assert q["entities_complete_free"] == 1
+    assert q["entity_format"] == {"complete": 2, "truncated": 1}
+    assert q["component_errors"] == {"entities:truncated": 1}
 
 
 # --------------------------------------------------------------------------
@@ -853,10 +1009,14 @@ def test_the_probe_takes_train_claims_naming_one_pictured_figure(tmp_path):
     assert probe[0].probe == "Narendra Modi" and probe[1].probe == "Donald Trump", "round-robin"
 
 
-def _probe_row(person_items, ocr_text, forced=False):
-    return {"status": "ok", "ocr": {"text": ocr_text}, "entities": {"PERSON": {
-        "status": "named" if person_items else "unidentified", "forced": forced,
-        "items": person_items}}}
+def _probe_row(person_items, ocr_text, forced=False, finish="eos"):
+    """A probe image's row: a whole entity answer naming ``person_items``. A
+    forced PERSON line means every line was forced; ``length`` cuts it."""
+    rest = {c: {"status": "none", "forced": forced, "items": []} for c in CATEGORIES[1:]}
+    return {"status": "ok", "ocr": {"text": ocr_text}, "entities": {
+        "raw": "(probe)", "flags": [], "finish": finish, **rest,
+        "PERSON": {"status": "named" if person_items else "unidentified", "forced": forced,
+                   "items": person_items}}}
 
 
 def _probe_name(text, basis, in_ocr, confidence=0.9):
@@ -944,13 +1104,35 @@ def test_a_name_partly_in_the_ocr_was_read_and_a_forced_person_line_stands_apart
     assert out["forced_person_lines"] == {"claimed_figure": 1, "images": 1, "names_from_appearance": 1}
 
 
+def test_a_cut_answer_is_no_evidence_for_the_probe():
+    """Its PERSON line may be the line that ran away: counted, and nothing more."""
+    probe = [WorkItem("factify2", str(i) * 64, "x", ("r",), 1, probe="Narendra Modi") for i in range(2)]
+    name = _probe_name("Narendra Modi", "seen", False)
+    rows = {probe[0].sha256: _probe_row([name], ""),
+            probe[1].sha256: _probe_row([name], "", finish="length")}
+    out = image_text.probe_summary(probe, rows)
+    assert (out["counts"]["images"], out["counts"]["entity_answer_truncated"]) == (1, 1)
+    assert (out["precision"]["names"], out["precision"]["claimed_figure"]) == (1, 1)
+    assert out["forced_person_lines"] == {}
+
+
+def test_a_rate_over_nothing_is_null_not_a_division():
+    assert image_text._ratio(3, 0, 4) is None and image_text._ratio(0, 0) is None
+    assert image_text._ratio(1, 3, 4) == 0.3333 and image_text._ratio(1, 4) == 0.25
+    # the candidate bar's denominators: only a target of 1 with a ratio of 0, and a target of 0
+    assert image_text.candidate_precision_needed(0.0, target=1.0) is None
+    assert image_text.max_false_accept_ratio(0.5, target=0.0) is None
+
+
 def test_a_stub_pilot_stops_after_n_and_reports_what_was_asked(fake_root, tmp_path, monkeypatch):
     monkeypatch.setattr(image_text, "OUT_ROOT", tmp_path / "out")
     lines = [json.dumps({**_put(fake_root, f"data/raw/verite/q{i}.png", _png((i, 3, 3), (80 + i, 60)),
                                 rid=str(i)).as_json()}) for i in range(6)]
     worklist = tmp_path / "wl.jsonl"
     worklist.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    assert image_text.main(["run", "--stub", "--worklist", str(worklist), "--pilot", "3"]) == 0
+    # a delay, so every image takes measurable time on any machine (the next test: none)
+    argv = ["run", "--stub", "--stub-delay", "0.002", "--worklist", str(worklist), "--pilot", "3"]
+    assert image_text.main(argv) == 0
     out_dir = next((tmp_path / "out").iterdir())
     assert len((out_dir / "verite.jsonl").read_bytes().splitlines()) == 3, "the pilot went past N"
     report = json.loads((out_dir / "pilot.json").read_text(encoding="utf-8"))
@@ -963,6 +1145,42 @@ def test_a_stub_pilot_stops_after_n_and_reports_what_was_asked(fake_root, tmp_pa
     assert "data/raw" not in text and "q0.png" not in text
     host = socket.gethostname()
     assert len(host) < 4 or host not in text
+
+
+class _StoppedClock:
+    """``time`` as image_text sees it, with perf_counter stopped: every duration
+    is 0.0, as the stub's are on a fast machine once rounded to the millisecond."""
+
+    def __getattr__(self, name):
+        return getattr(time, name)
+
+    @staticmethod
+    def perf_counter() -> float:
+        return 1000.0
+
+
+def test_a_pilot_whose_images_took_no_time_reports_null_rates(fake_root, tmp_path, monkeypatch):
+    """On the server the stub finished every image in 0.0 s, and the report
+    divided by their sum (ZeroDivisionError). A rate or a fit over nothing is
+    null; what has no denominator -- a mean, a projection -- is still 0.0."""
+    monkeypatch.setattr(image_text, "OUT_ROOT", tmp_path / "out")
+    monkeypatch.setattr(image_text, "time", _StoppedClock())
+    lines = [json.dumps(_put(fake_root, f"data/raw/verite/z{i}.png", _png((i, 5, 5), (56 * (i + 1), 56)),
+                             rid=str(i)).as_json()) for i in range(3)]  # 4, 8, 12 visual tokens
+    worklist = tmp_path / "wl.jsonl"
+    worklist.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    assert image_text.main(["run", "--stub", "--worklist", str(worklist), "--pilot", "3"]) == 0
+    (out_dir,) = (tmp_path / "out").iterdir()
+    rows = [json.loads(line) for line in (out_dir / "verite.jsonl").read_text(encoding="utf-8").splitlines()]
+    assert {s for r in rows for s in r["run"]["seconds"].values()} == {0.0}, "the server's condition"
+    report = json.loads((out_dir / "pilot.json").read_text(encoding="utf-8"))
+    t = report["throughput"]
+    assert t["images_per_second"] is None and t["seconds_per_image"]["mean"] == 0.0
+    assert t["fit_seconds_on_visual_tokens"] == {"a": 0.0, "b": 0.0, "r2": None, "n": 3}
+    assert report["projection"]["datasets"]["verite"]["hours_naive"] == 0.0
+    # every image the same size in visual tokens: no slope to fit, so no fit
+    same = [{**r, "model_input": {**r["model_input"], "visual_tokens": 4}} for r in rows]
+    assert image_text._fit(same) is None
 
 
 def test_recheck_and_status_read_what_a_run_wrote(fake_root, tmp_path, monkeypatch, capsys):
@@ -1059,9 +1277,11 @@ def _names(row, cat):
 
 
 def _five_lines(row):
-    """All five lines, and a line marked forced only where a replacement says so."""
+    """All five lines, and a line marked forced only where a replacement says
+    so; an answer, not an entity error -- not cut, and not forced throughout."""
     entities = row["entities"]
     assert image_text.entity_format(entities) == "complete", entities["raw"]
+    assert image_text.entity_answer_error(entities) is None and row["status"] == "ok", entities["flags"]
     replaced = [f for f in entities["flags"] if f.split(":")[0] in image_text.SKELETON_EVENTS]
     assert replaced or not any(entities[c]["forced"] for c in CATEGORIES), entities["flags"]
 
