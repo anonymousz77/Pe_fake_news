@@ -1,0 +1,909 @@
+{
+ "sface": {
+  "generated_at": "2026-10-21T22:48:26+00:00",
+  "backend": "sface",
+  "face_config": "b6abc4a9f987",
+  "coverage": {
+   "people": 3459,
+   "with_usable_reference_faces": 2336,
+   "without": 1123,
+   "share_without": 0.3247,
+   "without_any_commons_reference": 1009,
+   "references_but_no_usable_face": 114,
+   "statement": "1,123 of the 3,459 people in the gallery have no usable reference face (1,009 have no Commons reference at all): for them verify can only answer 'no usable reference'. That is a ceiling on coverage, apart from the threshold. In calibration, a name that resolves only to such a person is unscorable: it counts as a rejection against TAR (cost_in_true_accepts) and is never a false accept."
+  },
+  "population": {
+   "what": "Factify2 TRAIN claim images (every record using the image is train) whose claim names exactly one figure and says an image shows them; the figure from the probe's list first, from claim NER otherwise",
+   "images": 60,
+   "images_claim_ner": 13,
+   "images_figure_unlinked": 4,
+   "images_probe_list": 51,
+   "images_with_trials": 35,
+   "no_figure_named": 1187,
+   "not_train_only": 1575,
+   "several_figures": 2
+  },
+  "trials": {
+   "total": 44,
+   "headline": 44,
+   "excluded_same_photo": 0,
+   "forced_lines": 0,
+   "by_label": {
+    "right": 24,
+    "wrong": 19,
+    "unlinked": 1
+   },
+   "unscorable": {
+    "no_usable_reference": 1,
+    "name_unlinked": 1
+   }
+  },
+  "vlm_precision": {
+   "qid": 0.5455,
+   "names": 44,
+   "right": 24,
+   "excluding_unlinked": 0.5581,
+   "token_rule_on_probe_list_images": 0.561,
+   "note": "the pilot's 47.8% is APPROXIMATE: its reference is a loose token pattern over the claim. This QID-based figure replaces it; the token rule is recomputed beside it on the same images for comparison"
+  },
+  "bar": {
+   "accepted_name_precision": 0.9,
+   "max_fmr_over_tar": 0.1334,
+   "rule": "p*TAR / (p*TAR + (1-p)*FMR) >= 0.90, i.e. FMR/TAR <= p / (9 (1 - p))"
+  },
+  "threshold": {
+   "chosen": 0.661,
+   "chosen_by": "point estimate only: no threshold reaches 0.90 at the 95% lower bound on this many trials",
+   "by_bound": null,
+   "by_point_estimate": 0.661
+  },
+  "at_threshold": {
+   "threshold": 0.661,
+   "right": 24,
+   "wrong": 20,
+   "accepted_right": 9,
+   "accepted_wrong": 1,
+   "tar": 0.375,
+   "fmr": 0.05,
+   "fmr_upper_95": 0.2161,
+   "precision": 0.9,
+   "precision_lower_95": 0.6058
+  },
+  "fmr_over_tar": 0.1333,
+  "cost_in_true_accepts": {
+   "right_names": 24,
+   "rejected": 15,
+   "rejected_unscorable": {},
+   "rejected_below_threshold": 15
+  },
+  "bootstrap_95": {
+   "tar": [
+    0.1818,
+    0.5715
+   ],
+   "fmr": [
+    0.0,
+    0.1818
+   ],
+   "precision": [
+    0.6667,
+    1.0
+   ]
+  },
+  "cross_validated": {
+   "bound": {
+    "rule": "bound",
+    "fold_thresholds": [
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "accepted_right": 0,
+    "accepted_wrong": 0,
+    "tar": 0.0,
+    "fmr": 0.0,
+    "precision": null
+   },
+   "point": {
+    "rule": "point",
+    "fold_thresholds": [
+     0.7589,
+     0.7589,
+     0.6345,
+     0.661,
+     0.6345
+    ],
+    "accepted_right": 7,
+    "accepted_wrong": 2,
+    "tar": 0.2917,
+    "fmr": 0.1,
+    "precision": 0.7778
+   }
+  },
+  "curve": [
+   {
+    "threshold": 0.09,
+    "right": 24,
+    "wrong": 20,
+    "accepted_right": 24,
+    "accepted_wrong": 18,
+    "tar": 1.0,
+    "fmr": 0.9,
+    "fmr_upper_95": 0.9819,
+    "precision": 0.5714,
+    "precision_lower_95": 0.4333
+   },
+   {
+    "threshold": 0.15,
+    "right": 24,
+    "wrong": 20,
+    "accepted_right": 24,
+    "accepted_wrong": 17,
+    "tar": 1.0,
+    "fmr": 0.85,
+    "fmr_upper_95": 0.9578,
+    "precision": 0.5854,
+    "precision_lower_95": 0.4452
+   },
+   {
+    "threshold": 0.21,
+    "right": 24,
+    "wrong": 20,
+    "accepted_right": 24,
+    "accepted_wrong": 16,
+    "tar": 1.0,
+    "fmr": 0.8,
+    "fmr_upper_95": 0.9286,
+    "precision": 0.6,
+    "precision_lower_95": 0.4578
+   },
+   {
+    "threshold": 0.23,
+    "right": 24,
+    "wrong": 20,
+    "accepted_right": 24,
+    "accepted_wrong": 14,
+    "tar": 1.0,
+    "fmr": 0.7,
+    "fmr_upper_95": 0.8604,
+    "precision": 0.6316,
+    "precision_lower_95": 0.4853
+   },
+   {
+    "threshold": 0.28,
+    "right": 24,
+    "wrong": 20,
+    "accepted_right": 24,
+    "accepted_wrong": 13,
+    "tar": 1.0,
+    "fmr": 0.65,
+    "fmr_upper_95": 0.8227,
+    "precision": 0.6486,
+    "precision_lower_95": 0.5005
+   },
+   {
+    "threshold": 0.29,
+    "right": 24,
+    "wrong": 20,
+    "accepted_right": 24,
+    "accepted_wrong": 11,
+    "tar": 1.0,
+    "fmr": 0.55,
+    "fmr_upper_95": 0.7413,
+    "precision": 0.6857,
+    "precision_lower_95": 0.5339
+   },
+   {
+    "threshold": 0.3,
+    "right": 24,
+    "wrong": 20,
+    "accepted_right": 24,
+    "accepted_wrong": 11,
+    "tar": 1.0,
+    "fmr": 0.55,
+    "fmr_upper_95": 0.7413,
+    "precision": 0.6857,
+    "precision_lower_95": 0.5339
+   },
+   {
+    "threshold": 0.31,
+    "right": 24,
+    "wrong": 20,
+    "accepted_right": 24,
+    "accepted_wrong": 10,
+    "tar": 1.0,
+    "fmr": 0.5,
+    "fmr_upper_95": 0.698,
+    "precision": 0.7059,
+    "precision_lower_95": 0.5524
+   },
+   {
+    "threshold": 0.37,
+    "right": 24,
+    "wrong": 20,
+    "accepted_right": 24,
+    "accepted_wrong": 9,
+    "tar": 1.0,
+    "fmr": 0.45,
+    "fmr_upper_95": 0.6531,
+    "precision": 0.7273,
+    "precision_lower_95": 0.5724
+   },
+   {
+    "threshold": 0.39,
+    "right": 24,
+    "wrong": 20,
+    "accepted_right": 24,
+    "accepted_wrong": 7,
+    "tar": 1.0,
+    "fmr": 0.35,
+    "fmr_upper_95": 0.558,
+    "precision": 0.7742,
+    "precision_lower_95": 0.6174
+   },
+   {
+    "threshold": 0.44,
+    "right": 24,
+    "wrong": 20,
+    "accepted_right": 23,
+    "accepted_wrong": 7,
+    "tar": 0.9583,
+    "fmr": 0.35,
+    "fmr_upper_95": 0.558,
+    "precision": 0.7667,
+    "precision_lower_95": 0.6061
+   },
+   {
+    "threshold": 0.49,
+    "right": 24,
+    "wrong": 20,
+    "accepted_right": 23,
+    "accepted_wrong": 6,
+    "tar": 0.9583,
+    "fmr": 0.3,
+    "fmr_upper_95": 0.5078,
+    "precision": 0.7931,
+    "precision_lower_95": 0.632
+   },
+   {
+    "threshold": 0.5,
+    "right": 24,
+    "wrong": 20,
+    "accepted_right": 23,
+    "accepted_wrong": 6,
+    "tar": 0.9583,
+    "fmr": 0.3,
+    "fmr_upper_95": 0.5078,
+    "precision": 0.7931,
+    "precision_lower_95": 0.632
+   },
+   {
+    "threshold": 0.53,
+    "right": 24,
+    "wrong": 20,
+    "accepted_right": 21,
+    "accepted_wrong": 6,
+    "tar": 0.875,
+    "fmr": 0.3,
+    "fmr_upper_95": 0.5078,
+    "precision": 0.7778,
+    "precision_lower_95": 0.6079
+   },
+   {
+    "threshold": 0.54,
+    "right": 24,
+    "wrong": 20,
+    "accepted_right": 20,
+    "accepted_wrong": 6,
+    "tar": 0.8333,
+    "fmr": 0.3,
+    "fmr_upper_95": 0.5078,
+    "precision": 0.7692,
+    "precision_lower_95": 0.5946
+   },
+   {
+    "threshold": 0.55,
+    "right": 24,
+    "wrong": 20,
+    "accepted_right": 19,
+    "accepted_wrong": 5,
+    "tar": 0.7917,
+    "fmr": 0.25,
+    "fmr_upper_95": 0.4556,
+    "precision": 0.7917,
+    "precision_lower_95": 0.6109
+   },
+   {
+    "threshold": 0.56,
+    "right": 24,
+    "wrong": 20,
+    "accepted_right": 17,
+    "accepted_wrong": 5,
+    "tar": 0.7083,
+    "fmr": 0.25,
+    "fmr_upper_95": 0.4556,
+    "precision": 0.7727,
+    "precision_lower_95": 0.5802
+   },
+   {
+    "threshold": 0.58,
+    "right": 24,
+    "wrong": 20,
+    "accepted_right": 16,
+    "accepted_wrong": 4,
+    "tar": 0.6667,
+    "fmr": 0.2,
+    "fmr_upper_95": 0.401,
+    "precision": 0.8,
+    "precision_lower_95": 0.599
+   },
+   {
+    "threshold": 0.6,
+    "right": 24,
+    "wrong": 20,
+    "accepted_right": 15,
+    "accepted_wrong": 4,
+    "tar": 0.625,
+    "fmr": 0.2,
+    "fmr_upper_95": 0.401,
+    "precision": 0.7895,
+    "precision_lower_95": 0.5809
+   },
+   {
+    "threshold": 0.62,
+    "right": 24,
+    "wrong": 20,
+    "accepted_right": 12,
+    "accepted_wrong": 3,
+    "tar": 0.5,
+    "fmr": 0.15,
+    "fmr_upper_95": 0.3437,
+    "precision": 0.8,
+    "precision_lower_95": 0.5602
+   },
+   {
+    "threshold": 0.63,
+    "right": 24,
+    "wrong": 20,
+    "accepted_right": 12,
+    "accepted_wrong": 2,
+    "tar": 0.5,
+    "fmr": 0.1,
+    "fmr_upper_95": 0.2826,
+    "precision": 0.8571,
+    "precision_lower_95": 0.6146
+   },
+   {
+    "threshold": 0.64,
+    "right": 24,
+    "wrong": 20,
+    "accepted_right": 10,
+    "accepted_wrong": 2,
+    "tar": 0.4167,
+    "fmr": 0.1,
+    "fmr_upper_95": 0.2826,
+    "precision": 0.8333,
+    "precision_lower_95": 0.5619
+   },
+   {
+    "threshold": 0.65,
+    "right": 24,
+    "wrong": 20,
+    "accepted_right": 9,
+    "accepted_wrong": 2,
+    "tar": 0.375,
+    "fmr": 0.1,
+    "fmr_upper_95": 0.2826,
+    "precision": 0.8182,
+    "precision_lower_95": 0.5299
+   },
+   {
+    "threshold": 0.66,
+    "right": 24,
+    "wrong": 20,
+    "accepted_right": 9,
+    "accepted_wrong": 1,
+    "tar": 0.375,
+    "fmr": 0.05,
+    "fmr_upper_95": 0.2161,
+    "precision": 0.9,
+    "precision_lower_95": 0.6058
+   },
+   {
+    "threshold": 0.67,
+    "right": 24,
+    "wrong": 20,
+    "accepted_right": 6,
+    "accepted_wrong": 1,
+    "tar": 0.25,
+    "fmr": 0.05,
+    "fmr_upper_95": 0.2161,
+    "precision": 0.8571,
+    "precision_lower_95": 0.4793
+   },
+   {
+    "threshold": 0.68,
+    "right": 24,
+    "wrong": 20,
+    "accepted_right": 5,
+    "accepted_wrong": 1,
+    "tar": 0.2083,
+    "fmr": 0.05,
+    "fmr_upper_95": 0.2161,
+    "precision": 0.8333,
+    "precision_lower_95": 0.4182
+   },
+   {
+    "threshold": 0.69,
+    "right": 24,
+    "wrong": 20,
+    "accepted_right": 5,
+    "accepted_wrong": 1,
+    "tar": 0.2083,
+    "fmr": 0.05,
+    "fmr_upper_95": 0.2161,
+    "precision": 0.8333,
+    "precision_lower_95": 0.4182
+   },
+   {
+    "threshold": 0.7,
+    "right": 24,
+    "wrong": 20,
+    "accepted_right": 3,
+    "accepted_wrong": 1,
+    "tar": 0.125,
+    "fmr": 0.05,
+    "fmr_upper_95": 0.2161,
+    "precision": 0.75,
+    "precision_lower_95": 0.2486
+   },
+   {
+    "threshold": 0.71,
+    "right": 24,
+    "wrong": 20,
+    "accepted_right": 3,
+    "accepted_wrong": 1,
+    "tar": 0.125,
+    "fmr": 0.05,
+    "fmr_upper_95": 0.2161,
+    "precision": 0.75,
+    "precision_lower_95": 0.2486
+   },
+   {
+    "threshold": 0.76,
+    "right": 24,
+    "wrong": 20,
+    "accepted_right": 2,
+    "accepted_wrong": 0,
+    "tar": 0.0833,
+    "fmr": 0.0,
+    "fmr_upper_95": 0.1391,
+    "precision": 1.0,
+    "precision_lower_95": 0.2236
+   },
+   {
+    "threshold": 0.81,
+    "right": 24,
+    "wrong": 20,
+    "accepted_right": 2,
+    "accepted_wrong": 0,
+    "tar": 0.0833,
+    "fmr": 0.0,
+    "fmr_upper_95": 0.1391,
+    "precision": 1.0,
+    "precision_lower_95": 0.2236
+   },
+   {
+    "threshold": 0.82,
+    "right": 24,
+    "wrong": 20,
+    "accepted_right": 0,
+    "accepted_wrong": 0,
+    "tar": 0.0,
+    "fmr": 0.0,
+    "fmr_upper_95": 0.1391,
+    "precision": null,
+    "precision_lower_95": null
+   }
+  ],
+  "strata": {
+   "one_face": {
+    "threshold": 0.661,
+    "right": 15,
+    "wrong": 6,
+    "accepted_right": 5,
+    "accepted_wrong": 1,
+    "tar": 0.3333,
+    "fmr": 0.1667,
+    "fmr_upper_95": 0.5818,
+    "precision": 0.8333,
+    "precision_lower_95": 0.4182
+   },
+   "several_faces": {
+    "threshold": 0.661,
+    "right": 9,
+    "wrong": 13,
+    "accepted_right": 4,
+    "accepted_wrong": 0,
+    "tar": 0.4444,
+    "fmr": 0.0,
+    "fmr_upper_95": 0.2058,
+    "precision": 1.0,
+    "precision_lower_95": 0.4729
+   },
+   "figure_from_probe_list": {
+    "threshold": 0.661,
+    "right": 22,
+    "wrong": 19,
+    "accepted_right": 8,
+    "accepted_wrong": 1,
+    "tar": 0.3636,
+    "fmr": 0.0526,
+    "fmr_upper_95": 0.2264,
+    "precision": 0.8889,
+    "precision_lower_95": 0.5709
+   },
+   "figure_from_claim_ner": {
+    "threshold": 0.661,
+    "right": 2,
+    "wrong": 1,
+    "accepted_right": 1,
+    "accepted_wrong": 0,
+    "tar": 0.5,
+    "fmr": 0.0,
+    "fmr_upper_95": 0.95,
+    "precision": 1.0,
+    "precision_lower_95": 0.05
+   },
+   "ambiguous_link": {
+    "threshold": 0.661,
+    "right": 1,
+    "wrong": 0,
+    "accepted_right": 0,
+    "accepted_wrong": 0,
+    "tar": 0.0,
+    "fmr": null,
+    "fmr_upper_95": null,
+    "precision": null,
+    "precision_lower_95": null
+   },
+   "figure_link_ambiguous": {
+    "threshold": 0.661,
+    "right": 1,
+    "wrong": 0,
+    "accepted_right": 0,
+    "accepted_wrong": 0,
+    "tar": 0.0,
+    "fmr": null,
+    "fmr_upper_95": null,
+    "precision": null,
+    "precision_lower_95": null
+   }
+  },
+  "figures": {
+   "what": "per figure the claims name, most trials first: trials and what the threshold accepts of them. Local report only: the published one gives ranks, never a name or QID",
+   "concentration": {
+    "figures": 17,
+    "trials": 44,
+    "top_1_share": 0.25,
+    "top_2_share": 0.3864,
+    "effective_figures": 8.34,
+    "figures_with_5_trials_or_more": 3,
+    "figures_with_1_trial": 9,
+    "concentrated": false,
+    "statement": "The two most-tried figures carry 39% of the trials; the figure-stratified estimate weighs every figure the same, beside the pooled one."
+   },
+   "table": [
+    {
+     "rank": 1,
+     "figure_source": [
+      "probe_list"
+     ],
+     "trials": 11,
+     "right": 8,
+     "wrong": 3,
+     "unlinked": 0,
+     "scorable": 10,
+     "accepted_right": 4,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 2,
+     "figure_source": [
+      "probe_list"
+     ],
+     "trials": 6,
+     "right": 4,
+     "wrong": 2,
+     "unlinked": 0,
+     "scorable": 6,
+     "accepted_right": 0,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 3,
+     "figure_source": [
+      "probe_list"
+     ],
+     "trials": 6,
+     "right": 1,
+     "wrong": 5,
+     "unlinked": 0,
+     "scorable": 6,
+     "accepted_right": 0,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 4,
+     "figure_source": [
+      "probe_list"
+     ],
+     "trials": 3,
+     "right": 2,
+     "wrong": 1,
+     "unlinked": 1,
+     "scorable": 2,
+     "accepted_right": 0,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 5,
+     "figure_source": [
+      "probe_list"
+     ],
+     "trials": 3,
+     "right": 0,
+     "wrong": 3,
+     "unlinked": 0,
+     "scorable": 3,
+     "accepted_right": 0,
+     "accepted_wrong": 1
+    },
+    {
+     "rank": 6,
+     "figure_source": [
+      "probe_list"
+     ],
+     "trials": 2,
+     "right": 1,
+     "wrong": 1,
+     "unlinked": 0,
+     "scorable": 2,
+     "accepted_right": 1,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 7,
+     "figure_source": [
+      "probe_list"
+     ],
+     "trials": 2,
+     "right": 1,
+     "wrong": 1,
+     "unlinked": 0,
+     "scorable": 2,
+     "accepted_right": 0,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 8,
+     "figure_source": [
+      "probe_list"
+     ],
+     "trials": 2,
+     "right": 1,
+     "wrong": 1,
+     "unlinked": 0,
+     "scorable": 2,
+     "accepted_right": 1,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 9,
+     "figure_source": [
+      "probe_list"
+     ],
+     "trials": 1,
+     "right": 0,
+     "wrong": 1,
+     "unlinked": 0,
+     "scorable": 1,
+     "accepted_right": 0,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 10,
+     "figure_source": [
+      "probe_list"
+     ],
+     "trials": 1,
+     "right": 1,
+     "wrong": 0,
+     "unlinked": 0,
+     "scorable": 1,
+     "accepted_right": 1,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 11,
+     "figure_source": [
+      "probe_list"
+     ],
+     "trials": 1,
+     "right": 1,
+     "wrong": 0,
+     "unlinked": 0,
+     "scorable": 1,
+     "accepted_right": 0,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 12,
+     "figure_source": [
+      "claim_ner"
+     ],
+     "trials": 1,
+     "right": 1,
+     "wrong": 0,
+     "unlinked": 0,
+     "scorable": 1,
+     "accepted_right": 0,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 13,
+     "figure_source": [
+      "claim_ner"
+     ],
+     "trials": 1,
+     "right": 0,
+     "wrong": 1,
+     "unlinked": 0,
+     "scorable": 1,
+     "accepted_right": 0,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 14,
+     "figure_source": [
+      "probe_list"
+     ],
+     "trials": 1,
+     "right": 0,
+     "wrong": 1,
+     "unlinked": 0,
+     "scorable": 1,
+     "accepted_right": 0,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 15,
+     "figure_source": [
+      "claim_ner"
+     ],
+     "trials": 1,
+     "right": 1,
+     "wrong": 0,
+     "unlinked": 0,
+     "scorable": 1,
+     "accepted_right": 1,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 16,
+     "figure_source": [
+      "probe_list"
+     ],
+     "trials": 1,
+     "right": 1,
+     "wrong": 0,
+     "unlinked": 0,
+     "scorable": 1,
+     "accepted_right": 1,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 17,
+     "figure_source": [
+      "probe_list"
+     ],
+     "trials": 1,
+     "right": 1,
+     "wrong": 0,
+     "unlinked": 0,
+     "scorable": 1,
+     "accepted_right": 0,
+     "accepted_wrong": 0
+    }
+   ]
+  },
+  "figure_stratified": {
+   "what": "every figure weighs the same: each trial counts 1 / its figure's trials; 95% intervals by resampling figures",
+   "figures": 17,
+   "threshold": 0.661,
+   "vlm_precision": 0.5722,
+   "tar": 0.4486,
+   "fmr": 0.0458,
+   "precision": 0.929,
+   "precision_lower_95": 0.75,
+   "bootstrap_95": {
+    "vlm_precision": [
+     0.3859,
+     0.755
+    ],
+    "tar": [
+     0.1672,
+     0.718
+    ],
+    "fmr": [
+     0.0,
+     0.1375
+    ],
+    "precision": [
+     0.7143,
+     1.0
+    ]
+   },
+   "threshold_by_figure_bound": 0.7589,
+   "note": "the threshold at which the one-sided 95% lower bound of figure-weighted precision reaches 0.90; when it is above the pooled one, the pooled threshold leans on the most-tried figures",
+   "pooled_without_top_two_figures": {
+    "threshold": 0.661,
+    "right": 12,
+    "wrong": 15,
+    "accepted_right": 5,
+    "accepted_wrong": 1,
+    "tar": 0.4167,
+    "fmr": 0.0667,
+    "fmr_upper_95": 0.2794,
+    "precision": 0.8333,
+    "precision_lower_95": 0.4182
+   }
+  },
+  "look_alike_finding": {
+   "what": "the VLM's wrong names against random strangers: the right names' faces, each scored against a random other person in the gallery (seeded). A contrast, never an input",
+   "random_strangers": {
+    "pairs": 24,
+    "max_score": 0.2814,
+    "median_score": 0.1581,
+    "accepted_at_threshold": 0
+   },
+   "vlm_wrong_names": {
+    "wrong": 20,
+    "scorable": 18,
+    "median_score": 0.3413,
+    "above_every_stranger": 12,
+    "accepted_at_threshold": 1
+   },
+   "right_names_median_score": 0.6248,
+   "if_calibrated_on_random_pairs": {
+    "threshold": 0.2626,
+    "rule": "the lowest threshold at which p*TAR / (p*TAR + (1-p)*FMR) >= 0.90 with FMR measured on random strangers (point estimate), p the VLM's QID precision",
+    "on_the_vlms_own_names": {
+     "threshold": 0.2626,
+     "right": 24,
+     "wrong": 20,
+     "accepted_right": 24,
+     "accepted_wrong": 14,
+     "tar": 1.0,
+     "fmr": 0.7,
+     "fmr_upper_95": 0.8604,
+     "precision": 0.6316,
+     "precision_lower_95": 0.4853
+    }
+   },
+   "finding": "Scored against a random other person, the right names' faces reach at most 0.281 (median 0.158); 12 of the 18 scorable wrong names the VLM gave score above every stranger. A threshold calibrated on random pairs would sit at 0.263; on the VLM's own names it accepts 14 of 20 wrong names, an accepted-name precision of 0.6316 against the 0.9 required. A random-pair false-match rate measures strangers; the names a gallery must refuse are the look-alikes the VLM chose, so the threshold is calibrated on those."
+  },
+  "verite": "not read: calibration reads Factify2 train only",
+  "factify2_ledger": {
+   "run": "93cd9d679720",
+   "images": 2828,
+   "worklist": 45186,
+   "share_done": 0.0626,
+   "complete": false,
+   "note": "the full calibration needs the finished run; a partial ledger gives a partial population"
+  },
+  "adjudicated": null
+ }
+}

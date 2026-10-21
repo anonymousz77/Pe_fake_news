@@ -57,13 +57,16 @@ from scripts.hydrate import LABEL_COLUMNS  # noqa: E402
 FORBIDDEN_SUFFIXES = {
     ".zip", ".7z", ".tar", ".gz", ".tgz",
     ".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp",
+    # Commons serves these too: gallery references are data, never description
+    ".svg", ".tif", ".tiff", ".jfif",
     ".parquet", ".npy", ".npz", ".pkl", ".pt", ".bin", ".arrow",
-    # model weights: the Qwen shards and EasyOCR's detector / recogniser
-    ".safetensors", ".pth", ".ckpt",
+    # model weights: the Qwen shards, EasyOCR's detector / recogniser, and the
+    # gallery's face detector and recognisers
+    ".safetensors", ".pth", ".ckpt", ".onnx",
 }
 
 #: Path prefixes that hold data, never description.
-FORBIDDEN_PREFIXES = ("data/raw/", "data/bible/", "data/interim/", "models/")
+FORBIDDEN_PREFIXES = ("data/raw/", "data/bible/", "data/gallery/", "data/interim/", "models/")
 
 #: Column / key names that carry an annotation. Built from the same table
 #: hydrate.py uses to find label columns, so the two cannot drift apart.

@@ -66,6 +66,12 @@ REPORTS: Final[Path] = DATA / "reports"
 #: Gitignored; expected to reach tens of GB.
 BIBLE: Final[Path] = DATA / "bible"
 
+#: The entity gallery: Wikidata entities, their Wikimedia Commons reference
+#: images with each image's licence and attribution, and face embeddings.
+#: Data, not documentation, and not a dataset: it stays outside the register.
+#: Gitignored. See scripts/gallery.py.
+GALLERY: Final[Path] = DATA / "gallery"
+
 #: Hand-written, git-tracked prose (data card, counts ledger, provenance).
 DOCS: Final[Path] = PROJECT_ROOT / "docs"
 
@@ -118,6 +124,7 @@ _TREE: Final[tuple[Path, ...]] = (
     SPLITS,
     REPORTS,
     BIBLE,
+    GALLERY,
     DOCS,
 )
 

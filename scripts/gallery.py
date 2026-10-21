@@ -1,0 +1,3689 @@
+#!/usr/bin/env python
+"""The entity gallery: who an image shows, checked against reference images of known entities.
+
+    python scripts/gallery.py fetch-models                # pinned NER and face weights (network)
+    python scripts/gallery.py count                       # the names our corpora use; offline
+    python scripts/gallery.py link [--all] [--dry-run]    # names -> Wikidata: the sample, or the build (network)
+    python scripts/gallery.py fetch [--all] --budget-gb 8 # their Commons references, gated (network)
+    python scripts/gallery.py embed --backend sface       # faces of references and calibration images
+    python scripts/gallery.py calibrate --backend sface   # threshold and its cost: Factify2 train only
+    python scripts/gallery.py review --backend sface      # a local sheet a person checks by eye
+    python scripts/gallery.py sample-report               # data/reports/gallery_sample.json
+    python scripts/gallery.py verify --image P --name N   # one 1:1 verification
+    python scripts/gallery.py status                      # offline counts
+
+The network commands use one worker, one request in flight, at the pace
+Wikimedia's robot policy publishes (WikimediaWorker: one request start per
+second per Wikimedia host, five seconds after an API answer that took over a
+second, Retry-After and 5xx pauses for the whole host; 5 s for any other host).
+They send a User-Agent naming the project's anonymised repository URL
+(``PE_FAKE_NEWS_UA_CONTACT`` overrides it from the environment), and log
+every request to ``data/gallery/provenance.jsonl``. Every reference goes
+through the three gates -- status 200, a full decode, the placeholder registry
+-- and two of the gallery's own: the bytes are the rendition the API described,
+and they are not an image of any of our corpora.
+
+A VLM name is a candidate, never a verification. On the image_text pilot (run
+93cd9d679720) 22 of the 46 PERSON names the model produced from appearance
+alone were the figure the claim names: 47.8%. That figure is APPROXIMATE. The
+probe's reference is a loose token pattern over the claim text ("gandhi"
+counts Rahul Gandhi as Mahatma Gandhi, "trump" counts Melania as Donald), so a
+right name can be scored wrong and a wrong one right. The QID-based precision
+this block measures replaces it once it exists.
+
+Identity is decided here instead, against a gallery of known entities:
+Wikidata items with reference images on Wikimedia Commons, each image's licence
+and attribution recorded as Commons states them, and a face embedding per
+reference. Open-web reverse image search is not used.
+
+**Scope: the entities our corpora name**, not Wikidata at large. ``count``
+gathers PERSON and ORG names from two places and says how many there are before
+a single request is made:
+
+- the VLM's own names, from the current image_text run directory (row schema
+  image_text/3). They are read through ``image_text.entities_of(forced="mark")``,
+  so a name on a line the skeleton forced stays marked. Each is also checked
+  against the independent OCR (``written`` / ``partly_written`` /
+  ``not_written``), the evidence the recognition probe uses;
+- claim text, through a pinned NER model (dslim/bert-base-NER, MIT, CoNLL-2003
+  PER and ORG), over the usable rows with images of every image-bearing corpus.
+  Spans are cached per record, and the cache resumes.
+
+The counts are of distinct NORMALISED NAMES, not entities: "PM Modi" and
+"Narendra Modi" are two names until linking resolves both to one Wikidata item.
+Linking a sample measures how far names collapse.
+
+**What is published.** ``data/reports/gallery_counts.json`` holds aggregates
+only: no name and no record id. The name table itself
+(``data/interim/gallery/names.jsonl``) is derived from corpora whose licences
+do not allow redistribution, so it stays local.
+"""
+
+from __future__ import annotations
+
+import argparse
+import html
+import io
+import json
+import math
+import os
+import re
+import statistics
+import sys
+import unicodedata
+from collections import Counter
+from dataclasses import dataclass, field
+from functools import lru_cache
+from pathlib import Path
+from typing import Any, Callable, Iterable, Iterator, Sequence
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+for _stream in (sys.stdout, sys.stderr):  # Windows consoles default to cp1252
+    if hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+
+from configs.paths import GALLERY, INTERIM, MODELS, REPORTS, free_gb  # noqa: E402
+from scripts import image_text, images, recover  # noqa: E402
+from scripts.fetchlib import utcnow  # noqa: E402
+from scripts.image_text import FileLock, canonical, config_id_of, log  # noqa: E402
+
+GALLERY_INTERIM = INTERIM / "gallery"
+NAMES_PATH = GALLERY_INTERIM / "names.jsonl"
+CLAIM_NER_DIR = GALLERY_INTERIM / "claim_ner"
+COUNTS_REPORT = REPORTS / "gallery_counts.json"
+HF_CACHE = image_text.HF_CACHE
+
+#: Entity types the gallery holds. PERSON is verified by face. ORG gets entries
+#: and references only: logo matching is a different model and a different
+#: problem, and no ORG answer claims a verification.
+TYPES = ("PERSON", "ORG")
+
+#: Claim text is read from every corpus whose records carry images...
+CLAIM_DATASETS = images.IMAGE_DATASETS
+#: ...and the gallery is BUILT for these unless told otherwise (--scope): the
+#: corpora the image_text run covers and the November presentation path. DGM4
+#: is left out (a synthetic corpus not chosen for training; its captions alone
+#: name 38,165 people). It can join later without a rebuild: link, fetch and
+#: embed are keyed by name, QID and sha256 and skip what is done, and a pinned
+#: consistency threshold keeps every existing entry as it is.
+BUILD_SCOPE = ("verite", "averimatec", "factify2")
+#: Points on the coverage curve: the share of mentions the N most-mentioned names hold.
+COVERAGE_TOP = (100, 500, 1000, 2000, 5000, 10000, 20000)
+
+
+class GalleryError(RuntimeError):
+    pass
+
+
+# --------------------------------------------------------------------------
+# pinned models: read from the Hub on 2026-10-21, re-checked by fetch-models
+# --------------------------------------------------------------------------
+
+#: Claim-text NER. The licence is the model card's; fetch-models refuses if it changes.
+NER_MODEL = {"id": "dslim/bert-base-NER",
+             "revision": "d1a3e8f13f8c3566299d95fcfc9a8d2382a9affc",
+             "licence": "mit"}
+NER_FILES = ("config.json", "model.safetensors", "tokenizer_config.json", "vocab.txt",
+             "special_tokens_map.json", "added_tokens.json")
+NER_LABELS = {"PER": "PERSON", "ORG": "ORG"}
+#: Claims are short; a longer text is cut here, and the cut is counted.
+NER_MAX_CHARS = 1500
+NER_BATCH = 64
+CLEAN_RULE = ("html.unescape twice (Factify2 keeps &amp;amp;); URLs removed; "
+              f"whitespace collapsed; first {NER_MAX_CHARS} characters")
+
+#: Face models. Each is ONE file at a pinned commit, checked by sha256, beside
+#: its licence file, also checked by sha256: a licence text that changes is read
+#: again before anything is fetched. The OpenCV repositories carry no licence
+#: in their card metadata; their LICENSE files are the statement.
+#: AuraFace is fetched ONLY for the bake-off: it measures whether the bar is
+#: reachable at all. Its training data is described only as "a commercial
+#: dataset", and its repository also ships InsightFace-named detector,
+#: landmark and gender-age files. Those are never fetched or used.
+FACE_MODELS: dict[str, dict[str, str]] = {
+    "yunet": {"repo": "opencv/face_detection_yunet",
+              "revision": "3cc26e7f1014a5ee5d74a42acee58bafc9d0a310",
+              "file": "face_detection_yunet_2023mar.onnx",
+              "sha256": "8f2383e4dd3cfbb4553ea8718107fc0423210dc964f9f4280604804ed2552fa4",
+              "licence": "MIT", "licence_file": "LICENSE",
+              "licence_sha256": "c83b8120c50ccbd4c4f96edf53141bdd566ebb8f8e9227e415326aa1b1aba958"},
+    "sface": {"repo": "opencv/face_recognition_sface",
+              "revision": "3d7082438a6e4551e840c9b2bb60b71e8da4b524",
+              "file": "face_recognition_sface_2021dec.onnx",
+              "sha256": "0ba9fbfa01b5270c96627c4ef784da859931e02f04419c829e83484087c34e79",
+              "licence": "Apache-2.0", "licence_file": "LICENSE",
+              "licence_sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"},
+    "auraface": {"repo": "fal/AuraFace-v1",
+                 "revision": "af6d057c9b0ec4071d4c49c80e3539258798b609",
+                 "file": "glintr100.onnx",
+                 "sha256": "a7933ea5330113b01c9b60351d8f4c33003f145d8470ac5f0e52ee2effe25c60",
+                 "licence": "Apache-2.0", "card_licence": "apache-2.0", "licence_file": "LICENSE.md",
+                 "licence_sha256": "609e2cb599f84aaa41d8ef29d8fdb04d164fab22e8d9292ca34a599d0f56a338"},
+}
+MODEL_CHOICES = ("ner", *FACE_MODELS)
+#: What fetch-models takes unless told otherwise. AuraFace is asked for by name.
+DEFAULT_MODELS = ("ner", "yunet", "sface")
+
+
+def snapshot_dir(repo: str, revision: str) -> Path:
+    """The pinned snapshot in the project's Hugging Face cache, or ModelMissing."""
+    path = HF_CACHE / f"models--{repo.replace('/', '--')}" / "snapshots" / revision
+    if not path.is_dir():
+        raise image_text.ModelMissing(
+            f"{repo}@{revision[:12]} is not in {HF_CACHE}; run: python scripts/gallery.py fetch-models")
+    return path
+
+
+# --------------------------------------------------------------------------
+# small JSONL files: one writer, fsynced, torn tails cut and kept
+# --------------------------------------------------------------------------
+
+
+def read_jsonl(path: Path) -> Iterator[dict[str, Any]]:
+    """Every complete line. Strict: a damaged complete line raises with its
+    number, because skipping it would hide damage. A torn last line (no
+    newline: the writer died mid-write) is not a row and is left for
+    JsonlLedger.open() to cut."""
+    if not path.is_file():
+        return
+    with path.open("rb") as handle:
+        for n, line in enumerate(handle, 1):
+            if not line.endswith(b"\n"):
+                return
+            try:
+                yield json.loads(line)
+            except ValueError as exc:
+                raise GalleryError(f"{path.name}: line {n} is not JSON ({exc}); refusing to "
+                                   "resume over a damaged file") from None
+
+
+def _cut_torn_tail(path: Path, torn_path: Path) -> int:
+    """Move a torn last line into ``torn_path`` (kept, never deleted). Returns its size."""
+    if not path.is_file():
+        return 0
+    with open(path, "r+b") as fh:
+        size = fh.seek(0, os.SEEK_END)
+        if size == 0:
+            return 0
+        fh.seek(size - 1)
+        if fh.read(1) == b"\n":
+            return 0
+        fh.seek(0)
+        body = fh.read()
+        cut = body.rfind(b"\n") + 1
+        fragment = body[cut:]
+        with open(torn_path, "ab") as torn:
+            torn.write(canonical({"cut_at": utcnow(), "offset": cut, "bytes": len(fragment),
+                                  "fragment": fragment.decode("utf-8", "replace")}) + b"\n")
+            torn.flush()
+            os.fsync(torn.fileno())
+        fh.truncate(cut)
+        fh.flush()
+        os.fsync(fh.fileno())
+    return len(fragment)
+
+
+class JsonlLedger:
+    """Append-only JSONL with one writer (an OS lock that dies with its holder).
+
+    A batch of lines is written in one write and fsynced, so a kill loses at
+    most the batch in flight; on the next open a torn last line is cut and kept
+    in ``<stem>.torn.jsonl``."""
+
+    def __init__(self, path: Path):
+        self.path = path
+        self.lock = FileLock(path.with_name(path.name + ".lock"))
+        self.torn_path = path.with_name(path.stem + ".torn.jsonl")
+        self._fh = None
+
+    def open(self, lock_wait: float = 5.0) -> list[dict[str, Any]]:
+        image_text.assert_not_raw(self.path)
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        self.lock.acquire(lock_wait)
+        try:
+            cut = _cut_torn_tail(self.path, self.torn_path)
+            if cut:
+                log(f"  cut a torn last line ({cut} bytes) from {self.path.name} -> {self.torn_path.name}")
+            rows = list(read_jsonl(self.path))
+            self._fh = open(self.path, "ab")
+        except BaseException:
+            self.lock.release()
+            raise
+        return rows
+
+    def append_many(self, rows: Sequence[dict[str, Any]]) -> None:
+        if not rows:
+            return
+        self._fh.write(b"".join(canonical(r) + b"\n" for r in rows))
+        self._fh.flush()
+        os.fsync(self._fh.fileno())
+
+    def append(self, row: dict[str, Any]) -> None:
+        self.append_many([row])
+
+    def close(self) -> None:
+        if self._fh is not None:
+            self._fh.close()
+            self._fh = None
+        self.lock.release()
+
+
+def write_json(path: Path, obj: Any) -> None:
+    """Whole-file JSON, written atomically (``.part`` then replace)."""
+    image_text.assert_not_raw(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(path.name + ".part")
+    tmp.write_text(json.dumps(obj, indent=1, sort_keys=False, ensure_ascii=False) + "\n",
+                   encoding="utf-8", newline="\n")
+    os.replace(tmp, path)
+
+
+def write_jsonl(path: Path, rows: Iterable[dict[str, Any]]) -> int:
+    """A derived table, regenerated whole and replaced atomically. Not a ledger."""
+    image_text.assert_not_raw(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(path.name + ".part")
+    n = 0
+    with open(tmp, "wb") as fh:
+        for row in rows:
+            fh.write(canonical(row) + b"\n")
+            n += 1
+    os.replace(tmp, path)
+    return n
+
+
+# --------------------------------------------------------------------------
+# names: one display form and one key per name
+# --------------------------------------------------------------------------
+
+#: Leading titles and roles stripped from PERSON names, which claims and
+#: captions put in front of a name ("PM Modi", "Union Home Minister Amit Shah",
+#: "former President Obama"). Never applied to ORG ("General Motors").
+_TITLE = re.compile(
+    r"^(?:(?:former|late|ex|then|current|outgoing|incumbent)[\s-]+)?"
+    r"(?:(?:prime|chief|deputy|vice|union|state|foreign|home|finance|defen[cs]e|"
+    r"external\s+affairs)\s+)*"
+    r"(?:minister|president|pm|cm|mr|mrs|ms|miss|dr|shri|sri|smt|hon|honou?rable|senator|sen|"
+    r"rep|governor|gov|mp|mla|prof|professor|sir|dame|lt|gen|general|col|capt|justice|judge)"
+    r"(?:-elect)?\b\.?\s+",
+    re.I)
+_POSSESSIVE = re.compile(r"(?:'s|’s|'|’)$")
+#: The Hindi honorific written after a name ("Modi ji"); "Gandhiji" is one word and stays.
+_JI = re.compile(r"\s+ji$", re.I)
+_ORG_ARTICLE = re.compile(r"^the\s+", re.I)
+_EDGE = " \t\"'“”‘’.,;:()[]{}"
+#: Keys that name no one: what the VLM writes for an unknown face, a bare
+#: title, and NER noise.
+GENERIC_NAMES = frozenset({
+    "unidentified", "unknown", "none", "n a", "na", "anonymous", "someone", "person",
+    "people", "man", "woman", "men", "women", "boy", "girl", "child", "children", "crowd",
+    "president", "prime minister", "pm", "minister", "chief minister", "cm", "governor",
+    "senator", "mp", "mla", "mr", "mrs", "ms", "dr", "sir"})
+
+
+def fold(text: str) -> str:
+    """Casefolded, accents removed (Erdoğan -> erdogan), anything else a space.
+
+    Not image_text._normalise, which turns an accented letter into a space;
+    that is right for matching OCR text and wrong for a name key."""
+    decomposed = unicodedata.normalize("NFKD", text)
+    plain = "".join(ch for ch in decomposed if not unicodedata.combining(ch))
+    return re.sub(r"[^0-9a-z]+", " ", plain.casefold()).strip()
+
+
+def display_form(name: str, entity_type: str) -> str:
+    """The name as it is searched for: titles, possessives and edge punctuation
+    removed, case kept."""
+    s = re.sub(r"\s+", " ", unicodedata.normalize("NFKC", name)).strip(_EDGE)
+    s = _POSSESSIVE.sub("", s).strip(_EDGE)
+    if entity_type == "PERSON":
+        for _ in range(3):  # "former PM Dr. Manmohan Singh"
+            stripped = _TITLE.sub("", s, count=1)
+            if stripped == s:
+                break
+            s = stripped
+        s = _JI.sub("", s)
+    else:
+        s = _ORG_ARTICLE.sub("", s)
+    return s.strip(_EDGE)
+
+
+def name_key(name: str, entity_type: str) -> str | None:
+    """The key a name is counted under, or None when it names no one:
+    a subword fragment, a lone letter, digits only, more than eight words, or
+    a generic word."""
+    if name.startswith("##"):
+        return None
+    key = fold(display_form(name, entity_type))
+    if len(key) < 2 or not re.search(r"[a-z]", key) or len(key.split()) > 8 or key in GENERIC_NAMES:
+        return None
+    return key
+
+
+# --------------------------------------------------------------------------
+# the VLM's names: the current image_text run directory
+# --------------------------------------------------------------------------
+
+
+def run_dirs(root: Path | None = None) -> list[tuple[Path, int | None]]:
+    """Every image_text run directory with its row schema."""
+    root = image_text.OUT_ROOT if root is None else root
+    out = []
+    if root.is_dir():
+        for d in sorted(p for p in root.iterdir() if (p / "config.json").is_file()):
+            config = json.loads((d / "config.json").read_text(encoding="utf-8"))
+            out.append((d, config.get("schema_version")))
+    return out
+
+
+def current_run_dir(root: Path | None = None) -> Path:
+    """The one run directory written under the current row schema.
+
+    Older directories hold earlier pilots under earlier parsers. Their images
+    are re-run under the current one, and schema-1 rows cannot tell a forced
+    line from a free one (entities_of refuses them)."""
+    found = [d for d, schema in run_dirs(root) if schema == image_text.SCHEMA_VERSION]
+    if not found:
+        raise GalleryError(
+            f"no image_text run directory with row schema {image_text.SCHEMA}; rsync the "
+            "server's current one into data/interim/image_text/ first")
+    if len(found) > 1:
+        raise GalleryError(f"several current-schema run directories ({', '.join(d.name for d in found)}); "
+                           "name one with --ledger-dir")
+    return found[0]
+
+
+@dataclass
+class LedgerRead:
+    """The last row of every image in one image_text ledger, reduced to its names."""
+
+    dataset: str
+    images: dict[str, dict[str, Any]] = field(default_factory=dict)
+    rows: int = 0
+    torn_tail_bytes: int = 0
+    #: rows written before forced marks existed: their names cannot be read
+    unmarked: int = 0
+
+
+def read_ledger(path: Path, dataset: str) -> LedgerRead:
+    """PERSON and ORG names of every image in an image_text ledger, from the
+    image's LAST row (a retried image has several), with the evidence the
+    recognition probe uses: whether the independent OCR holds the name."""
+    from scripts.processed_loader import SupervisionError
+
+    out = LedgerRead(dataset)
+
+    def keep(row: dict[str, Any]) -> bool:
+        out.rows += 1
+        try:
+            found = list(image_text.entities_of(row, forced="mark"))
+        except SupervisionError:
+            out.unmarked += 1
+            found = []
+        ocr = row.get("ocr") or {}
+        ocr_text = None if ocr.get("error") else (ocr.get("text") or "")
+        entities = row.get("entities") or {}
+        out.images[row["sha256"]] = {
+            "record_ids": tuple(row["record_ids"]), "status": row["status"],
+            "entity_error": entities.get("error"),
+            "names": [{"type": e["category"], "name": e["name"], "basis": e["basis"],
+                       "forced": e["forced"], "confidence": e["confidence"],
+                       "evidence": image_text._evidence(e, ocr_text)}
+                      for e in found if e["category"] in TYPES]}
+        return False
+
+    _summaries, _kept, out.torn_tail_bytes = image_text.scan_ledger(path, dataset=dataset, keep=keep)
+    return out
+
+
+# --------------------------------------------------------------------------
+# claim text: NER, cached per record
+# --------------------------------------------------------------------------
+
+_URL = re.compile(r"https?://\S+|\bwww\.\S+", re.I)
+
+
+def clean_claim(text: str | None) -> tuple[str, bool]:
+    """(text NER reads, whether it was cut)."""
+    t = html.unescape(html.unescape(text or ""))
+    t = re.sub(r"\s+", " ", _URL.sub(" ", t)).strip()
+    return t[:NER_MAX_CHARS], len(t) > NER_MAX_CHARS
+
+
+def claim_rows(dataset: str) -> Iterator[tuple[str, str, bool]]:
+    """(record_id, cleaned text, cut) for every usable row with an image."""
+    for row in image_text.usable_rows(dataset):
+        text, cut = clean_claim(row.get("text"))
+        yield str(row["record_id"]), text, cut
+
+
+def ner_config() -> dict[str, Any]:
+    return {"model": dict(NER_MODEL), "files": list(NER_FILES), "aggregation": "first",
+            "labels": dict(NER_LABELS), "clean": CLEAN_RULE, "max_chars": NER_MAX_CHARS}
+
+
+class Ner:
+    """dslim/bert-base-NER at the pinned revision, offline: PER and ORG spans.
+    Loaded on the first call, so a run with nothing new to read never loads it."""
+
+    def __init__(self, device: str | None = None):
+        self.device = device
+        self.pipe = None
+
+    def load(self) -> None:
+        os.environ.setdefault("HF_HUB_OFFLINE", "1")
+        os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
+        import torch
+        from transformers import AutoModelForTokenClassification, AutoTokenizer, pipeline
+
+        snap = snapshot_dir(NER_MODEL["id"], NER_MODEL["revision"])
+        device = self.device or ("cuda" if torch.cuda.is_available() else "cpu")
+        tokenizer = AutoTokenizer.from_pretrained(str(snap), local_files_only=True)
+        model = AutoModelForTokenClassification.from_pretrained(str(snap), local_files_only=True)
+        self.pipe = pipeline("token-classification", model=model, tokenizer=tokenizer,
+                             aggregation_strategy="first", device=0 if device == "cuda" else -1)
+        self.device = device
+        log(f"  NER {NER_MODEL['id']}@{NER_MODEL['revision'][:12]} on {device}")
+
+    def __call__(self, texts: Sequence[str]) -> list[list[dict[str, Any]]]:
+        if self.pipe is None:
+            self.load()
+        out: list[list[dict[str, Any]]] = [[] for _ in texts]
+        todo = [i for i, t in enumerate(texts) if t.strip()]
+        found = self.pipe([texts[i] for i in todo], batch_size=NER_BATCH) if todo else []
+        for i, ents in zip(todo, found):
+            text = texts[i]
+            out[i] = [{"type": NER_LABELS[e["entity_group"]], "text": text[e["start"]:e["end"]],
+                       "start": int(e["start"]), "end": int(e["end"]),
+                       "score": round(float(e["score"]), 4)}
+                      for e in ents if e["entity_group"] in NER_LABELS]
+        return out
+
+
+def claim_spans(dataset: str, ner: Callable[[Sequence[str]], list[list[dict[str, Any]]]], *,
+                rows: Iterable[tuple[str, str, bool]] | None = None, out_dir: Path | None = None,
+                chunk: int = 2048) -> dict[str, dict[str, Any]]:
+    """record_id -> {spans, cut} for one corpus, from the cache where it has
+    them. A record already read is never read again; a kill loses at most the
+    chunk in flight."""
+    directory = out_dir or (CLAIM_NER_DIR / config_id_of(ner_config()))
+    config_path = directory / "config.json"
+    if config_path.is_file():
+        if json.loads(config_path.read_text(encoding="utf-8")) != ner_config():
+            raise GalleryError(f"{config_path} does not match the NER configuration; refusing to mix")
+    else:
+        write_json(config_path, ner_config())
+    ledger = JsonlLedger(directory / f"{dataset}.jsonl")
+    done = {r["record_id"]: r for r in ledger.open()}
+    try:
+        source = claim_rows(dataset) if rows is None else rows
+        pending = [(rid, text, cut) for rid, text, cut in source if rid not in done]
+        if pending:
+            log(f"  [{dataset}] NER: {len(done):,} records cached, {len(pending):,} to read")
+        for start in range(0, len(pending), chunk):
+            part = pending[start:start + chunk]
+            found = ner([text for _rid, text, _cut in part])
+            batch = [{"record_id": rid, "spans": spans, "cut": cut}
+                     for (rid, _text, cut), spans in zip(part, found)]
+            ledger.append_many(batch)
+            done.update((r["record_id"], r) for r in batch)
+            if len(pending) > chunk:
+                log(f"  [{dataset}] NER {min(start + chunk, len(pending)):,}/{len(pending):,}")
+    finally:
+        ledger.close()
+    return done
+
+
+# --------------------------------------------------------------------------
+# the name table and the counts
+# --------------------------------------------------------------------------
+
+
+class NameTable:
+    """Every distinct (type, key), with where it was seen."""
+
+    def __init__(self) -> None:
+        self.rows: dict[tuple[str, str], dict[str, Any]] = {}
+
+    def _row(self, entity_type: str, key: str) -> dict[str, Any]:
+        return self.rows.setdefault((entity_type, key), {
+            "type": entity_type, "key": key, "forms": Counter(), "vlm": {}, "claims": {}})
+
+    def add_vlm(self, dataset: str, sha256: str, name: dict[str, Any]) -> bool:
+        key = name_key(name["name"], name["type"])
+        if key is None:
+            return False
+        row = self._row(name["type"], key)
+        row["forms"][display_form(name["name"], name["type"])] += 1
+        v = row["vlm"].setdefault(dataset, {"images": set(), "mentions": 0, "free": 0, "forced": 0,
+                                            "evidence": Counter(), "basis": Counter()})
+        v["images"].add(sha256)
+        v["mentions"] += 1
+        v["forced" if name["forced"] else "free"] += 1
+        v["evidence"][name["evidence"]] += 1
+        v["basis"][name["basis"]] += 1
+        return True
+
+    def add_claim(self, dataset: str, record_id: str, span: dict[str, Any]) -> bool:
+        key = name_key(span["text"], span["type"])
+        if key is None:
+            return False
+        row = self._row(span["type"], key)
+        row["forms"][display_form(span["text"], span["type"])] += 1
+        c = row["claims"].setdefault(dataset, {"records": set(), "mentions": 0})
+        c["records"].add(record_id)
+        c["mentions"] += 1
+        return True
+
+    @staticmethod
+    def mentions(row: dict[str, Any], source: str) -> int:
+        return sum(v["mentions"] for v in row[source].values())
+
+    def serialised(self) -> Iterator[dict[str, Any]]:
+        """Rows for names.jsonl, most-mentioned first."""
+        def total(r: dict[str, Any]) -> int:
+            return self.mentions(r, "vlm") + self.mentions(r, "claims")
+
+        for r in sorted(self.rows.values(), key=lambda r: (-total(r), r["type"], r["key"])):
+            display = sorted(r["forms"].items(), key=lambda kv: (-kv[1], kv[0]))[0][0]
+            yield {"type": r["type"], "key": r["key"], "display": display,
+                   "forms": dict(r["forms"].most_common()),
+                   "mentions": {"vlm": self.mentions(r, "vlm"), "claims": self.mentions(r, "claims")},
+                   "vlm": {ds: {"images": len(v["images"]), "mentions": v["mentions"],
+                                "free": v["free"], "forced": v["forced"],
+                                "evidence": dict(v["evidence"]), "basis": dict(v["basis"])}
+                           for ds, v in sorted(r["vlm"].items())},
+                   "claims": {ds: {"records": len(c["records"]), "mentions": c["mentions"]}
+                              for ds, c in sorted(r["claims"].items())}}
+
+
+def coverage(mentions: Sequence[int]) -> dict[str, float | None]:
+    """The share of all mentions held by the N most-mentioned names."""
+    ordered = sorted((m for m in mentions if m), reverse=True)
+    total = sum(ordered)
+    out: dict[str, float | None] = {}
+    running, i = 0, 0
+    for n in COVERAGE_TOP:
+        while i < min(n, len(ordered)):
+            running += ordered[i]
+            i += 1
+        out[f"top_{n}"] = image_text._ratio(running, total, 4)
+        if n >= len(ordered):
+            break
+    return out
+
+
+def in_scope(row: dict[str, Any], scope: Sequence[str] = BUILD_SCOPE) -> bool:
+    """A name the gallery is built for: the VLM gave it on an image of, or the
+    claim text of, a corpus in ``scope``. Per corpus on both sides, so a
+    ledger that grows to cover another corpus does not widen the scope."""
+    return any(ds in scope for ds in row["vlm"]) or any(ds in scope for ds in row["claims"])
+
+
+def scope_mentions(row: dict[str, Any], scope: Sequence[str] = BUILD_SCOPE) -> int:
+    return (sum(v["mentions"] for ds, v in row["vlm"].items() if ds in scope)
+            + sum(c["mentions"] for ds, c in row["claims"].items() if ds in scope))
+
+
+def type_counts(rows: Sequence[dict[str, Any]], ledgers: Sequence[str],
+                claims: Sequence[str]) -> dict[str, Any]:
+    """Aggregates for one entity type, from serialised name rows."""
+    vlm = [r for r in rows if r["mentions"]["vlm"]]
+    clm = [r for r in rows if r["mentions"]["claims"]]
+    evidence: Counter = Counter()
+    lines: Counter = Counter()
+    for r in vlm:
+        for v in r["vlm"].values():
+            evidence.update(v["evidence"])
+            lines.update({"free": v["free"], "forced": v["forced"]})
+    scoped = [r for r in rows if in_scope(r)]
+    return {
+        "distinct_names": len(rows),
+        "overlap": {"vlm_only": sum(1 for r in rows if r["mentions"]["vlm"] and not r["mentions"]["claims"]),
+                    "claims_only": sum(1 for r in rows if r["mentions"]["claims"] and not r["mentions"]["vlm"]),
+                    "both": sum(1 for r in rows if r["mentions"]["vlm"] and r["mentions"]["claims"])},
+        "build_scope": {"datasets": list(BUILD_SCOPE), "distinct_names": len(scoped),
+                        "named_once": sum(1 for r in scoped if scope_mentions(r) == 1)},
+        "vlm": {
+            "distinct_names": len(vlm),
+            "by_dataset": {ds: sum(1 for r in vlm if ds in r["vlm"]) for ds in ledgers},
+            "mentions": sum(r["mentions"]["vlm"] for r in vlm),
+            "mentions_by_evidence": dict(sorted(evidence.items())),
+            "mentions_by_line": {"free": lines["free"], "forced": lines["forced"]},
+            # the names a gallery has to verify: produced from appearance alone
+            "distinct_names_not_written": sum(1 for r in vlm if any(
+                v["evidence"].get("not_written") for v in r["vlm"].values())),
+            "distinct_names_only_on_forced_lines": sum(1 for r in vlm if not any(
+                v["free"] for v in r["vlm"].values())),
+            "coverage": coverage([r["mentions"]["vlm"] for r in vlm])},
+        "claims": {
+            "distinct_names": len(clm),
+            "by_dataset": {ds: sum(1 for r in clm if ds in r["claims"]) for ds in claims},
+            "mentions": sum(r["mentions"]["claims"] for r in clm),
+            "coverage": coverage([r["mentions"]["claims"] for r in clm])},
+    }
+
+
+def ledger_counts(read: LedgerRead, total_images: int | None) -> dict[str, Any]:
+    imgs = read.images.values()
+    with_names = Counter()
+    for img in imgs:
+        for t in {n["type"] for n in img["names"]}:
+            with_names[t] += 1
+    return {"rows": read.rows, "images": len(read.images),
+            "images_in_worklist": total_images,
+            "share_done": image_text._ratio(len(read.images), total_images, 4) if total_images else None,
+            "status": dict(sorted(Counter(i["status"] for i in imgs).items())),
+            "entity_errors": dict(sorted(Counter(i["entity_error"] for i in imgs
+                                                 if i["entity_error"]).items())),
+            "images_naming": {t: with_names[t] for t in TYPES},
+            "rows_without_forced_marks": read.unmarked,
+            "torn_tail_bytes": read.torn_tail_bytes}
+
+
+#: Prefix sizes the growth fit uses; the smallest are left out (too noisy).
+GROWTH_POINTS = (1000, 1500, 2000, 2500)
+
+
+def name_growth(read: LedgerRead, total: int | None) -> dict[str, Any] | None:
+    """How many distinct VLM names a FINISHED run would hold: an extrapolation.
+
+    The run takes images in sha256 order, which is pseudo-random, so the
+    images done are a random sample of the work list. Distinct names over
+    growing prefixes are fitted to V(n) = K n^beta (Heaps' law) and the fit is
+    evaluated at the work list's size. This is a projection far past the
+    observed range, and it says so: the full-build budget is planned from it,
+    and the finished run replaces it."""
+    order = sorted(read.images)
+    if not total or len(order) >= total or len(order) < GROWTH_POINTS[-1]:
+        return None
+    out: dict[str, Any] = {"method": ("V(n) = K n^beta fitted by least squares in log-log over "
+                                      f"prefixes {list(GROWTH_POINTS)} and all {len(order):,} images "
+                                      "done (sha256 order: a random sample), evaluated at the "
+                                      "work list's size; an extrapolation, not a measurement"),
+                           "images_done": len(order), "images_in_worklist": total}
+    for t in TYPES:
+        for scope in ("all", "not_written"):
+            seen: set[str] = set()
+            points = []
+            for i, sha in enumerate(order, 1):
+                for n in read.images[sha]["names"]:
+                    if n["type"] == t and (scope == "all" or n["evidence"] == "not_written"):
+                        key = name_key(n["name"], t)
+                        if key:
+                            seen.add(key)
+                if i in GROWTH_POINTS or i == len(order):
+                    points.append((i, len(seen)))
+            if len(points) < 3 or any(v == 0 for _i, v in points):
+                continue
+            xs = [math.log(i) for i, _v in points]
+            ys = [math.log(v) for _i, v in points]
+            mx, my = statistics.fmean(xs), statistics.fmean(ys)
+            beta = sum((x - mx) * (y - my) for x, y in zip(xs, ys)) / sum((x - mx) ** 2 for x in xs)
+            out[f"{t}_{scope}"] = {"now": points[-1][1], "beta": round(beta, 3),
+                                   "projected": round(math.exp(my + beta * (math.log(total) - mx)))}
+    return out
+
+
+def worklist_sizes(run_dir: Path) -> dict[str, int]:
+    """Distinct images per dataset as the run itself counted them (its pilot report)."""
+    pilot = run_dir / "pilot.json"
+    if not pilot.is_file():
+        return {}
+    doc = json.loads(pilot.read_text(encoding="utf-8"))
+    found = ((doc.get("count_corrections") or {}).get("datasets") or {})
+    return {ds: v["distinct_images"] for ds, v in found.items() if v.get("distinct_images")}
+
+
+def count(run_dir: Path, *, claims: Sequence[str], ner: Callable | None,
+          claim_source: Callable[[str], Iterable[tuple[str, str, bool]]] | None = None,
+          ner_dir: Path | None = None) -> tuple[NameTable, dict[str, Any]]:
+    """The name table, and the report on it. ``ner`` None reads no claim text."""
+    table = NameTable()
+    ledgers: dict[str, LedgerRead] = {}
+    for ds in image_text.ORDER:
+        path = run_dir / f"{ds}.jsonl"
+        if path.is_file():
+            read = read_ledger(path, ds)
+            ledgers[ds] = read
+            for sha, img in read.images.items():
+                for name in img["names"]:
+                    table.add_vlm(ds, sha, name)
+            log(f"  [{ds}] {len(read.images):,} images read from {run_dir.name}")
+    ner_stats: dict[str, Any] = {}
+    for ds in (claims if ner is not None else ()):
+        found = claim_spans(ds, ner, rows=claim_source(ds) if claim_source else None, out_dir=ner_dir)
+        per = Counter()
+        for rid, row in found.items():
+            per["records"] += 1
+            per["cut"] += bool(row.get("cut"))
+            kinds = set()
+            for span in row["spans"]:
+                per[f"spans_{span['type']}"] += 1
+                if table.add_claim(ds, rid, span):
+                    kinds.add(span["type"])
+            for t in kinds:
+                per[f"records_naming_{t}"] += 1
+        ner_stats[ds] = dict(sorted(per.items()))
+    rows = list(table.serialised())
+    sizes = worklist_sizes(run_dir)
+    report = {
+        "generated_at": utcnow(),
+        "what": ("distinct NORMALISED NAMES of people and organisations in our corpora, before "
+                 "anything is fetched. Names, not entities: a surname and the full name count "
+                 "as two until linking resolves both to one Wikidata item. Aggregates only; the "
+                 "name table stays in data/interim/gallery/."),
+        "image_text": {
+            "run": run_dir.name, "row_schema": image_text.SCHEMA,
+            "not_read": {d.name: f"row schema {s}: an earlier run under an older parser, superseded"
+                         for d, s in run_dirs(run_dir.parent) if d != run_dir},
+            "datasets": {ds: ledger_counts(read, sizes.get(ds)) for ds, read in ledgers.items()},
+            "projection": {ds: g for ds, read in ledgers.items()
+                           if (g := name_growth(read, sizes.get(ds))) is not None},
+            "names_are": ("the VLM's PERSON and ORG names, every line read through "
+                          "entities_of(forced='mark'); evidence is the independent OCR's "
+                          "(written / partly_written / not_written / no_ocr)")},
+        "claims": {
+            "ner": {"model": NER_MODEL["id"], "revision": NER_MODEL["revision"],
+                    "licence": NER_MODEL["licence"], "config_id": config_id_of(ner_config()),
+                    "clean": CLEAN_RULE},
+            "rows_read": "usable processed rows that carry at least one image",
+            "datasets": ner_stats},
+        "names": {t: type_counts([r for r in rows if r["type"] == t], list(ledgers), list(ner_stats))
+                  for t in TYPES},
+        "verite": ("VERITE's names count towards gallery membership, as an evaluation-time "
+                   "lookup of the claimed name would. Nothing is ever tuned on VERITE: the "
+                   "calibration reads Factify2 train only."),
+    }
+    return table, report
+
+
+def cmd_count(args) -> int:
+    run_dir = Path(args.ledger_dir) if args.ledger_dir else current_run_dir()
+    if not run_dir.is_absolute() and not run_dir.is_dir():
+        run_dir = image_text.OUT_ROOT / run_dir
+    from scripts.processed_loader import records_path
+
+    claims = [ds for ds in args.claims if records_path(ds).is_file()]
+    missing = sorted(set(args.claims) - set(claims))
+    if missing:
+        log(f"  no processed records for {', '.join(missing)}: their claims are not read")
+    table, report = count(run_dir, claims=claims, ner=None if args.no_claims else Ner(args.device))
+    n = write_jsonl(NAMES_PATH, table.serialised())
+    write_json(COUNTS_REPORT, report)
+    for t in TYPES:
+        c = report["names"][t]
+        log(f"{t}: {c['distinct_names']:,} distinct names "
+            f"(VLM {c['vlm']['distinct_names']:,}, of which {c['vlm']['distinct_names_not_written']:,} "
+            f"from appearance alone; claims {c['claims']['distinct_names']:,}; both "
+            f"{c['overlap']['both']:,}); build scope {c['build_scope']['distinct_names']:,}")
+    log(f"wrote {n:,} names to {NAMES_PATH} and the aggregates to {COUNTS_REPORT}")
+    return 0
+
+
+# --------------------------------------------------------------------------
+# fetch-models: the one command that downloads weights
+# --------------------------------------------------------------------------
+
+
+def cmd_fetch_models(args) -> int:
+    from fnmatch import fnmatch
+
+    from huggingface_hub import HfApi, hf_hub_download, snapshot_download
+
+    from scripts.manifest import sha256
+
+    MODELS.mkdir(parents=True, exist_ok=True)
+    api = HfApi()
+    for which in args.only:
+        if which == "ner":
+            info = api.model_info(NER_MODEL["id"], revision=NER_MODEL["revision"], files_metadata=True)
+            if info.sha != NER_MODEL["revision"]:
+                raise SystemExit(f"the Hub resolved {NER_MODEL['revision']} to {info.sha}; refusing")
+            licence = getattr(info.card_data, "license", None) if info.card_data else None
+            if licence != NER_MODEL["licence"]:
+                raise SystemExit(f"{NER_MODEL['id']} now states licence {licence!r}, not "
+                                 f"{NER_MODEL['licence']!r}; read it before fetching")
+            wanted = [s for s in info.siblings if any(fnmatch(s.rfilename, p) for p in NER_FILES)]
+            need = sum(s.size or 0 for s in wanted) / 1024 ** 3
+            if free_gb(MODELS) < 1.5 * need:
+                raise SystemExit(f"refusing: {free_gb(MODELS):.1f} GiB free, {1.5 * need:.2f} needed")
+            snap = Path(snapshot_download(NER_MODEL["id"], revision=NER_MODEL["revision"],
+                                          cache_dir=str(HF_CACHE), allow_patterns=list(NER_FILES)))
+            bad = [s.rfilename for s in wanted
+                   if not (snap / s.rfilename).is_file()
+                   or (snap / s.rfilename).stat().st_size != s.size
+                   or (s.lfs is not None and sha256(snap / s.rfilename) != s.lfs.sha256)]
+            if bad:
+                raise SystemExit(f"downloaded NER files do not match the Hub's metadata: {bad}")
+            log(f"{NER_MODEL['id']}@{NER_MODEL['revision'][:12]} ({licence}): "
+                f"{len(wanted)} files verified")
+            continue
+        spec = FACE_MODELS[which]
+        info = api.model_info(spec["repo"], revision=spec["revision"])
+        if info.sha != spec["revision"]:
+            raise SystemExit(f"the Hub resolved {spec['repo']}@{spec['revision']} to {info.sha}; refusing")
+        card = getattr(info.card_data, "license", None) if info.card_data else None
+        if spec.get("card_licence") and card != spec["card_licence"]:
+            raise SystemExit(f"{spec['repo']} now states licence {card!r}; read it before fetching")
+        licence = Path(hf_hub_download(spec["repo"], spec["licence_file"], revision=spec["revision"],
+                                       cache_dir=str(HF_CACHE)))
+        if sha256(licence) != spec["licence_sha256"]:
+            raise SystemExit(f"{spec['repo']}: {spec['licence_file']} is not the text read on "
+                             "2026-10-21; read it before fetching")
+        path = Path(hf_hub_download(spec["repo"], spec["file"], revision=spec["revision"],
+                                    cache_dir=str(HF_CACHE)))
+        if sha256(path) != spec["sha256"]:
+            raise SystemExit(f"{spec['repo']}/{spec['file']}: sha256 mismatch; refusing")
+        log(f"{spec['repo']}/{spec['file']}@{spec['revision'][:12]} ({spec['licence']}): verified")
+    return 0
+
+
+def face_model_path(which: str) -> Path:
+    """The pinned file of one face model, re-hashed: other bytes are another experiment."""
+    from scripts.manifest import sha256
+
+    spec = FACE_MODELS[which]
+    path = snapshot_dir(spec["repo"], spec["revision"]) / spec["file"]
+    if not path.is_file() or sha256(path) != spec["sha256"]:
+        raise image_text.ModelMissing(f"{spec['file']} is missing or not the pinned bytes; "
+                                      "run: python scripts/gallery.py fetch-models")
+    return path
+
+
+# --------------------------------------------------------------------------
+# the store
+# --------------------------------------------------------------------------
+
+#: Tags every provenance row, link and entity the sample pass writes...
+PASS_ID = "gallery-2026-10"
+#: ...and the full build (link/fetch --all), so either can be told apart later.
+BUILD_PASS_ID = "gallery-build-2026-10"
+LINKS_PATH = GALLERY / "links.jsonl"
+WIKIDATA_PATH = GALLERY / "wikidata.jsonl"
+ENTITIES_PATH = GALLERY / "entities.jsonl"
+PROVENANCE_PATH = GALLERY / "provenance.jsonl"
+MEDIA_DIR = GALLERY / "media"
+REJECTED_DIR = GALLERY / "rejected"
+FACES_DIR = GALLERY / "faces"
+SAMPLE_PATH = GALLERY_INTERIM / "sample.json"
+QUERY_FACES_DIR = GALLERY_INTERIM / "faces"
+CALIBRATION_DIR = GALLERY_INTERIM / "calibration"
+REVIEW_DIR = GALLERY_INTERIM / "review"
+SAMPLE_REPORT = REPORTS / "gallery_sample.json"
+SEED = image_text.SEED
+
+
+def latest(rows: Iterable[dict[str, Any]], key: Callable[[dict[str, Any]], Any]) -> dict[Any, dict[str, Any]]:
+    """Append-only files: the last row for each key wins."""
+    out: dict[Any, dict[str, Any]] = {}
+    for row in rows:
+        out[key(row)] = row
+    return out
+
+
+# --------------------------------------------------------------------------
+# the network: Wikidata and Commons, one worker, at Wikimedia's published pace
+# --------------------------------------------------------------------------
+
+#: Hosts spaced at WIKIMEDIA_DELAY, named one by one: every other host keeps
+#: recover.HOST_DELAY (5 s). Wikimedia's robot policy
+#: (wikitech.wikimedia.org/wiki/Robot_policy, edited 2026-03-16, read
+#: 2026-10-21) allows an unauthenticated Action API client "1 at a time, and
+#: below 5 requests per second overall", and media "a total concurrency of at
+#: most 2" within 25 Mbps. One request in flight, at most one start per second
+#: per host, is inside both: two API hosts make at most 2 per second.
+WIKIMEDIA_HOSTS = {"www.wikidata.org": "action_api", "commons.wikimedia.org": "action_api",
+                   "upload.wikimedia.org": "media", "thumb.wikimedia.org": "media"}
+WIKIMEDIA_DELAY = 1.0
+#: The same policy: "if your request takes more than 1 second to serve, please
+#: wait 5 seconds before making another request" (Action API).
+SLOW_API_S = 1.0
+SLOW_API_PAUSE = 5.0
+#: "When we reply with a 429 Too Many Requests status code respect the delay
+#: specified by the Retry-After header": the whole host waits, not one request.
+#: A 429 without the header waits a minute.
+RATE_LIMITED_PAUSE = 60.0
+#: Its rule for other wikimedia.org services, kept here for the answers that
+#: say the service itself is struggling (502, 503, 504): "Pause crawling for at
+#: least 15 minutes if you receive a 5xx status code". A 500 on one file is that
+#: file's (a thumbnail that cannot be rendered) and holds only its own retries.
+#: The sample's 791 requests met no 5xx at all.
+SERVER_ERROR_PAUSE = 900.0
+OVERLOAD_STATUSES = (502, 503, 504)
+
+UA_CONTACT_ENV = "PE_FAKE_NEWS_UA_CONTACT"
+#: The repository's own anonymised URL. Wikimedia's User-Agent policy accepts a
+#: URL as contact, and this one keeps the review blind. A real contact can be
+#: supplied through the environment and never enters tracked code.
+UA_CONTACT_DEFAULT = "https://github.com/anonymousz77/Pe_fake_news"
+WIKIDATA_API = "https://www.wikidata.org/w/api.php"
+COMMONS_API = "https://commons.wikimedia.org/w/api.php"
+#: Non-interactive API use asks the servers to refuse it when they are lagged
+#: (mediawiki.org, API:Etiquette); a refusal is waited out, then retried.
+MAXLAG = 5
+MAXLAG_RETRIES = 3
+#: API errors that say "not now", sent with status 200, and the first wait for
+#: each (doubled on every retry). The sample pass met the search one 10 times in
+#: 252 searches; the server's Retry-After wins when it is longer.
+TRANSIENT_API_ERRORS = {"maxlag": float(MAXLAG), "cirrussearch-too-busy-error": 30.0,
+                        "ratelimited": 60.0}
+#: The two that are about the host's load or our rate (API:Etiquette): the whole
+#: host waits, as for a 429. A busy search pool only delays the refused search.
+HOST_WIDE_API_ERRORS = ("maxlag", "ratelimited")
+#: A Wikimedia standard thumbnail width. Bots must use a standard size or the
+#: original (mediawiki.org, "Common thumbnail sizes", read 2026-10-20), and a
+#: fixed width keeps every reference comparable.
+THUMB_WIDTH = 960
+SEARCH_LIMIT = 10
+COMMONS_SEARCH_LIMIT = 10
+#: Reference candidates tried per entity: Wikidata's own image first, then
+#: files whose structured data says they depict the entity, then its category.
+CANDIDATES = {"PERSON": 6, "ORG": 2}
+BATCH = 50  # wbgetentities ids, imageinfo titles
+Q_HUMAN = "Q5"
+Q_ORGANISATION = "Q43229"
+#: Subclass-of steps walked upward from an item's classes before giving up.
+CLASS_DEPTH = 12
+#: A name is ambiguous when its second exact candidate has at least a third of
+#: the first's sitelinks: neither dominates.
+AMBIGUITY_RATIO = 3.0
+EXTMETADATA = ("LicenseShortName", "LicenseUrl", "License", "UsageTerms", "AttributionRequired",
+               "Copyrighted", "Restrictions", "Artist", "Credit", "DateTimeOriginal")
+
+
+def user_agent() -> str:
+    """Wikimedia's policy: client/version (contact) library/version, with "bot"."""
+    import requests
+
+    contact = os.environ.get(UA_CONTACT_ENV) or UA_CONTACT_DEFAULT
+    return (f"Pe_Fake_News_Dec-gallery-bot/1.1 ({contact}; research; one request at a time, at "
+            f"most one per {WIKIMEDIA_DELAY:g} s per host) python-requests/{requests.__version__}")
+
+
+def retry_after(resp) -> float | None:
+    try:
+        return float(resp.headers.get("retry-after"))
+    except (TypeError, ValueError):
+        return None
+
+
+class WikimediaWorker(recover.Worker):
+    """recover.Worker at the pace Wikimedia publishes, on the hosts named in
+    WIKIMEDIA_HOSTS only: one second between request starts, five after an API
+    answer that took over a second, and for the whole host the Retry-After of
+    a 429 (or of a maxlag refusal) and fifteen minutes after a 502, 503 or 504.
+    Every other host keeps recover.HOST_DELAY."""
+
+    def spacing(self, host: str) -> float:
+        return WIKIMEDIA_DELAY if host in WIKIMEDIA_HOSTS else self.delay
+
+    def pause_after(self, host: str, resp) -> float:
+        kind = WIKIMEDIA_HOSTS.get(host)
+        if kind is None:
+            return 0.0
+        if resp.status == 429:
+            return max(retry_after(resp) or 0.0, RATE_LIMITED_PAUSE)
+        if resp.status in OVERLOAD_STATUSES:
+            return SERVER_ERROR_PAUSE
+        code = resp.headers.get("mediawiki-api-error")
+        if code in HOST_WIDE_API_ERRORS:
+            return max(retry_after(resp) or 0.0, TRANSIENT_API_ERRORS[code])
+        if kind == "action_api" and resp.elapsed > SLOW_API_S:
+            return SLOW_API_PAUSE
+        return 0.0
+
+
+class ProvenanceLog:
+    """Every request this block makes, one row each (URL, host, status,
+    outcome, reason), in the gallery's own ledger. recover.get() logs its
+    redirects and retries through ``attempt``; callers log the final outcome."""
+
+    def __init__(self, ledger: JsonlLedger, pass_id: str = PASS_ID):
+        self.ledger = ledger
+        #: tags every row written through this log's Net: the sample's or the build's
+        self.pass_id = pass_id
+
+    def attempt(self, unit: str, route: str, resp, outcome: str, reason: str | None,
+                **extra: Any) -> None:
+        from scripts.recover import host_of
+
+        self.ledger.append({"event": "attempt", "pass": self.pass_id, "at": utcnow(), "stage": route,
+                            "key": unit, "url": resp.url, "host": host_of(resp.url),
+                            "http_status": resp.status, "outcome": outcome,
+                            "attempt_reason": reason, "bytes": len(resp.body),
+                            "elapsed_s": round(resp.elapsed, 3), **extra})
+
+
+@dataclass
+class Net:
+    """The single worker, its clock and the log: real, or a test's fakes.
+
+    ONE worker per Net, kept across runs: its per-host spacing must hold from
+    one phase to the next (search, entities, type check), not restart with
+    each."""
+
+    make_worker: Callable[[], Any]
+    log: ProvenanceLog
+    clock: Callable[[], float]
+    requests: Counter = field(default_factory=Counter)
+    #: Why the network may not be used again in this process (a spent budget).
+    stopped: str | None = None
+    _worker: Any = field(default=None, repr=False)
+
+    def run(self, gens: Iterable[Any]) -> None:
+        if self._worker is None:
+            self._worker = self.make_worker()
+        worker = self._worker
+        before = (worker.requests, worker.bytes_in)
+        for gen in gens:
+            worker.start(gen)
+        try:
+            worker.run()
+        finally:
+            self.requests["total"] += worker.requests - before[0]
+            self.requests["bytes"] += worker.bytes_in - before[1]
+
+
+def live_net(log: ProvenanceLog, budget_bytes: int | None = None) -> Net:
+    import time
+
+    import requests
+
+    from scripts import recover
+
+    session = requests.Session()
+    session.headers.clear()  # every request carries its own headers
+    return Net(lambda: WikimediaWorker(session, delay=recover.HOST_DELAY, budget_bytes=budget_bytes),
+               log, time.monotonic)
+
+
+def api_json(net: Net, base: str, params: dict[str, Any], key: str, stage: str):
+    """GET one API call through the worker; (document, None) or (None, reason).
+
+    A 200 is not the answer: the body must be JSON, and a JSON error -- maxlag
+    above all, which Wikimedia sends with status 200 -- is a failure (maxlag is
+    waited out and retried)."""
+    from urllib.parse import urlencode
+
+    from scripts import recover
+
+    url = f"{base}?{urlencode(params)}"
+    # the robot policy asks for gzip on everything but media
+    headers = {"User-Agent": user_agent(), "Accept": "application/json", "Accept-Encoding": "gzip"}
+    for attempt in range(MAXLAG_RETRIES + 1):
+        resp, _chain = yield from recover.get(url, headers, net.log, key, stage, net.clock)
+        if resp.error or resp.status != 200:
+            reason = resp.error or f"http_{resp.status}"
+            net.log.attempt(key, stage, resp, "failed", reason)
+            return None, reason
+        try:
+            doc = json.loads(resp.body)
+        except ValueError:
+            net.log.attempt(key, stage, resp, "failed", "not_json")
+            return None, "not_json"
+        error = (doc.get("error") or {}).get("code") if isinstance(doc, dict) else None
+        if error in TRANSIENT_API_ERRORS and attempt < MAXLAG_RETRIES:
+            wait = TRANSIENT_API_ERRORS[error] * 2 ** attempt
+            try:
+                wait = max(wait, float(resp.headers.get("retry-after") or 0))
+            except ValueError:
+                pass
+            net.log.attempt(key, stage, resp, "retrying", error, retry_in_s=wait)
+            yield recover.Req(None, None, net.clock() + wait)  # a pure wait
+            continue
+        if error:
+            net.log.attempt(key, stage, resp, "failed", f"api_error:{error}")
+            return None, f"api_error:{error}"
+        net.log.attempt(key, stage, resp, "ok", None)
+        return doc, None
+    return None, f"api_error:{error}"
+
+
+# --------------------------------------------------------------------------
+# linking names to Wikidata items
+# --------------------------------------------------------------------------
+
+
+def claim_values(entity: dict[str, Any], prop: str) -> list[str]:
+    out = []
+    for claim in (entity.get("claims") or {}).get(prop, []):
+        value = ((claim.get("mainsnak") or {}).get("datavalue") or {}).get("value")
+        if isinstance(value, dict) and "id" in value:
+            out.append(value["id"])
+        elif isinstance(value, str):
+            out.append(value)
+    return out
+
+
+#: Languages asked for. "mul" holds a label every language shares: since 2024
+#: Wikidata keeps many people's names there and not under "en" (on the sample,
+#: 17 of 556 items had no English label and none had an English alias).
+LANGUAGES = ("en", "mul")
+
+
+def entity_summary(entity: dict[str, Any]) -> dict[str, Any]:
+    """What the gallery keeps of a Wikidata item (CC0)."""
+    def first(field_: str) -> str | None:
+        for lang in LANGUAGES:
+            value = ((entity.get(field_) or {}).get(lang) or {}).get("value")
+            if value:
+                return value
+        return None
+
+    aliases = [a["value"] for lang in LANGUAGES for a in (entity.get("aliases") or {}).get(lang, [])]
+    return {"qid": entity["id"], "label": first("labels"), "description": first("descriptions"),
+            "aliases": list(dict.fromkeys(aliases)),
+            "p31": claim_values(entity, "P31"), "sitelinks": len(entity.get("sitelinks") or {}),
+            "images": claim_values(entity, "P18"), "logos": claim_values(entity, "P154"),
+            "commons_category": next(iter(claim_values(entity, "P373")), None)}
+
+
+def same_name(text: str, key: str) -> bool:
+    """A label or alias that IS the name: equal once folded, or once spaces are
+    dropped too ("ArvindKejriwal", a hashtag, is "Arvind Kejriwal")."""
+    folded = fold(text)
+    return bool(folded) and (folded == key or folded.replace(" ", "") == key.replace(" ", ""))
+
+
+def is_type(entity: dict[str, Any], entity_type: str, organisations: set[str]) -> bool:
+    if entity_type == "PERSON":
+        return Q_HUMAN in entity["p31"]
+    return entity["qid"] in organisations
+
+
+def exact_candidates(results: Sequence[dict[str, Any]], key: str) -> list[str]:
+    out: list[str] = []
+    for r in results:
+        texts = [r.get("label") or "", (r.get("match") or {}).get("text") or "",
+                 *(r.get("aliases") or [])]
+        if any(same_name(t, key) for t in texts) and r["id"] not in out:
+            out.append(r["id"])
+    return out
+
+
+def decide(entity_type: str, key: str, results: Sequence[dict[str, Any]] | None,
+           error: str | None, entities: dict[str, dict[str, Any]], organisations: set[str],
+           unchecked: set[str], failed: set[str] = frozenset()) -> dict[str, Any]:
+    """Which item a name is, or why it is none.
+
+    Only an EXACT label or alias counts: search ranks prefixes too, and a name
+    linked to the wrong person verifies the wrong face. Among exact candidates
+    of the right type, the most-linked wins; one that does not dominate the
+    next makes the name ``ambiguous``, kept, chosen and marked. A candidate
+    whose data never arrived (``failed``) makes the name an error to retry,
+    never a "no"."""
+    if results is None:
+        return {"status": "error", "reason": error}
+    if not results:
+        return {"status": "no_result"}
+    exact = exact_candidates(results, key)
+    if not exact:
+        return {"status": "no_exact_match", "top": [r["id"] for r in results[:3]]}
+    if any(q in failed for q in exact):
+        return {"status": "error", "reason": "entities_failed", "exact": exact}
+    if entity_type == "ORG" and any(q in unchecked for q in exact):
+        return {"status": "error", "reason": "type_check_failed", "exact": exact}
+    typed = [q for q in exact if q in entities and is_type(entities[q], entity_type, organisations)]
+    if not typed:
+        return {"status": "no_type_match", "exact": exact}
+    ranked = sorted(typed, key=lambda q: (-entities[q]["sitelinks"], q))
+    top = ranked[0]
+    ambiguous = (len(ranked) > 1
+                 and entities[ranked[1]]["sitelinks"] * AMBIGUITY_RATIO >= entities[top]["sitelinks"])
+    return {"status": "ambiguous" if ambiguous else "linked", "qid": top,
+            "candidates": [{"qid": q, "label": entities[q]["label"],
+                            "description": entities[q]["description"],
+                            "sitelinks": entities[q]["sitelinks"]} for q in ranked]}
+
+
+def fetch_entities(net: Net, qids: Sequence[str], failed: set[str] | None = None
+                   ) -> dict[str, dict[str, Any]]:
+    """Item summaries; the ids of a batch that got no answer go to ``failed``,
+    so that what the network lost is never read as what Wikidata said."""
+    out: dict[str, dict[str, Any]] = {}
+
+    def batch(ids: Sequence[str]):
+        doc, _err = yield from api_json(net, WIKIDATA_API, {
+            "action": "wbgetentities", "ids": "|".join(ids), "languages": "|".join(LANGUAGES),
+            "format": "json", "props": "labels|aliases|descriptions|claims|sitelinks", "maxlag": MAXLAG},
+            f"entities:{ids[0]}+{len(ids) - 1}", "entities")
+        if doc is None and failed is not None:
+            failed.update(ids)
+        for qid, entity in ((doc or {}).get("entities") or {}).items():
+            if "missing" not in entity:
+                out[qid] = entity_summary(entity)
+
+    net.run(batch(qids[i:i + BATCH]) for i in range(0, len(qids), BATCH))
+    return out
+
+
+def organisations(net: Net, entities: dict[str, dict[str, Any]], qids: Sequence[str],
+                  parents: dict[str, list[str]] | None = None) -> tuple[set[str], set[str]]:
+    """(items that are an organisation -- an instance of a class that is, by
+    subclass of (P279) steps, Q43229 --, items whose check could not finish).
+
+    The class hierarchy is walked through wbgetentities, on the host every
+    other call uses and at its pace: the Query Service timed out on five of the
+    sample's six batched subclass queries (2026-10-21), and a check that
+    depends on it fails whenever it is loaded. ``parents`` (class -> its P279
+    classes) may be shared between calls, so a class is fetched once a run."""
+    parents = {} if parents is None else parents
+    failed: set[str] = set()
+
+    def batch(ids: Sequence[str]):
+        doc, _err = yield from api_json(net, WIKIDATA_API, {
+            "action": "wbgetentities", "ids": "|".join(ids), "props": "claims", "format": "json",
+            "maxlag": MAXLAG}, f"classes:{ids[0]}+{len(ids) - 1}", "type_check")
+        if doc is None:
+            failed.update(ids)
+            return
+        for qid, entity in (doc.get("entities") or {}).items():
+            parents[qid] = [] if "missing" in entity else claim_values(entity, "P279")
+
+    frontier = sorted({c for q in qids for c in entities[q]["p31"]})
+    for _depth in range(CLASS_DEPTH):
+        todo = [c for c in frontier if c not in parents and c not in failed and c != Q_ORGANISATION]
+        if not todo:
+            break
+        net.run(batch(todo[i:i + BATCH]) for i in range(0, len(todo), BATCH))
+        frontier = sorted({p for c in todo for p in parents.get(c, [])})
+
+    def reaches(cls: str, seen: set[str]) -> bool | None:
+        """True if Q43229 is reached; None if an unknown class blocks the answer."""
+        if cls == Q_ORGANISATION:
+            return True
+        if cls in seen:
+            return False
+        seen.add(cls)
+        if cls not in parents:
+            return None
+        answers = [reaches(p, seen) for p in parents[cls]]
+        return True if any(a is True for a in answers) else None if None in answers else False
+
+    found, unchecked = set(), set()
+    for q in qids:
+        answers = [reaches(c, set()) for c in entities[q]["p31"]]
+        if any(a is True for a in answers):
+            found.add(q)
+        elif None in answers:
+            unchecked.add(q)
+    return found, unchecked
+
+
+def link_names(net: Net, todo: Sequence[dict[str, Any]], *,
+               known: dict[str, dict[str, Any]] | None = None,
+               classes: dict[str, list[str]] | None = None
+               ) -> tuple[list[dict[str, Any]], dict[str, dict[str, Any]]]:
+    """Link rows for ``todo`` ({type, key, query}), and the items they reach.
+    Three passes, each through the one worker: search; the exact candidates'
+    data (an item in ``known`` is not fetched again); for organisations, the
+    type check (``classes`` carries the class hierarchy from call to call)."""
+    known = known or {}
+    found: dict[tuple[str, str], tuple[list[dict[str, Any]] | None, str | None]] = {}
+
+    def search(row: dict[str, Any]):
+        doc, err = yield from api_json(net, WIKIDATA_API, {
+            "action": "wbsearchentities", "search": row["query"], "language": "en", "uselang": "en",
+            "type": "item", "limit": SEARCH_LIMIT, "format": "json", "maxlag": MAXLAG},
+            f"{row['type']}:{row['key']}", "search")
+        found[(row["type"], row["key"])] = ((doc.get("search") or []) if doc is not None else None, err)
+
+    net.run(search(r) for r in todo)
+    wanted: dict[str, set[str]] = {}
+    for r in todo:
+        for qid in exact_candidates(found[(r["type"], r["key"])][0] or [], r["key"]):
+            wanted.setdefault(qid, set()).add(r["type"])
+    entities = {q: known[q] for q in wanted if q in known}
+    failed: set[str] = set()
+    entities.update(fetch_entities(net, sorted(q for q in wanted if q not in known), failed))
+    orgs, unchecked = organisations(net, entities, sorted(q for q, t in wanted.items()
+                                                          if "ORG" in t and q in entities), classes)
+    rows = []
+    for r in todo:
+        results, err = found[(r["type"], r["key"])]
+        rows.append({"schema": "gallery_link/1", "pass": net.log.pass_id, "type": r["type"], "key": r["key"],
+                     "query": r["query"], "at": utcnow(),
+                     **decide(r["type"], r["key"], results, err, entities, orgs, unchecked, failed)})
+    return rows, entities
+
+
+# --------------------------------------------------------------------------
+# the sample: who is linked and fetched in this pass
+# --------------------------------------------------------------------------
+
+SAMPLE_RANDOM = 200
+#: Linked random-sample entities whose references are fetched, per type: what
+#: the reference yield (and so the full-build budget) is measured on.
+SAMPLE_FETCH_RANDOM = 25
+#: The full build's checkpoints: names linked, and entities fetched, between
+#: two writes. A stop loses at most one chunk (a few minutes of requests).
+LINK_CHUNK = 200
+FETCH_CHUNK = 40
+
+
+def frequency_band(mentions: int) -> str:
+    return "1" if mentions <= 1 else "2-4" if mentions <= 4 else "5+"
+
+
+def source_of(row: dict[str, Any]) -> str:
+    v, c = row["mentions"]["vlm"], row["mentions"]["claims"]
+    return "both" if v and c else "vlm" if v else "claims"
+
+
+def stratum_of(row: dict[str, Any]) -> str:
+    total = row["mentions"]["vlm"] + row["mentions"]["claims"]
+    return f"{row['type']}|{source_of(row)}|{frequency_band(total)}"
+
+
+def stratified_sample(rows: Sequence[dict[str, Any]], n: int, seed: int = SEED
+                      ) -> tuple[list[dict[str, Any]], dict[str, dict[str, int]]]:
+    """A proportional stratified sample (type x source x frequency band), every
+    stratum represented, each pick by a seeded hash priority. Returns the picks
+    and each stratum's size and draw, so estimates can be weighted back."""
+    strata: dict[str, list[dict[str, Any]]] = {}
+    for r in rows:
+        strata.setdefault(stratum_of(r), []).append(r)
+    total = len(rows)
+    quota = {s: max(1, round(n * len(v) / total)) for s, v in strata.items()} if total else {}
+    picks: list[dict[str, Any]] = []
+    for s, members in sorted(strata.items()):
+        ordered = sorted(members, key=lambda r: image_text._priority(seed, f"{r['type']}:{r['key']}"))
+        quota[s] = min(quota[s], len(ordered))
+        picks += [{**r, "stratum": s} for r in ordered[:quota[s]]]
+    return picks, {s: {"size": len(strata[s]), "drawn": quota[s]} for s in sorted(strata)}
+
+
+def glue_map(rows: Iterable[dict[str, Any]]) -> dict[tuple[str, str], dict[str, Any]]:
+    """Spaced names by (type, key without spaces): a hashtag ("rahulgandhi") is
+    searched for under its spaced twin, when the table has one."""
+    out: dict[tuple[str, str], dict[str, Any]] = {}
+    for r in rows:
+        if " " in r["key"]:
+            k = (r["type"], r["key"].replace(" ", ""))
+            if k not in out or (r["mentions"]["vlm"] + r["mentions"]["claims"]
+                                > out[k]["mentions"]["vlm"] + out[k]["mentions"]["claims"]):
+                out[k] = r
+    return out
+
+
+def query_for(row: dict[str, Any], glued: dict[tuple[str, str], dict[str, Any]]) -> str:
+    if " " not in row["key"]:
+        twin = glued.get((row["type"], row["key"]))
+        if twin is not None:
+            return twin["display"]
+    return row["display"]
+
+
+#: The figures the recognition probe lists, by name key, with the name searched.
+PROBE_FIGURES = {name_key(name, "PERSON"): name for name, _claim, _token in image_text.PUBLIC_FIGURES}
+
+
+def claimed_figure(row: dict[str, Any], spans: dict[str, dict[str, Any]]) -> tuple[str, str] | None:
+    """(source, name key) of the one figure a claim names and says an image
+    shows, or None. The probe's own list decides first, exactly as the probe
+    selects; otherwise a claim whose NER finds exactly one person names that
+    person. Two listed figures, or none and several NER names, name no one."""
+    text = row.get("text") or ""
+    if not image_text.PICTURED.search(text):
+        return None
+    hits = [name for name, claim, _token in image_text.PUBLIC_FIGURES if re.search(claim, text, re.I)]
+    if len(hits) == 1:
+        return ("probe_list", name_key(hits[0], "PERSON"))
+    if hits:
+        return None
+    keys = {name_key(s["text"], "PERSON")
+            for s in (spans.get(str(row["record_id"])) or {}).get("spans", [])
+            if s["type"] == "PERSON"} - {None}
+    return ("claim_ner", keys.pop()) if len(keys) == 1 else None
+
+
+def assert_factify2_train(record_ids: Iterable[str], split: dict[str, str]) -> None:
+    """Calibration reads Factify2 TRAIN and nothing else: never VERITE, never
+    val or test. Raises on any record that is not a Factify2 train record."""
+    bad = [r for r in record_ids if split.get(r) != "train"]
+    if bad:
+        raise GalleryError(f"calibration may read Factify2 train only; {len(bad)} record(s) are not "
+                           f"(first: {bad[0]!r}, split {split.get(bad[0])!r})")
+
+
+def calibration_population(read: LedgerRead, rows: Iterable[dict[str, Any]],
+                           index: dict[str, dict[str, Any]], spans: dict[str, dict[str, Any]]
+                           ) -> tuple[list[dict[str, Any]], Counter]:
+    """Factify2 TRAIN claim images whose claim names exactly one figure and says
+    an image shows them: the probe's population, its figures taken from the
+    probe's list first and from claim NER otherwise.
+
+    An image any val or test record also uses is left out, so neither split is
+    ever read. The figure is the reference a VLM name is scored against: that
+    is what makes a name right or wrong."""
+    if read.dataset != "factify2":
+        raise GalleryError(f"calibration reads the Factify2 ledger, not {read.dataset!r}")
+    split: dict[str, str] = {}
+    claims_of: dict[str, list[dict[str, Any]]] = {}
+    for row in rows:
+        split[str(row["record_id"])] = row["split"]
+        if row.get("usable") and row.get("image_paths"):
+            entry = index.get(row["image_paths"][0])  # the claim image
+            if entry and entry.get("sha256"):
+                claims_of.setdefault(entry["sha256"], []).append(row)
+    out, tally = [], Counter()
+    for sha, img in sorted(read.images.items()):
+        if not all(split.get(r) == "train" for r in img["record_ids"]):
+            tally["not_train_only"] += 1
+            continue
+        figures = {f for f in (claimed_figure(r, spans) for r in claims_of.get(sha, [])) if f}
+        if not figures:
+            tally["no_figure_named"] += 1
+            continue
+        if len({key for _s, key in figures}) > 1:
+            tally["several_figures"] += 1
+            continue
+        # one figure; named by the probe's list on any record, that is its source
+        source, key = sorted(figures, key=lambda f: f[0] != "probe_list")[0]
+        assert_factify2_train(img["record_ids"], split)
+        tally[f"images_{source}"] += 1
+        out.append({"sha256": sha, "record_ids": list(img["record_ids"]),
+                    "figure_source": source, "figure_key": key, "names": img["names"]})
+    return out, tally
+
+
+def calibration_names(population: Sequence[dict[str, Any]]) -> set[str]:
+    """PERSON keys of the names produced from appearance alone on the
+    population's images: the VLM's own names, the ones calibration scores."""
+    return {k for img in population for n in img["names"]
+            if n["type"] == "PERSON" and n["evidence"] == "not_written"
+            and (k := name_key(n["name"], "PERSON"))}
+
+
+# --------------------------------------------------------------------------
+# references: Commons files, through the three gates
+# --------------------------------------------------------------------------
+
+
+def _plain(text: str | None) -> str | None:
+    """Commons's HTML attribution as plain text (the HTML is kept beside it)."""
+    if text is None:
+        return None
+    return re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", " ", text))).strip()
+
+
+def licence_of(meta: dict[str, Any]) -> dict[str, Any]:
+    """The licence and attribution exactly as Commons states them."""
+    value = {k: (meta.get(k) or {}).get("value") for k in EXTMETADATA}
+    return {"licence": {"short_name": value["LicenseShortName"], "url": value["LicenseUrl"],
+                        "id": value["License"], "usage_terms": value["UsageTerms"],
+                        "attribution_required": value["AttributionRequired"],
+                        "copyrighted": value["Copyrighted"], "restrictions": value["Restrictions"]},
+            "attribution": {"artist": _plain(value["Artist"]), "credit": _plain(value["Credit"]),
+                            "artist_html": value["Artist"], "credit_html": value["Credit"]},
+            "date_original": _plain(value["DateTimeOriginal"])}
+
+
+@lru_cache(maxsize=1)
+def corpus_hashes() -> frozenset[str]:
+    """sha256 of every image in every corpus index: a reference that IS a corpus
+    image would verify a record with its own pixels."""
+    out: set[str] = set()
+    for ds in images.IMAGE_DATASETS:
+        out.update(r["sha256"] for r in images.load_index(ds).values() if r.get("sha256"))
+    return frozenset(out)
+
+
+EXT = {"JPEG": "jpg", "PNG": "png", "WEBP": "webp", "GIF": "gif", "TIFF": "tif", "BMP": "bmp"}
+
+
+def rendition_problem(body: bytes, examined: dict[str, Any], info: dict[str, Any]) -> str | None:
+    """None when the bytes are the file the API described, else why not.
+
+    Wikimedia never scales a thumbnail UP: for an original no wider than
+    THUMB_WIDTH it serves the original itself (``thumbnail_unscaled``), though
+    imageinfo reports the size it would have scaled to. Those bytes must BE the
+    file, by Commons's own SHA-1 -- the strongest check there is. A scaled
+    thumbnail must have the requested width exactly, and the height the API
+    gave within the thumbnailer's rounding (the sample saw 1 to 3 pixels)."""
+    import hashlib
+
+    original, rendition = info["original"], info["rendition"]
+    if (original.get("width") and original["width"] <= THUMB_WIDTH
+            and info.get("mime") != "image/svg+xml"):
+        return None if hashlib.sha1(body).hexdigest() == original.get("sha1") else "not_the_original_file"
+    if examined["width"] != rendition["width"]:
+        return "rendition_mismatch"
+    tolerance = max(2, math.ceil(0.01 * rendition["height"]))
+    return None if abs(examined["height"] - rendition["height"]) <= tolerance else "rendition_mismatch"
+
+
+def gate_reference(resp, info: dict[str, Any], corpus: frozenset[str]) -> dict[str, Any]:
+    """The three gates, and two of the gallery's own.
+
+    status 200, the bytes decode in full, they are not in the placeholder
+    registry; then they are the file the API described (rendition_problem),
+    and they are not an image of any of our corpora."""
+    if resp.error or resp.status != 200:
+        return {"outcome": resp.error or f"http_{resp.status}"}
+    examined = images.examine_bytes(resp.body)
+    if not examined["loads"]:
+        return {"outcome": "undecodable", "detail": examined["error"]}
+    status = images.status({**examined, "path": None})
+    common = {"examined": examined, "quarantine": True}
+    if status != images.USABLE:
+        return {"outcome": f"registry:{status}", **common}
+    problem = rendition_problem(resp.body, examined, info)
+    if problem:
+        return {"outcome": problem, **common}
+    if examined["sha256"] in corpus:
+        return {"outcome": "corpus_duplicate", **common}
+    return {"outcome": "usable", "examined": examined}
+
+
+def store(body: bytes, examined: dict[str, Any], directory: Path) -> Path:
+    """Content-addressed and written once: ``<dir>/<sha[:2]>/<sha>.<ext>``."""
+    sha = examined["sha256"]
+    path = directory / sha[:2] / f"{sha}.{EXT.get(examined['format'], 'img')}"
+    if not path.is_file():
+        image_text.assert_not_raw(path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = path.with_name(path.name + ".part")
+        tmp.write_bytes(body)
+        os.replace(tmp, path)
+    return path
+
+
+def commons_candidates(net: Net, entities: Sequence[dict[str, Any]]
+                       ) -> tuple[dict[str, list[tuple[str, str]]], set[str]]:
+    """(qid -> [(File: title, source)], qids whose search got no answer). In
+    order: the item's own image (P18; for an organisation its logo, P154,
+    first), files whose structured data says they depict the item, then files
+    in its Commons category."""
+    out: dict[str, list[tuple[str, str]]] = {}
+    failed: set[str] = set()
+    for e in entities:
+        own = [("P154", f) for f in e["logos"]] if e["type"] == "ORG" else []
+        own += [("P18", f) for f in e["images"]]
+        out[e["qid"]] = [(f"File:{name}", source) for source, name in own]
+
+    def depicts(e: dict[str, Any]):
+        doc, _err = yield from api_json(net, COMMONS_API, {
+            "action": "query", "list": "search", "srnamespace": 6, "srlimit": COMMONS_SEARCH_LIMIT,
+            "srsearch": f"haswbstatement:P180={e['qid']} filetype:bitmap", "format": "json",
+            "maxlag": MAXLAG}, f"depicts:{e['qid']}", "depicts")
+        if doc is None:
+            failed.add(e["qid"])
+        for hit in ((doc or {}).get("query") or {}).get("search") or []:
+            out[e["qid"]].append((hit["title"], "depicts"))
+
+    def category(e: dict[str, Any]):
+        doc, _err = yield from api_json(net, COMMONS_API, {
+            "action": "query", "list": "categorymembers", "cmtype": "file",
+            "cmtitle": f"Category:{e['commons_category']}", "cmlimit": COMMONS_SEARCH_LIMIT,
+            "format": "json", "maxlag": MAXLAG}, f"category:{e['qid']}", "category")
+        if doc is None:
+            failed.add(e["qid"])
+        for hit in ((doc or {}).get("query") or {}).get("categorymembers") or []:
+            out[e["qid"]].append((hit["title"], "category"))
+
+    people = [e for e in entities if e["type"] == "PERSON"]
+    net.run(depicts(e) for e in people)
+    net.run(category(e) for e in people
+            if e["commons_category"] and len({t for t, _s in out[e["qid"]]}) < CANDIDATES["PERSON"])
+    kinds = {e["qid"]: e["type"] for e in entities}
+    for qid, found in out.items():
+        seen: set[str] = set()
+        unique = []
+        for title, source in found:
+            if title.replace("_", " ") not in seen:
+                seen.add(title.replace("_", " "))
+                unique.append((title, source))
+        out[qid] = unique[:CANDIDATES[kinds[qid]]]
+    return out, failed
+
+
+def image_info(net: Net, titles: Sequence[str]) -> dict[str, dict[str, Any]]:
+    """title -> the file's facts, its licence and attribution, and its
+    THUMB_WIDTH rendition (what is downloaded)."""
+    out: dict[str, dict[str, Any]] = {}
+
+    def batch(part: Sequence[str]):
+        doc, _err = yield from api_json(net, COMMONS_API, {
+            "action": "query", "prop": "imageinfo", "titles": "|".join(part),
+            "iiprop": "url|size|sha1|mime|mediatype|extmetadata", "iiurlwidth": THUMB_WIDTH,
+            "iiextmetadatafilter": "|".join(EXTMETADATA), "iiextmetadatalanguage": "en",
+            "format": "json", "maxlag": MAXLAG}, f"imageinfo:{len(part)}", "imageinfo")
+        if doc is None:  # no answer is not "no such file"
+            out.update({t: {"lookup_failed": _err} for t in part})
+            return
+        query = doc.get("query") or {}
+        renamed = {n["to"]: n["from"] for n in query.get("normalized") or []}
+        for page in (query.get("pages") or {}).values():
+            info = (page.get("imageinfo") or [None])[0]
+            asked = renamed.get(page.get("title"), page.get("title"))
+            if info is None:
+                out[asked] = {"missing": True}
+                continue
+            out[asked] = {"page_url": info.get("descriptionurl"), "mime": info.get("mime"),
+                          "mediatype": info.get("mediatype"),
+                          "original": {"url": info.get("url"), "width": info.get("width"),
+                                       "height": info.get("height"), "bytes": info.get("size"),
+                                       "sha1": info.get("sha1")},
+                          "rendition": {"url": info.get("thumburl") or info.get("url"),
+                                        "width": info.get("thumbwidth") or info.get("width"),
+                                        "height": info.get("thumbheight") or info.get("height")},
+                          **licence_of(info.get("extmetadata") or {})}
+
+    unique = list(dict.fromkeys(titles))
+    net.run(batch(unique[i:i + BATCH]) for i in range(0, len(unique), BATCH))
+    return out
+
+
+def eligible(info: dict[str, Any], entity_type: str) -> str | None:
+    """Why a file is not tried, or None. A person's reference is a photograph:
+    a drawing (SVG) is not. Every file must carry its licence."""
+    if info.get("missing"):
+        return "missing_file"
+    kinds = ("BITMAP",) if entity_type == "PERSON" else ("BITMAP", "DRAWING")
+    if info.get("mediatype") not in kinds:
+        return f"mediatype:{info.get('mediatype')}"
+    if not info["licence"]["short_name"]:
+        return "no_licence_metadata"
+    return None
+
+
+#: Download outcomes that mean "not now", not "not this file" (recover.get has
+#: already retried them twice): an entity holding one is not written, and the
+#: next run fetches it again. A 500 or 404 on a file is that file's answer.
+TRANSIENT_OUTCOMES = frozenset({"timeout", "connection_error", "dns_failure", "ssl_error",
+                                "http_429", "http_502", "http_503", "http_504"})
+
+
+def fetch_references(net: Net, entities: Sequence[dict[str, Any]], *,
+                     corpus: frozenset[str] | None = None, media: Path = MEDIA_DIR,
+                     rejected: Path = REJECTED_DIR) -> list[dict[str, Any]]:
+    """Entity rows for ``entities`` (Wikidata summaries with a ``type``): each
+    candidate file tried once, gated, stored or quarantined, with its licence."""
+    from scripts import recover
+
+    corpus = corpus_hashes() if corpus is None else corpus
+    candidates, lookup_failed = commons_candidates(net, entities)
+    infos = image_info(net, [t for found in candidates.values() for t, _s in found])
+    results: dict[str, dict[str, Any]] = {}
+
+    def download(url: str, info: dict[str, Any]):
+        resp, chain = yield from recover.get(url, {"User-Agent": user_agent()}, net.log,
+                                             f"file:{url.rsplit('/', 1)[-1][:80]}", "download",
+                                             net.clock)
+        gated = gate_reference(resp, info, corpus)
+        examined = gated.get("examined")
+        if gated["outcome"] == "usable":
+            path = store(resp.body, examined, media)
+        elif gated.get("quarantine"):
+            path = store(resp.body, examined, rejected)
+        else:
+            path = None
+        net.log.attempt(f"file:{url.rsplit('/', 1)[-1][:80]}", "download", resp,
+                        "ok" if gated["outcome"] == "usable" else "rejected",
+                        None if gated["outcome"] == "usable" else gated["outcome"],
+                        sha256=(examined or {}).get("sha256"))
+        results[url] = {"outcome": gated["outcome"], "redirects": chain,
+                        "path": None if path is None else path.relative_to(image_text.PROJECT_ROOT).as_posix()
+                        if path.is_relative_to(image_text.PROJECT_ROOT) else str(path),
+                        **({k: examined[k] for k in ("sha256", "bytes", "format", "width", "height")}
+                           if examined else {})}
+
+    # an entity whose lookups got no answer is left whole for the next run
+    unanswered = set(lookup_failed) | {e["qid"] for e in entities for t, _s in candidates[e["qid"]]
+                                       if (infos.get(t) or {}).get("lookup_failed")}
+    wanted: dict[str, dict[str, Any]] = {}
+    for e in entities:
+        if e["qid"] in unanswered:
+            continue
+        for title, _source in candidates[e["qid"]]:
+            info = infos.get(title) or {"missing": True}
+            if eligible(info, e["type"]) is None:
+                wanted.setdefault(info["rendition"]["url"], info)
+    try:
+        net.run(download(url, info) for url, info in wanted.items())
+    except recover.BudgetExceeded as exc:
+        net.stopped = f"budget: {exc}"
+        log(f"  stopped: the transfer budget is spent ({exc}); finished entities are kept")
+    rows = []
+    for e in entities:
+        if e["qid"] in unanswered:
+            continue
+        refs, complete = [], True
+        for title, source in candidates[e["qid"]]:
+            info = infos.get(title) or {"missing": True}
+            why = eligible(info, e["type"])
+            ref = {"title": title, "source": source,
+                   **{k: info.get(k) for k in ("page_url", "mime", "mediatype", "original",
+                                                "rendition", "licence", "attribution",
+                                                "date_original")}}
+            if why is not None:
+                refs.append({**ref, "outcome": why})
+                continue
+            got = results.get(info["rendition"]["url"])
+            if got is None or got["outcome"] in TRANSIENT_OUTCOMES:
+                complete = False  # not downloaded, or "not now": the next run tries again
+                break
+            refs.append({**ref, **got})
+        if complete:
+            rows.append({"schema": "gallery_entity/1", "pass": net.log.pass_id, "fetched_at": utcnow(),
+                         **{k: e[k] for k in ("qid", "type", "label", "description", "aliases", "p31",
+                                              "sitelinks", "commons_category")},
+                         "names": sorted(e.get("names") or []), "refs": refs})
+    return rows
+
+
+# --------------------------------------------------------------------------
+# faces: YuNet finds them, SFace (or, for the bake-off, AuraFace) embeds them
+# --------------------------------------------------------------------------
+
+FACE_BACKENDS = ("sface", "auraface")
+#: Fixed before any data was seen; never tuned.
+DET_SCORE = 0.8
+DET_NMS = 0.3
+#: YuNet finds faces of about 10 to 300 pixels (its model card), so an image is
+#: searched at a long side of 640 and at its own size up to 1920, and the two
+#: lists merged.
+DET_LONG_SIDES = (640, 1920)
+MERGE_IOU = 0.4
+#: Smallest face side (pixels, in the original image) that is embedded.
+MIN_FACE = {"query": 32, "reference": 48}
+#: A reference with several faces is one person's only if its largest face is
+#: this many times the area of the next.
+DOMINANCE = 2.0
+#: References of one entity must agree: one further from the entity's medoid
+#: than this quantile of similarities between DIFFERENT entities' medoids is
+#: someone else. Measured on the gallery's own Commons references, never on
+#: corpus images.
+CONSISTENCY_QUANTILE = 0.999
+CONSISTENCY_MAX_PAIRS = 2_000_000
+#: Aligned face crops this close (dHash bits) are the same photograph, not
+#: another photograph of the same person.
+SAME_PHOTO_BITS = 10
+#: The five-point template both recognisers are aligned to (ArcFace's; OpenCV's
+#: FaceRecognizerSF.alignCrop uses the same points, in YuNet's landmark order).
+ARCFACE_TEMPLATE = ((38.2946, 51.6963), (73.5318, 51.5014), (56.0252, 71.7366),
+                    (41.5493, 92.3655), (70.7299, 92.2041))
+
+
+def load_bgr(body: bytes):
+    """Pixels as the recogniser sees them: EXIF-rotated, first frame, BGR."""
+    import numpy as np
+    from PIL import Image, ImageOps
+
+    with Image.open(io.BytesIO(body)) as img:
+        img.seek(0)
+        rgb = ImageOps.exif_transpose(img).convert("RGB")
+    return np.ascontiguousarray(np.asarray(rgb)[:, :, ::-1])
+
+
+def similarity_transform(src, dst):
+    """Least-squares similarity (Umeyama) mapping five landmarks to the template."""
+    import numpy as np
+
+    src, dst = np.asarray(src, dtype=np.float64), np.asarray(dst, dtype=np.float64)
+    ms, md = src.mean(0), dst.mean(0)
+    s, d = src - ms, dst - md
+    u, sig, vt = np.linalg.svd(d.T @ s / len(src))
+    sign = np.eye(2)
+    if np.linalg.det(u) * np.linalg.det(vt) < 0:
+        sign[1, 1] = -1
+    rot = u @ sign @ vt
+    scale = (sig * np.diag(sign)).sum() / s.var(0).sum()
+    return np.hstack([scale * rot, (md - scale * rot @ ms)[:, None]])
+
+
+def dhash(aligned) -> str:
+    import cv2
+
+    gray = cv2.cvtColor(aligned, cv2.COLOR_BGR2GRAY)
+    small = cv2.resize(gray, (9, 8), interpolation=cv2.INTER_AREA)
+    bits = (small[:, 1:] > small[:, :-1]).flatten()
+    return f"{int(''.join('1' if b else '0' for b in bits), 2):016x}"
+
+
+def hamming(a: str, b: str) -> int:
+    return bin(int(a, 16) ^ int(b, 16)).count("1")
+
+
+def _iou(a, b) -> float:
+    ax, ay, aw, ah = a[:4]
+    bx, by, bw, bh = b[:4]
+    iw = max(0.0, min(ax + aw, bx + bw) - max(ax, bx))
+    ih = max(0.0, min(ay + ah, by + bh) - max(ay, by))
+    inter = iw * ih
+    union = aw * ah + bw * bh - inter
+    return inter / union if union > 0 else 0.0
+
+
+class FaceBackend:
+    """YuNet finds faces and five landmarks, at two scales; a recogniser embeds
+    each aligned face. Subclasses name the recogniser."""
+
+    name = ""
+
+    def __init__(self) -> None:
+        import cv2
+
+        self.cv2 = cv2
+        self.detector = cv2.FaceDetectorYN.create(str(face_model_path("yunet")), "", (320, 320),
+                                                  DET_SCORE, DET_NMS, 5000)
+
+    def recogniser_config(self) -> dict[str, Any]:
+        raise NotImplementedError
+
+    def config(self) -> dict[str, Any]:
+        spec = FACE_MODELS["yunet"]
+        return {"schema": "gallery_faces/1", "backend": self.name, "opencv": self.cv2.__version__,
+                "detector": {"model": f"{spec['repo']}/{spec['file']}@{spec['revision']}",
+                             "sha256": spec["sha256"], "licence": spec["licence"],
+                             "score": DET_SCORE, "nms": DET_NMS, "long_sides": list(DET_LONG_SIDES),
+                             "merge_iou": MERGE_IOU},
+                "recogniser": self.recogniser_config(), "min_face": dict(MIN_FACE),
+                "dhash": "9x8 grey, on the aligned 112x112 crop",
+                "preprocessing": "EXIF transpose, first frame, RGB -> BGR"}
+
+    def detect(self, bgr) -> list[Any]:
+        """YuNet rows (box, five landmarks, score) in the image's own pixels."""
+        h, w = bgr.shape[:2]
+        scales = sorted({min(1.0, side / max(h, w)) for side in DET_LONG_SIDES})
+        found: list[Any] = []
+        for s in scales:
+            img = bgr if s == 1.0 else self.cv2.resize(bgr, (max(1, round(w * s)), max(1, round(h * s))),
+                                                         interpolation=self.cv2.INTER_AREA)
+            self.detector.setInputSize((img.shape[1], img.shape[0]))
+            _ok, rows = self.detector.detect(img)
+            for row in ([] if rows is None else rows):
+                row = row.copy()
+                row[:14] /= s
+                same = [i for i, f in enumerate(found) if _iou(f, row) >= MERGE_IOU]
+                if not same:
+                    found.append(row)
+                elif row[14] > found[same[0]][14]:
+                    found[same[0]] = row
+        return sorted(found, key=lambda r: -float(r[2] * r[3]))
+
+    def align(self, bgr, row):
+        raise NotImplementedError
+
+    def embed(self, aligned):
+        raise NotImplementedError
+
+    def faces(self, bgr, min_side: int) -> list[dict[str, Any]]:
+        import base64
+
+        import numpy as np
+
+        out = []
+        for row in self.detect(bgr):
+            if min(row[2], row[3]) < min_side:
+                continue
+            aligned = self.align(bgr, row)
+            vec = np.asarray(self.embed(aligned), dtype=np.float32).flatten()
+            vec /= max(float(np.linalg.norm(vec)), 1e-12)
+            out.append({"box": [round(float(v), 1) for v in row[:4]],
+                        "landmarks": [[round(float(row[4 + 2 * i]), 1), round(float(row[5 + 2 * i]), 1)]
+                                      for i in range(5)],
+                        "score": round(float(row[14]), 4), "dhash": dhash(aligned),
+                        "embedding": base64.b64encode(vec.tobytes()).decode("ascii")})
+        return out
+
+
+class SFaceBackend(FaceBackend):
+    name = "sface"
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.recogniser = self.cv2.FaceRecognizerSF.create(str(face_model_path("sface")), "")
+
+    def recogniser_config(self) -> dict[str, Any]:
+        spec = FACE_MODELS["sface"]
+        return {"model": f"{spec['repo']}/{spec['file']}@{spec['revision']}", "sha256": spec["sha256"],
+                "licence": spec["licence"], "alignment": "FaceRecognizerSF.alignCrop (five points)",
+                "dimensions": 128}
+
+    def align(self, bgr, row):
+        return self.recogniser.alignCrop(bgr, row)
+
+    def embed(self, aligned):
+        return self.recogniser.feature(aligned)
+
+
+class AuraFaceBackend(FaceBackend):
+    """The bake-off contrast: ONLY its recogniser (glintr100.onnx), behind
+    YuNet. Its graph opens with a convolution (a PyTorch export), so input
+    normalisation is outside it: (x - 127.5) / 127.5 on RGB, InsightFace's rule
+    for such graphs."""
+
+    name = "auraface"
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.net = self.cv2.dnn.readNetFromONNX(str(face_model_path("auraface")))
+        first = [n for n in self.net.getLayerNames() if not n.startswith("trlayout")][:1]
+        if not first or not first[0].endswith("Conv"):
+            raise image_text.ModelMissing(f"AuraFace's graph opens with {first}, not a "
+                                          "convolution; its input normalisation is unknown")
+
+    def recogniser_config(self) -> dict[str, Any]:
+        spec = FACE_MODELS["auraface"]
+        return {"model": f"{spec['repo']}/{spec['file']}@{spec['revision']}", "sha256": spec["sha256"],
+                "licence": spec["licence"], "alignment": "similarity transform to the ArcFace template",
+                "normalisation": "(x - 127.5) / 127.5, RGB", "dimensions": 512,
+                "caveat": "training data described only as 'a commercial dataset'"}
+
+    def align(self, bgr, row):
+        landmarks = [(row[4 + 2 * i], row[5 + 2 * i]) for i in range(5)]
+        matrix = similarity_transform(landmarks, ARCFACE_TEMPLATE)
+        return self.cv2.warpAffine(bgr, matrix, (112, 112), borderValue=0)
+
+    def embed(self, aligned):
+        blob = self.cv2.dnn.blobFromImage(aligned, 1.0 / 127.5, (112, 112), (127.5, 127.5, 127.5),
+                                          swapRB=True)
+        self.net.setInput(blob)
+        return self.net.forward()
+
+
+def make_backend(name: str) -> FaceBackend:
+    return {"sface": SFaceBackend, "auraface": AuraFaceBackend}[name]()
+
+
+def face_config_id(backend: FaceBackend) -> str:
+    return config_id_of(backend.config())
+
+
+def decode_embedding(text: str):
+    import base64
+
+    import numpy as np
+
+    return np.frombuffer(base64.b64decode(text), dtype=np.float32)
+
+
+def embed_images(backend: FaceBackend, items: Sequence[tuple[str, Callable[[], bytes]]],
+                 path: Path, min_side: int) -> dict[str, dict[str, Any]]:
+    """sha256 -> its faces, one row per image in ``path``; an image already
+    there is not read again."""
+    ledger = JsonlLedger(path)
+    done = latest(ledger.open(), lambda r: r["sha256"])
+    try:
+        todo = [(sha, read) for sha, read in items if sha not in done]
+        batch = []
+        for i, (sha, read) in enumerate(todo, 1):
+            try:
+                bgr = load_bgr(read())
+                row = {"sha256": sha, "width": int(bgr.shape[1]), "height": int(bgr.shape[0]),
+                       "faces": backend.faces(bgr, min_side), "error": None}
+            except Exception as exc:  # noqa: BLE001 -- an unreadable image is a row
+                row = {"sha256": sha, "width": None, "height": None, "faces": [],
+                       "error": f"{type(exc).__name__}"}
+            batch.append(row)
+            done[sha] = row
+            if len(batch) >= 64 or i == len(todo):
+                ledger.append_many(batch)
+                batch = []
+            if i % 500 == 0:
+                log(f"  [{path.stem}] faces {i:,}/{len(todo):,}")
+    finally:
+        ledger.close()
+    return done
+
+
+# --------------------------------------------------------------------------
+# the gallery: references that agree with each other
+# --------------------------------------------------------------------------
+
+
+def _area(face: dict[str, Any]) -> float:
+    return face["box"][2] * face["box"][3]
+
+
+def choose_reference_face(faces: Sequence[dict[str, Any]]) -> tuple[int | None, str]:
+    """(face index, decision) for one reference image of a person."""
+    if not faces:
+        return None, "no_face"
+    if len(faces) == 1:
+        return 0, "single_face"
+    order = sorted(range(len(faces)), key=lambda i: -_area(faces[i]))
+    if _area(faces[order[0]]) >= DOMINANCE * _area(faces[order[1]]):
+        return order[0], "dominant_face"
+    return None, "ambiguous_faces"
+
+
+def medoid_of(vectors: dict[int, Any]) -> int | None:
+    """The key of the vector most similar, on average, to the others."""
+    import numpy as np
+
+    if not vectors:
+        return None
+    keys = list(vectors)
+    m = np.stack([vectors[k] for k in keys])
+    return keys[int((m @ m.T).mean(1).argmax())]
+
+
+def consistency_threshold(medoids: dict[str, Any], seed: int = SEED) -> float | None:
+    """The CONSISTENCY_QUANTILE of similarities between the medoid faces of
+    DIFFERENT entities, from the gallery's own references.
+
+    Medoids, not every face: a reference filed under the wrong entity is not a
+    medoid, so it cannot raise the very threshold that is meant to catch it."""
+    import numpy as np
+
+    qids = sorted(medoids)
+    n = len(qids)
+    if n < 2:
+        return None
+    m = np.stack([medoids[q] for q in qids])
+    if n * (n - 1) // 2 <= CONSISTENCY_MAX_PAIRS:
+        values = (m @ m.T)[np.triu_indices(n, 1)]
+    else:
+        rng = np.random.default_rng(seed)
+        i = rng.integers(0, n, CONSISTENCY_MAX_PAIRS)
+        j = rng.integers(0, n, CONSISTENCY_MAX_PAIRS)
+        keep = i != j
+        values = np.einsum("ij,ij->i", m[i[keep]], m[j[keep]])
+    return float(np.quantile(values, CONSISTENCY_QUANTILE))
+
+
+def assemble(entities: Sequence[dict[str, Any]], ref_faces: dict[str, dict[str, Any]],
+             pinned: float | None = None) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """One row per entity: every reference with what the gallery decided about
+    it. A person's usable references are faces that agree with each other.
+
+    ``pinned`` replaces the derived consistency threshold: an entity's
+    decisions then depend on its own references alone, so entities added later
+    (another corpus, the rest of a run) leave every existing row unchanged."""
+    import numpy as np
+
+    picks: dict[str, list[tuple[int, int | None, str]]] = {}
+    vectors: dict[str, dict[int, Any]] = {}
+    for e in entities:
+        if e["type"] != "PERSON":
+            continue
+        rows = []
+        for i, ref in enumerate(e["refs"]):
+            if ref.get("outcome") != "usable":
+                rows.append((i, None, ref.get("outcome") or "not_fetched"))
+                continue
+            faces = (ref_faces.get(ref["sha256"]) or {}).get("faces") or []
+            idx, decision = choose_reference_face(faces)
+            rows.append((i, idx, decision))
+            if idx is not None:
+                vectors.setdefault(e["qid"], {})[i] = decode_embedding(faces[idx]["embedding"])
+        picks[e["qid"]] = rows
+    medoids = {qid: vec[medoid_of(vec)] for qid, vec in vectors.items()}
+    derived = consistency_threshold(medoids)
+    threshold = derived if pinned is None else pinned
+    out = []
+    for e in entities:
+        refs = []
+        if e["type"] != "PERSON":
+            for ref in e["refs"]:
+                refs.append({"sha256": ref.get("sha256"), "title": ref["title"], "source": ref["source"],
+                             "decision": "org_reference" if ref.get("outcome") == "usable"
+                             else ref.get("outcome"), "face": None})
+            out.append({"qid": e["qid"], "type": e["type"], "refs": refs, "usable_refs": 0})
+            continue
+        rows = picks[e["qid"]]
+        vec = vectors.get(e["qid"], {})
+        medoid = medoid_of(vec) if len(vec) >= 2 else None
+        decided: dict[int, tuple[int | None, str, float | None]] = {}
+        for i, idx, decision in rows:
+            if idx is None and decision == "ambiguous_faces" and medoid is not None and threshold is not None:
+                faces = ref_faces[e["refs"][i]["sha256"]]["faces"]
+                sims = [float(decode_embedding(f["embedding"]) @ vec[medoid]) for f in faces]
+                best = int(np.argmax(sims))
+                if sims[best] >= threshold:
+                    decided[i] = (best, "resolved_by_medoid", round(sims[best], 4))
+                    continue
+            decided[i] = (idx, decision, None)
+        if threshold is not None and len(vec) >= 2:
+            if len(vec) == 2:
+                a, b = list(vec)
+                if float(vec[a] @ vec[b]) < threshold:
+                    anchors = [i for i in (a, b) if e["refs"][i]["source"] == "P18"]
+                    for i in (a, b):
+                        if anchors and i not in anchors:
+                            decided[i] = (None, "inconsistent_reference", round(float(vec[a] @ vec[b]), 4))
+                        elif not anchors:
+                            decided[i] = (None, "unresolved_pair", round(float(vec[a] @ vec[b]), 4))
+            else:
+                for i, v in vec.items():
+                    sim = float(v @ vec[medoid])
+                    if i != medoid and sim < threshold:
+                        decided[i] = (None, "inconsistent_reference", round(sim, 4))
+                    elif decided[i][2] is None:
+                        decided[i] = (decided[i][0], decided[i][1], round(sim, 4))
+        usable = 0
+        for i, ref in enumerate(e["refs"]):
+            idx, decision, sim = decided.get(i, (None, ref.get("outcome"), None))
+            ok = idx is not None
+            usable += ok
+            refs.append({"sha256": ref.get("sha256"), "title": ref["title"], "source": ref["source"],
+                         "decision": "usable" if ok else decision, "selected_by": decision if ok else None,
+                         "face": idx if ok else None, "similarity_to_medoid": sim})
+        out.append({"qid": e["qid"], "type": e["type"], "refs": refs, "usable_refs": usable,
+                    "single_reference": usable == 1})
+    people = [r for r in out if r["type"] == "PERSON"]
+    summary = {"consistency_threshold": None if threshold is None else round(threshold, 4),
+               "pinned": pinned is not None,
+               "derived_now": None if derived is None else round(derived, 4),
+               "people": len(people),
+               "people_with_usable_faces": sum(1 for r in people if r["usable_refs"]),
+               "consistency_quantile": CONSISTENCY_QUANTILE, "entities_with_faces": len(medoids),
+               "threshold_from": ("similarities between the medoid faces of different entities; "
+                                  "gallery references only, never corpus images")}
+    return out, summary
+
+
+# --------------------------------------------------------------------------
+# 1:1 verification: a claimed name, an image, and the reference it matched
+# --------------------------------------------------------------------------
+
+
+class Gallery:
+    """The assembled gallery for one face configuration, with the name index.
+
+    Verification is 1:1 by design: it answers whether an image shows the
+    entity a CLAIMED name resolves to. It does not search the gallery for an
+    unnamed face."""
+
+    def __init__(self, cid: str, *, faces_dir: Path = FACES_DIR, entities_path: Path = ENTITIES_PATH,
+                 links_path: Path = LINKS_PATH, wikidata_path: Path = WIKIDATA_PATH) -> None:
+        self.cid = cid
+        self.rows = latest(read_jsonl(faces_dir / cid / "gallery.jsonl"), lambda r: r["qid"])
+        self.entities = latest(read_jsonl(entities_path), lambda r: r["qid"])
+        ref_faces = latest(read_jsonl(faces_dir / cid / "refs.jsonl"), lambda r: r["sha256"])
+        self.refs: dict[str, list[tuple[dict[str, Any], dict[str, Any], Any]]] = {}
+        for qid, row in self.rows.items():
+            entity = self.entities.get(qid) or {"refs": []}
+            by_sha = {r.get("sha256"): r for r in entity["refs"] if r.get("sha256")}
+            for ref in row["refs"]:
+                if ref["decision"] == "usable":
+                    face = ref_faces[ref["sha256"]]["faces"][ref["face"]]
+                    self.refs.setdefault(qid, []).append(
+                        (by_sha.get(ref["sha256"], {}), face, decode_embedding(face["embedding"])))
+        self.index: dict[tuple[str, str], set[str]] = {}
+        for link in latest(read_jsonl(links_path), lambda r: (r["type"], r["key"])).values():
+            if link.get("qid") and link["status"] in ("linked", "ambiguous"):
+                self.index.setdefault((link["type"], link["key"]), set()).add(link["qid"])
+        for summary in latest(read_jsonl(wikidata_path), lambda r: r["qid"]).values():
+            entity = self.entities.get(summary["qid"])
+            if entity is None:
+                continue
+            for text in [summary.get("label") or "", *summary.get("aliases", [])]:
+                key = name_key(text, entity["type"])
+                if key:
+                    self.index.setdefault((entity["type"], key), set()).add(summary["qid"])
+
+    def resolve(self, name: str, entity_type: str = "PERSON") -> list[str]:
+        key = name_key(name, entity_type)
+        return sorted(self.index.get((entity_type, key), ())) if key else []
+
+    def best(self, faces: Sequence[dict[str, Any]], qid: str) -> dict[str, Any] | None:
+        """The best (query face, reference) pair for one entity, or None."""
+        best = None
+        for qi, face in enumerate(faces):
+            q = decode_embedding(face["embedding"])
+            for ref, ref_face, vec in self.refs.get(qid, []):
+                score = float(q @ vec)
+                if best is None or score > best["score"]:
+                    best = {"score": score, "query_face": qi, "reference": ref, "reference_face": ref_face,
+                            "same_photo": hamming(face["dhash"], ref_face["dhash"]) <= SAME_PHOTO_BITS}
+        return best
+
+    def verify(self, faces: Sequence[dict[str, Any]], name: str, threshold: float | None,
+               entity_type: str = "PERSON") -> dict[str, Any]:
+        qids = self.resolve(name, entity_type)
+        out: dict[str, Any] = {"claimed_name": name, "entity_type": entity_type,
+                               "entities": [{"qid": q, "label": (self.entities.get(q) or {}).get("label")}
+                                            for q in qids],
+                               "ambiguous_name": len(qids) > 1, "in_gallery": False, "match": None,
+                               "score": None, "threshold": threshold, "faces_in_image": len(faces),
+                               "matched_entity": None, "matched_reference": None, "query_face": None,
+                               "per_reference": []}
+        if entity_type != "PERSON":
+            out["in_gallery"] = bool(qids)
+            out["reason"] = "org_entries_only: an organisation's visual match is not verified"
+            return out
+        usable = [q for q in qids if self.refs.get(q)]
+        out["in_gallery"] = bool(usable)
+        if not qids:
+            out["reason"] = "name_not_in_gallery"
+            return out
+        if not usable:
+            out["reason"] = "no_usable_reference"
+            return out
+        if not faces:
+            out["reason"] = "no_face_in_image"
+            return out
+        best_qid, best = None, None
+        for q in usable:
+            found = self.best(faces, q)
+            for ref, _rf, vec in self.refs[q]:
+                out["per_reference"].append({"qid": q, "title": ref.get("title"), "score": round(max(
+                    float(decode_embedding(f["embedding"]) @ vec) for f in faces), 4)})
+            if found and (best is None or found["score"] > best["score"]):
+                best_qid, best = q, found
+        ref = best["reference"]
+        out.update(score=round(best["score"], 4), matched_entity=best_qid,
+                   query_face={k: faces[best["query_face"]][k] for k in ("box", "landmarks", "score")},
+                   matched_reference={"title": ref.get("title"), "page_url": ref.get("page_url"),
+                                      "path": ref.get("path"), "sha256": ref.get("sha256"),
+                                      "licence": ref.get("licence"), "attribution": ref.get("attribution"),
+                                      "face_box": best["reference_face"]["box"]},
+                   same_photo=best["same_photo"])
+        if threshold is None:
+            out["reason"] = "uncalibrated: score and matched reference only"
+        else:
+            out["match"] = best["score"] >= threshold
+            out["reason"] = "matched" if out["match"] else "below_threshold"
+        return out
+
+
+# --------------------------------------------------------------------------
+# calibration: the gallery's accept rate on the VLM's own wrong names
+# --------------------------------------------------------------------------
+
+#: The accepted-name precision the gallery must reach (image_text's bar).
+TARGET_PRECISION = image_text.VERIFIER_PRECISION
+CV_FOLDS = 5
+BOOTSTRAP = 2000
+
+
+def clopper_pearson_lower(k: int, n: int, alpha: float = 0.05) -> float | None:
+    """One-sided lower confidence bound on a proportion k/n."""
+    if n == 0:
+        return None
+    if k == 0:
+        return 0.0
+    from scipy.stats import beta
+
+    return float(beta.ppf(alpha, k, n - k + 1))
+
+
+def clopper_pearson_upper(k: int, n: int, alpha: float = 0.05) -> float | None:
+    if n == 0:
+        return None
+    if k == n:
+        return 1.0
+    from scipy.stats import beta
+
+    return float(beta.ppf(1 - alpha, k + 1, n - k))
+
+
+def build_trials(population: Sequence[dict[str, Any]], links: dict[tuple[str, str], dict[str, Any]],
+                 query_faces: dict[str, dict[str, Any]], gallery: Gallery | None
+                 ) -> tuple[list[dict[str, Any]], Counter]:
+    """One trial per name the VLM produced from appearance alone on a
+    population image: right when it links to the figure the claim names, wrong
+    when it links to anyone else, unlinked when it links to no one."""
+    token = {name_key(name, "PERSON"): re.compile(tok) for name, _c, tok in image_text.PUBLIC_FIGURES}
+    out, tally = [], Counter()
+    for img in population:
+        figure = links.get(("PERSON", img["figure_key"])) or {}
+        figure_qid = figure.get("qid") if figure.get("status") in ("linked", "ambiguous") else None
+        if figure_qid is None:
+            tally["images_figure_unlinked"] += 1
+            continue
+        faces = (query_faces.get(img["sha256"]) or {}).get("faces") or []
+        names = [n for n in img["names"] if n["type"] == "PERSON" and n["evidence"] == "not_written"]
+        tally["images"] += 1
+        tally["images_with_trials"] += bool(names)
+        for n in names:
+            key = name_key(n["name"], "PERSON")
+            link = links.get(("PERSON", key)) if key else None
+            # resolved exactly as Gallery.verify resolves a claimed name, so the
+            # calibration measures the system verify runs
+            if gallery is not None:
+                qids = gallery.resolve(n["name"])
+            else:
+                qids = [link["qid"]] if link and link.get("status") in ("linked", "ambiguous") else []
+            label = "unlinked" if not qids else "right" if figure_qid in qids else "wrong"
+            trial = {"sha256": img["sha256"], "figure_source": img["figure_source"],
+                     "figure_key": img["figure_key"], "figure_qid": figure_qid,
+                     "figure_ambiguous": figure.get("status") == "ambiguous", "name": n["name"],
+                     "key": key, "qids": qids, "qid": qids[0] if qids else None, "label": label,
+                     "forced": n["forced"], "vlm_confidence": n["confidence"], "faces": len(faces),
+                     "ambiguous_link": len(qids) > 1 or bool(link and link.get("status") == "ambiguous"),
+                     "token_label": (None if img["figure_source"] != "probe_list" else
+                                     "right" if token[img["figure_key"]].search(image_text._normalise(n["name"]))
+                                     else "wrong"),
+                     "score": None, "scorable": False, "unscorable": None, "same_photo": None}
+            if gallery is not None:
+                usable = [q for q in qids if gallery.refs.get(q)]
+                if not qids:
+                    trial["unscorable"] = "name_unlinked"
+                elif not usable:
+                    trial["unscorable"] = "no_usable_reference"
+                elif not faces:
+                    trial["unscorable"] = "no_face_in_image"
+                else:
+                    found = [(q, gallery.best(faces, q)) for q in usable]
+                    q, best = max(found, key=lambda qb: qb[1]["score"])
+                    trial.update(score=round(best["score"], 6), scorable=True, qid=q,
+                                 same_photo=best["same_photo"],
+                                 matched_reference=best["reference"].get("sha256"),
+                                 refs=len(gallery.refs[q]))
+            out.append(trial)
+    return out, tally
+
+
+def verification_coverage(gallery: Gallery) -> dict[str, Any]:
+    """The ceiling on what verification can answer, whatever the threshold:
+    a person none of whose references holds a usable face can only ever get
+    "no usable reference"."""
+    people = [r for r in gallery.rows.values() if r["type"] == "PERSON"]
+    without = [r for r in people if not r["usable_refs"]]
+    no_refs = sum(1 for r in without if not r["refs"])
+    return {
+        "people": len(people), "with_usable_reference_faces": len(people) - len(without),
+        "without": len(without), "share_without": image_text._ratio(len(without), len(people), 4),
+        "without_any_commons_reference": no_refs, "references_but_no_usable_face": len(without) - no_refs,
+        "statement": (f"{len(without):,} of the {len(people):,} people in the gallery have no usable "
+                      f"reference face ({no_refs:,} have no Commons reference at all): for them verify can "
+                      "only answer 'no usable reference'. That is a ceiling on coverage, apart from the "
+                      "threshold. In calibration, a name that resolves only to such a person is unscorable: "
+                      "it counts as a rejection against TAR (cost_in_true_accepts) and is never a false "
+                      "accept.")}
+
+
+def operating_point(trials: Sequence[dict[str, Any]], t: float | None) -> dict[str, Any]:
+    """Accepts at threshold ``t``: an unscorable trial is never accepted."""
+    right = [x for x in trials if x["label"] == "right"]
+    wrong = [x for x in trials if x["label"] != "right"]
+    acc_r = sum(1 for x in right if t is not None and x["scorable"] and x["score"] >= t)
+    acc_w = sum(1 for x in wrong if t is not None and x["scorable"] and x["score"] >= t)
+    accepted = acc_r + acc_w
+    return {"threshold": None if t is None else round(t, 4), "right": len(right), "wrong": len(wrong),
+            "accepted_right": acc_r, "accepted_wrong": acc_w,
+            "tar": image_text._ratio(acc_r, len(right), 4), "fmr": image_text._ratio(acc_w, len(wrong), 4),
+            "fmr_upper_95": None if not wrong else round(clopper_pearson_upper(acc_w, len(wrong)), 4),
+            "precision": image_text._ratio(acc_r, accepted, 4),
+            "precision_lower_95": None if not accepted else round(clopper_pearson_lower(acc_r, accepted), 4)}
+
+
+def choose_threshold(trials: Sequence[dict[str, Any]], rule: str) -> float | None:
+    """The lowest threshold -- the most right names kept -- at which the names
+    the gallery accepts are right TARGET_PRECISION of the time: by the one-sided
+    95% lower bound (``bound``), or by the point estimate (``point``)."""
+    scores = sorted({x["score"] for x in trials if x["scorable"]})
+    for t in scores:
+        p = operating_point(trials, t)
+        value = p["precision_lower_95"] if rule == "bound" else p["precision"]
+        if value is not None and value >= TARGET_PRECISION:
+            return t
+    return None
+
+
+def cross_validated(trials: Sequence[dict[str, Any]], rule: str, seed: int = SEED) -> dict[str, Any]:
+    """The threshold chosen on four folds of IMAGES and applied to the fifth:
+    an estimate of what the chosen threshold does on images it never saw."""
+    images_ = sorted({x["sha256"] for x in trials}, key=lambda s: image_text._priority(seed, s))
+    fold_of = {s: i % CV_FOLDS for i, s in enumerate(images_)}
+    held: list[dict[str, Any]] = []
+    thresholds = []
+    for k in range(CV_FOLDS):
+        train = [x for x in trials if fold_of[x["sha256"]] != k]
+        test = [x for x in trials if fold_of[x["sha256"]] == k]
+        t = choose_threshold(train, rule)
+        thresholds.append(None if t is None else round(t, 4))
+        held += [{**x, "accepted": t is not None and x["scorable"] and x["score"] >= t} for x in test]
+    right = [x for x in held if x["label"] == "right"]
+    wrong = [x for x in held if x["label"] != "right"]
+    acc_r = sum(x["accepted"] for x in right)
+    acc_w = sum(x["accepted"] for x in wrong)
+    return {"rule": rule, "fold_thresholds": thresholds, "accepted_right": acc_r, "accepted_wrong": acc_w,
+            "tar": image_text._ratio(acc_r, len(right), 4), "fmr": image_text._ratio(acc_w, len(wrong), 4),
+            "precision": image_text._ratio(acc_r, acc_r + acc_w, 4)}
+
+
+def bootstrap(trials: Sequence[dict[str, Any]], t: float, seed: int = SEED) -> dict[str, Any]:
+    """95% intervals at ``t`` from resampling IMAGES (a name's trials share one)."""
+    import numpy as np
+
+    by_image: dict[str, list[dict[str, Any]]] = {}
+    for x in trials:
+        by_image.setdefault(x["sha256"], []).append(x)
+    keys = sorted(by_image)
+    rng = np.random.default_rng(seed)
+    stats: dict[str, list[float]] = {"tar": [], "fmr": [], "precision": []}
+    for _ in range(BOOTSTRAP):
+        sample = [x for i in rng.integers(0, len(keys), len(keys)) for x in by_image[keys[i]]]
+        p = operating_point(sample, t)
+        for k in stats:
+            if p[k] is not None:
+                stats[k].append(p[k])
+    return {k: ([round(float(np.quantile(v, 0.025)), 4), round(float(np.quantile(v, 0.975)), 4)]
+                if v else None) for k, v in stats.items()}
+
+
+def random_pair_scores(trials: Sequence[dict[str, Any]], gallery: Gallery, query_faces: dict[str, Any],
+                       seed: int = SEED) -> list[float]:
+    """CONTRAST ONLY, never used to choose anything: the faces of the right
+    names, each scored against a random OTHER person in the gallery -- what a
+    calibration on random pairs would measure."""
+    import numpy as np
+
+    people = sorted(q for q, refs in gallery.refs.items() if refs)
+    if len(people) < 2:
+        return []
+    rng = np.random.default_rng(seed)
+    out = []
+    for x in trials:
+        if x["label"] != "right" or not x["scorable"]:
+            continue
+        others = [q for q in people if q != x["qid"]]
+        best = gallery.best(query_faces[x["sha256"]]["faces"], others[int(rng.integers(0, len(others)))])
+        if best is not None:
+            out.append(best["score"])
+    return out
+
+
+def look_alike_finding(trials: Sequence[dict[str, Any]], random_scores: Sequence[float],
+                       t: float | None, p: float | None) -> dict[str, Any] | None:
+    """Why the threshold is calibrated on the VLM's own wrong names: the names a
+    VLM gets wrong are people who look like the face, and they score far above
+    random strangers. Measured two ways: how the two score, and what a
+    threshold set on random pairs would accept of the VLM's own names."""
+    import numpy as np
+
+    right = [x for x in trials if x["label"] == "right"]
+    wrong = [x for x in trials if x["label"] != "right"]
+    wrong_scores = [x["score"] for x in wrong if x["scorable"]]
+    if not random_scores or not right or p is None:
+        return None
+    top = max(random_scores)
+
+    def precision_on_strangers(th: float) -> float | None:
+        tar = sum(1 for x in right if x["scorable"] and x["score"] >= th) / len(right)
+        fmr = sum(s >= th for s in random_scores) / len(random_scores)
+        return None if not tar else p * tar / (p * tar + (1 - p) * fmr)
+
+    candidates = sorted({x["score"] for x in trials if x["scorable"]} | set(random_scores))
+    t_random = next((th for th in candidates if (v := precision_on_strangers(th)) is not None
+                     and v >= TARGET_PRECISION), None)
+    on_vlm = operating_point(trials, t_random)
+    above = sum(s > top for s in wrong_scores)
+    holds = on_vlm["precision"] is not None and on_vlm["precision"] >= TARGET_PRECISION
+    finding = (
+        f"Scored against a random other person, the right names' faces reach at most {top:.3f} "
+        f"(median {float(np.median(random_scores)):.3f}); {above} of the {len(wrong_scores)} scorable "
+        f"wrong names the VLM gave score above every stranger. "
+        + ("No threshold reaches the bar even on random strangers. " if t_random is None else
+           f"A threshold calibrated on random pairs would sit at {t_random:.3f}; on the VLM's own names it "
+           f"accepts {on_vlm['accepted_wrong']} of {on_vlm['wrong']} wrong names, an accepted-name precision "
+           f"of {on_vlm['precision']} against the {TARGET_PRECISION} required. ")
+        + ("A random-pair false-match rate measures strangers; the names a gallery must refuse are "
+           "the look-alikes the VLM chose, so the threshold is calibrated on those."
+           if not holds else
+           "On this population a random-pair threshold would also hold the bar; the VLM's own wrong "
+           "names remain the measure."))
+    return {
+        "what": ("the VLM's wrong names against random strangers: the right names' faces, each scored "
+                 "against a random other person in the gallery (seeded). A contrast, never an input"),
+        "random_strangers": {"pairs": len(random_scores), "max_score": round(top, 4),
+                             "median_score": round(float(np.median(random_scores)), 4),
+                             "accepted_at_threshold": None if t is None else sum(s >= t for s in random_scores)},
+        "vlm_wrong_names": {"wrong": len(wrong), "scorable": len(wrong_scores),
+                            "median_score": (round(float(np.median(wrong_scores)), 4)
+                                             if wrong_scores else None),
+                            "above_every_stranger": above,
+                            "accepted_at_threshold": None if t is None else sum(s >= t for s in wrong_scores)},
+        "right_names_median_score": round(float(np.median([x["score"] for x in right if x["scorable"]]
+                                                          or [np.nan])), 4),
+        "if_calibrated_on_random_pairs": {
+            "threshold": None if t_random is None else round(t_random, 4),
+            "rule": ("the lowest threshold at which p*TAR / (p*TAR + (1-p)*FMR) >= 0.90 with FMR measured "
+                     "on random strangers (point estimate), p the VLM's QID precision"),
+            "on_the_vlms_own_names": on_vlm},
+        "finding": finding}
+
+
+#: When the two most-tried figures carry more than this share of the trials,
+#: the pooled numbers describe those two people more than the method.
+CONCENTRATION_SHARE = 0.5
+
+
+def figure_table(trials: Sequence[dict[str, Any]], t: float | None) -> list[dict[str, Any]]:
+    """Per figure the claims name, most trials first: its trials and what the
+    threshold accepts of them."""
+    by: dict[str, list[dict[str, Any]]] = {}
+    for x in trials:
+        by.setdefault(x["figure_qid"], []).append(x)
+    rows = []
+    for qid, xs in by.items():
+        at = operating_point(xs, t)
+        rows.append({"figure_qid": qid, "figure_source": sorted({x["figure_source"] for x in xs}),
+                     "trials": len(xs), "right": at["right"], "wrong": at["wrong"],
+                     "unlinked": sum(1 for x in xs if x["label"] == "unlinked"),
+                     "scorable": sum(1 for x in xs if x["scorable"]),
+                     "accepted_right": at["accepted_right"], "accepted_wrong": at["accepted_wrong"]})
+    return sorted(rows, key=lambda r: (-r["trials"], r["figure_qid"]))
+
+
+def concentration(table: Sequence[dict[str, Any]]) -> dict[str, Any]:
+    """How far the trials are a few people's. The effective number of figures
+    is 1 / sum(share^2): equal to the figures when all carry the same."""
+    n = sum(r["trials"] for r in table)
+    if not n:
+        return {"figures": 0, "trials": 0, "concentrated": None, "statement": "no trials"}
+    shares = [r["trials"] / n for r in table]
+    top2 = sum(shares[:2])
+    concentrated = top2 > CONCENTRATION_SHARE
+    return {"figures": len(table), "trials": n, "top_1_share": round(shares[0], 4),
+            "top_2_share": round(top2, 4), "effective_figures": round(1 / sum(s * s for s in shares), 2),
+            "figures_with_5_trials_or_more": sum(1 for r in table if r["trials"] >= 5),
+            "figures_with_1_trial": sum(1 for r in table if r["trials"] == 1),
+            "concentrated": concentrated,
+            "statement": (f"The two most-tried figures carry {top2:.0%} of the trials: the pooled numbers "
+                          "are mostly about those two people, not about the method. Read the "
+                          "figure-stratified estimate, which weighs every figure the same."
+                          if concentrated else
+                          f"The two most-tried figures carry {top2:.0%} of the trials; the "
+                          "figure-stratified estimate weighs every figure the same, beside the pooled one.")}
+
+
+def figure_stratified(trials: Sequence[dict[str, Any]], t: float | None,
+                      seed: int = SEED) -> dict[str, Any] | None:
+    """Every figure weighs the same: each of its trials counts 1 / its trials.
+    At the pooled threshold, with 95% intervals from resampling FIGURES, so the
+    interval reflects how many people were tried, not how many names; and the
+    lowest threshold whose one-sided 95% figure-bootstrap bound reaches the bar."""
+    import numpy as np
+
+    if not trials:
+        return None
+    figs = sorted({x["figure_qid"] for x in trials})
+    position = {q: i for i, q in enumerate(figs)}
+    idx = np.array([position[x["figure_qid"]] for x in trials])
+    per_figure = np.bincount(idx, minlength=len(figs)).astype(float)
+    right = np.array([x["label"] == "right" for x in trials])
+    score = np.array([x["score"] if x["scorable"] else -np.inf for x in trials])
+    rng = np.random.default_rng(seed)
+    draws = rng.integers(0, len(figs), size=(BOOTSTRAP, len(figs)))
+    copies = np.zeros((BOOTSTRAP, len(figs)))
+    np.add.at(copies, (np.repeat(np.arange(BOOTSTRAP), len(figs)), draws.ravel()), 1)
+    # row 0 is the estimate itself, every figure once; the rest are bootstrap draws
+    weights = np.vstack([np.ones(len(figs)), copies])[:, idx] / per_figure[idx]
+
+    def rates(th: float | None) -> dict[str, Any]:
+        accepted = score >= (np.inf if th is None else th)
+        w_right, w_wrong = (weights * right).sum(1), (weights * ~right).sum(1)
+        a_right, a_wrong = (weights * (right & accepted)).sum(1), (weights * (~right & accepted)).sum(1)
+        with np.errstate(invalid="ignore", divide="ignore"):
+            return {"vlm_precision": w_right / (w_right + w_wrong), "tar": a_right / w_right,
+                    "fmr": a_wrong / w_wrong, "precision": a_right / (a_right + a_wrong)}
+
+    def value(v: float) -> float | None:
+        return None if np.isnan(v) else round(float(v), 4)
+
+    def interval(v) -> list[float] | None:
+        v = v[~np.isnan(v)]
+        return None if not len(v) else [round(float(np.quantile(v, 0.025)), 4),
+                                        round(float(np.quantile(v, 0.975)), 4)]
+
+    def lower(v) -> float | None:
+        v = v[~np.isnan(v)]
+        return None if not len(v) else float(np.quantile(v, 0.05))
+
+    at = rates(t)
+    # every candidate threshold at once: trials by falling score, weights summed cumulatively
+    order = np.argsort(-score, kind="stable")
+    falling = score[order]
+    cum_right = np.cumsum(weights[:, order] * right[order], axis=1)
+    cum_wrong = np.cumsum(weights[:, order] * ~right[order], axis=1)
+    t_bound = None
+    for th in sorted({float(s) for s in falling if np.isfinite(s)}):
+        j = int(np.searchsorted(-falling, -th, side="right")) - 1  # the last trial scoring >= th
+        with np.errstate(invalid="ignore", divide="ignore"):
+            lb = lower((cum_right[1:, j] / (cum_right[1:, j] + cum_wrong[1:, j])))
+        if lb is not None and lb >= TARGET_PRECISION:
+            t_bound = th
+            break
+    return {"what": ("every figure weighs the same: each trial counts 1 / its figure's trials; 95% "
+                     "intervals by resampling figures"),
+            "figures": len(figs), "threshold": None if t is None else round(t, 4),
+            **{k: value(v[0]) for k, v in at.items()},
+            "precision_lower_95": None if (lb := lower(at["precision"][1:])) is None else round(lb, 4),
+            "bootstrap_95": {k: interval(v[1:]) for k, v in at.items()},
+            "threshold_by_figure_bound": None if t_bound is None else round(t_bound, 4),
+            "note": ("the threshold at which the one-sided 95% lower bound of figure-weighted precision "
+                     "reaches 0.90; when it is above the pooled one, the pooled threshold leans on the "
+                     "most-tried figures")}
+
+
+def calibrate(trials: Sequence[dict[str, Any]], tally: Counter, gallery: Gallery,
+              query_faces: dict[str, Any], backend: str) -> dict[str, Any]:
+    """The report: the threshold, what it costs in true accepts, and the rest."""
+    headline = [x for x in trials if not x.get("same_photo") and not x["forced"]]
+    named = [x for x in headline if x["label"] != "unlinked"]
+    right = sum(1 for x in headline if x["label"] == "right")
+    p = image_text._ratio(right, len(headline), 4)
+    r_max = None if p is None else image_text.max_false_accept_ratio(p)
+    t_bound = choose_threshold(headline, "bound")
+    t_point = choose_threshold(headline, "point")
+    chosen = t_bound if t_bound is not None else t_point
+    at = operating_point(headline, chosen)
+    rejected_right = [x for x in headline if x["label"] == "right"
+                      and not (chosen is not None and x["scorable"] and x["score"] >= chosen)]
+    grid = sorted({round(x["score"], 2) for x in headline if x["scorable"]})
+    strata = {}
+    for name, test in (("one_face", lambda x: x["faces"] == 1), ("several_faces", lambda x: x["faces"] > 1),
+                       ("figure_from_probe_list", lambda x: x["figure_source"] == "probe_list"),
+                       ("figure_from_claim_ner", lambda x: x["figure_source"] == "claim_ner"),
+                       ("ambiguous_link", lambda x: x["ambiguous_link"]),
+                       ("figure_link_ambiguous", lambda x: x.get("figure_ambiguous"))):
+        subset = [x for x in headline if test(x)]
+        if subset:
+            strata[name] = operating_point(subset, chosen)
+    probe_list = [x for x in headline if x["token_label"] is not None]
+    table = figure_table(headline, chosen)
+    top_two = {r["figure_qid"] for r in table[:2]}
+    for r in table:
+        r["label"] = (gallery.entities.get(r["figure_qid"]) or {}).get("label")
+    return {
+        "backend": backend, "face_config": gallery.cid,
+        "coverage": verification_coverage(gallery),
+        "population": {"what": ("Factify2 TRAIN claim images (every record using the image is "
+                                "train) whose claim names exactly one figure and says an image "
+                                "shows them; the figure from the probe's list first, from claim "
+                                "NER otherwise"), **dict(sorted(tally.items()))},
+        "trials": {"total": len(trials), "headline": len(headline),
+                   "excluded_same_photo": sum(1 for x in trials if x.get("same_photo")),
+                   "forced_lines": sum(1 for x in trials if x["forced"]),
+                   "by_label": dict(Counter(x["label"] for x in headline)),
+                   "unscorable": dict(Counter(x["unscorable"] for x in headline if x["unscorable"]))},
+        "vlm_precision": {
+            "qid": p, "names": len(headline), "right": right,
+            "excluding_unlinked": image_text._ratio(right, len(named), 4),
+            "token_rule_on_probe_list_images": image_text._ratio(
+                sum(1 for x in probe_list if x["token_label"] == "right"), len(probe_list), 4),
+            "note": ("the pilot's 47.8% is APPROXIMATE: its reference is a loose token pattern "
+                     "over the claim. This QID-based figure replaces it; the token rule is "
+                     "recomputed beside it on the same images for comparison")},
+        "bar": {"accepted_name_precision": TARGET_PRECISION,
+                "max_fmr_over_tar": None if r_max is None else round(r_max, 4),
+                "rule": "p*TAR / (p*TAR + (1-p)*FMR) >= 0.90, i.e. FMR/TAR <= p / (9 (1 - p))"},
+        "threshold": {"chosen": None if chosen is None else round(chosen, 4),
+                      "chosen_by": ("one-sided 95% lower bound of accepted-name precision >= 0.90"
+                                    if t_bound is not None else
+                                    "point estimate only: no threshold reaches 0.90 at the 95% "
+                                    "lower bound on this many trials" if t_point is not None else
+                                    "none: no threshold reaches 0.90 even as a point estimate"),
+                      "by_bound": None if t_bound is None else round(t_bound, 4),
+                      "by_point_estimate": None if t_point is None else round(t_point, 4)},
+        "at_threshold": at,
+        "fmr_over_tar": (None if not at["tar"] or at["fmr"] is None else round(at["fmr"] / at["tar"], 4)),
+        "cost_in_true_accepts": {
+            "right_names": at["right"], "rejected": len(rejected_right),
+            "rejected_unscorable": dict(Counter(x["unscorable"] for x in rejected_right if x["unscorable"])),
+            "rejected_below_threshold": sum(1 for x in rejected_right if x["scorable"])},
+        "bootstrap_95": None if chosen is None else bootstrap(headline, chosen),
+        "cross_validated": {"bound": cross_validated(headline, "bound"),
+                            "point": cross_validated(headline, "point")},
+        "curve": [operating_point(headline, t) for t in grid],
+        "strata": strata,
+        "figures": {"what": ("per figure the claims name, most trials first: trials and what the "
+                             "threshold accepts of them. Local report only: the published one "
+                             "gives ranks, never a name or QID"),
+                    "concentration": concentration(table), "table": table},
+        "figure_stratified": {**(figure_stratified(headline, chosen) or {}),
+                              "pooled_without_top_two_figures": operating_point(
+                                  [x for x in headline if x["figure_qid"] not in top_two], chosen)},
+        "look_alike_finding": look_alike_finding(
+            headline, random_pair_scores(headline, gallery, query_faces), chosen, p),
+        "verite": "not read: calibration reads Factify2 train only",
+    }
+
+
+# --------------------------------------------------------------------------
+# commands for the network, the faces and the calibration
+# --------------------------------------------------------------------------
+
+
+def _run_dir(args) -> Path:
+    run_dir = Path(args.ledger_dir) if getattr(args, "ledger_dir", None) else current_run_dir()
+    if not run_dir.is_absolute() and not run_dir.is_dir():
+        run_dir = image_text.OUT_ROOT / run_dir
+    return run_dir
+
+
+def _ledger_read(args) -> LedgerRead:
+    return read_ledger(_run_dir(args) / "factify2.jsonl", "factify2")
+
+
+def _population(read: LedgerRead) -> tuple[list[dict[str, Any]], Counter]:
+    from scripts.processed_loader import iter_rows
+
+    spans = {r["record_id"]: r for r in read_jsonl(
+        CLAIM_NER_DIR / config_id_of(ner_config()) / "factify2.jsonl")}
+    return calibration_population(read, iter_rows("factify2"), images.load_index("factify2"), spans)
+
+
+def refresh_entities() -> int:
+    """Fetch every stored item's summary again (the last row wins): for a
+    summary schema that changed, as when "mul" labels were added."""
+    qids = sorted(latest(read_jsonl(WIKIDATA_PATH), lambda r: r["qid"]))
+    wiki, prov = JsonlLedger(WIKIDATA_PATH), JsonlLedger(PROVENANCE_PATH)
+    wiki.open()
+    prov.open()
+    try:
+        entities = fetch_entities(live_net(ProvenanceLog(prov)), qids)
+        wiki.append_many([{"pass": PASS_ID, "at": utcnow(), **e} for e in entities.values()])
+    finally:
+        wiki.close()
+        prov.close()
+    log(f"refreshed {len(entities):,} of {len(qids):,} item summaries")
+    return 0
+
+
+def cmd_link(args) -> int:
+    if args.refresh_entities:
+        return refresh_entities()
+    names = list(read_jsonl(NAMES_PATH))
+    if not names:
+        raise GalleryError(f"{NAMES_PATH} is empty; run: python scripts/gallery.py count")
+    by_key = {(r["type"], r["key"]): r for r in names}
+    glued = glue_map(names)
+    population, tally = _population(_ledger_read(args))
+    wanted: dict[tuple[str, str], dict[str, Any]] = {}
+
+    def want(entity_type: str, key: str, why: str, query: str | None = None, **extra: Any) -> None:
+        row = by_key.get((entity_type, key)) or {"type": entity_type, "key": key, "display": query or key,
+                                                 "mentions": {"vlm": 0, "claims": 0}}
+        entry = wanted.setdefault((entity_type, key), {
+            "type": entity_type, "key": key, "query": query or query_for(row, glued), "why": []})
+        entry["why"].append(why)
+        entry.update(extra)
+
+    for key, name in PROBE_FIGURES.items():
+        want("PERSON", key, "probe_figure", name)
+    for img in population:
+        want("PERSON", img["figure_key"], f"figure_{img['figure_source']}")
+    for key in calibration_names(population):
+        want("PERSON", key, "vlm_name_on_calibration_image")
+    scoped = [r for r in names if in_scope(r, args.scope)]
+    strata = None
+    if args.all:
+        for r in sorted(scoped, key=lambda r: (-scope_mentions(r, args.scope), r["type"], r["key"])):
+            want(r["type"], r["key"], "build_scope")
+    else:
+        picks, strata = stratified_sample(scoped, args.random)
+        for r in picks:
+            want(r["type"], r["key"], "random", stratum=r["stratum"])
+    done = latest(read_jsonl(LINKS_PATH), lambda r: (r["type"], r["key"]))
+    known = latest(read_jsonl(WIKIDATA_PATH), lambda r: r["qid"])
+
+    def needs_link(k: tuple[str, str]) -> bool:
+        """Never linked; an error; or a "no type match" whose candidates' data
+        never arrived (a batch lost before failed batches were told apart)."""
+        row = done.get(k)
+        return (row is None or row["status"] == "error"
+                or (row["status"] == "no_type_match" and any(q not in known for q in row.get("exact", []))))
+
+    todo = [w for k, w in wanted.items() if needs_link(k)]
+    whys = Counter(why for w in wanted.values() for why in set(w["why"]))
+    log(f"{'build' if args.all else 'sample'} (scope {','.join(args.scope)}): {len(wanted):,} names "
+        f"({len(population):,} calibration images {dict(tally)}; by reason {dict(whys)}); "
+        f"{len(todo):,} to link: about {len(todo):,} searches and "
+        f"{math.ceil(len(todo) * 2 / BATCH):,}+ entity calls on www.wikidata.org, at most one "
+        f"per {WIKIMEDIA_DELAY:g} s")
+    if args.dry_run:
+        return 0
+    if not args.all:  # the sample's definition, which sample-report reads back
+        write_json(SAMPLE_PATH, {"generated_at": utcnow(), "ledger_images": tally,
+                                 "population_images": len(population), "strata": strata,
+                                 "names": sorted(wanted.values(), key=lambda w: (w["type"], w["key"]))})
+    if not todo:
+        return 0
+    links, wiki = JsonlLedger(LINKS_PATH), JsonlLedger(WIKIDATA_PATH)
+    prov = JsonlLedger(PROVENANCE_PATH)
+    links.open()
+    wiki.open()
+    prov.open()
+    classes: dict[str, list[str]] = {}
+    net = live_net(ProvenanceLog(prov, BUILD_PASS_ID if args.all else PASS_ID))
+    status: Counter = Counter()
+    try:
+        # checkpointed: each chunk's items and links are written before the next
+        # starts, so a stop loses at most one chunk, and a rerun skips the rest
+        for start in range(0, len(todo), LINK_CHUNK):
+            rows, entities = link_names(net, todo[start:start + LINK_CHUNK], known=known, classes=classes)
+            wiki.append_many([{"pass": net.log.pass_id, "at": utcnow(), **e}
+                              for q, e in entities.items() if q not in known])
+            known.update(entities)
+            links.append_many(rows)
+            status.update(r["status"] for r in rows)
+            log(f"  linked {min(start + LINK_CHUNK, len(todo)):,}/{len(todo):,} "
+                f"({net.requests['total']:,} requests): {dict(status)}")
+    finally:
+        for ledger in (links, wiki, prov):
+            ledger.close()
+    log(json.dumps(dict(status), indent=1))
+    return 0
+
+
+#: Outcomes a corrected rendition rule may reverse. Only these: a reference
+#: refused by the registry, or as a corpus image, stays refused.
+REGATE_OUTCOMES = ("rendition_mismatch",)
+REGATE_RULE = ("rendition_problem: an unscaled original must be the file by Commons's SHA-1; a "
+               "scaled thumbnail must have the requested width and the height within rounding")
+
+
+def regate(entities: Sequence[dict[str, Any]], *, corpus: frozenset[str] | None = None,
+           media: Path = MEDIA_DIR) -> tuple[list[dict[str, Any]], Counter]:
+    """Entities whose rendition-refused references are judged again, by the
+    current rule, from their quarantined bytes. No request is made and nothing
+    is deleted: the quarantined copy stays, a reference that now passes every
+    gate is stored, and each judged reference records what it was and why."""
+    from scripts.recover import Resp
+
+    corpus = corpus_hashes() if corpus is None else corpus
+    changed, tally = [], Counter()
+    for e in entities:
+        refs, touched = [], False
+        for ref in e["refs"]:
+            if ref.get("outcome") not in REGATE_OUTCOMES or not ref.get("path"):
+                refs.append(ref)
+                continue
+            body = (image_text.PROJECT_ROOT / ref["path"]).read_bytes()
+            gated = gate_reference(Resp(ref["rendition"]["url"], 200, {}, body, None, 0.0), ref, corpus)
+            tally[f"{ref['outcome']}->{gated['outcome']}"] += 1
+            new = {**ref, "outcome": gated["outcome"],
+                   "regated": {"from": ref["outcome"], "at": utcnow(), "rule": REGATE_RULE}}
+            if gated["outcome"] == "usable":
+                new["path"] = store(body, gated["examined"], media).relative_to(
+                    image_text.PROJECT_ROOT).as_posix()
+            refs.append(new)
+            touched = True
+        if touched:
+            changed.append({**e, "refs": refs})
+    return changed, tally
+
+
+def sample_entities(seed: int = SEED) -> list[dict[str, Any]]:
+    """The entities this pass fetches: every one the calibration needs, and
+    SAMPLE_FETCH_RANDOM linked random-sample entities per type (reference yield)."""
+    sample = json.loads(SAMPLE_PATH.read_text(encoding="utf-8"))
+    links = latest(read_jsonl(LINKS_PATH), lambda r: (r["type"], r["key"]))
+    wiki = latest(read_jsonl(WIKIDATA_PATH), lambda r: r["qid"])
+    chosen: dict[str, dict[str, Any]] = {}
+    random_pool: dict[str, list[tuple[str, dict[str, Any]]]] = {t: [] for t in TYPES}
+    for w in sample["names"]:
+        link = links.get((w["type"], w["key"]))
+        if not link or link["status"] not in ("linked", "ambiguous") or link["qid"] not in wiki:
+            continue
+        entry = chosen.get(link["qid"]) or {**wiki[link["qid"]], "type": w["type"], "names": set()}
+        entry["names"].add(w["key"])
+        if any(why != "random" for why in w["why"]):
+            chosen[link["qid"]] = entry
+        else:
+            random_pool[w["type"]].append((link["qid"], entry))
+    for entity_type, pool in random_pool.items():
+        ordered = sorted({q: e for q, e in pool}.items(), key=lambda qe: image_text._priority(seed, qe[0]))
+        for qid, entry in [qe for qe in ordered if qe[0] not in chosen][:SAMPLE_FETCH_RANDOM]:
+            chosen[qid] = entry
+    return list(chosen.values())
+
+
+def build_entities(scope: Sequence[str] = BUILD_SCOPE) -> list[dict[str, Any]]:
+    """Every item a name in ``scope`` (or a probe figure) is linked to, the
+    most-mentioned first: the full build's work list. A name that links to an
+    item already fetched adds nothing to fetch."""
+    links = latest(read_jsonl(LINKS_PATH), lambda r: (r["type"], r["key"]))
+    wiki = latest(read_jsonl(WIKIDATA_PATH), lambda r: r["qid"])
+    chosen: dict[str, dict[str, Any]] = {}
+    weight: Counter = Counter()
+
+    def add(entity_type: str, key: str, mentions: int) -> None:
+        link = links.get((entity_type, key))
+        if not link or link["status"] not in ("linked", "ambiguous") or link["qid"] not in wiki:
+            return
+        entry = chosen.setdefault(link["qid"], {**wiki[link["qid"]], "type": entity_type, "names": set()})
+        entry["names"].add(key)
+        weight[link["qid"]] += mentions
+
+    for r in read_jsonl(NAMES_PATH):
+        if in_scope(r, scope):
+            add(r["type"], r["key"], scope_mentions(r, scope))
+    for key in PROBE_FIGURES:
+        add("PERSON", key, 0)
+    return sorted(chosen.values(), key=lambda e: (-weight[e["qid"]], e["qid"]))
+
+
+def cmd_fetch(args) -> int:
+    if args.regate:
+        stored = list(latest(read_jsonl(ENTITIES_PATH), lambda r: r["qid"]).values())
+        changed, tally = regate(stored)
+        ledger = JsonlLedger(ENTITIES_PATH)
+        ledger.open()
+        try:
+            ledger.append_many(changed)
+        finally:
+            ledger.close()
+        log(f"regated {sum(tally.values())} references of {len(changed)} entities, offline: {dict(tally)}")
+        return 0
+    if free_gb(GALLERY) < 5:
+        raise GalleryError(f"refusing: {free_gb(GALLERY):.1f} GiB free under {GALLERY}")
+    entities = build_entities(args.scope) if args.all else sample_entities()
+    done = latest(read_jsonl(ENTITIES_PATH), lambda r: r["qid"])
+    todo = [e for e in entities if e["qid"] not in done]
+    log(f"fetch: {len(entities):,} {'build' if args.all else 'sample'} entities "
+        f"(scope {','.join(args.scope)}), {len(todo):,} to fetch; budget {args.budget_gb} GiB; "
+        f"User-Agent: {user_agent()}")
+    if not todo:
+        return 0
+    out, prov = JsonlLedger(ENTITIES_PATH), JsonlLedger(PROVENANCE_PATH)
+    out.open()
+    prov.open()
+    net = live_net(ProvenanceLog(prov, BUILD_PASS_ID if args.all else PASS_ID), int(args.budget_gb * 1024 ** 3))
+    outcomes: Counter = Counter()
+    written = left = 0
+    try:
+        # checkpointed like link: each chunk's entities are written before the next
+        for start in range(0, len(todo), FETCH_CHUNK):
+            chunk = todo[start:start + FETCH_CHUNK]
+            try:
+                rows = fetch_references(net, chunk, media=MEDIA_DIR, rejected=REJECTED_DIR)
+            except recover.BudgetExceeded as exc:
+                net.stopped = f"budget: {exc}"
+                rows = []
+            out.append_many(rows)
+            written += len(rows)
+            left += 0 if net.stopped else len(chunk) - len(rows)
+            outcomes.update(r.get("outcome") for row in rows for r in row["refs"])
+            log(f"  fetched {written:,}/{len(todo):,} entities ({net.requests['total']:,} requests, "
+                f"{net.requests['bytes'] / 1024 ** 3:.2f} GiB): usable references "
+                f"{outcomes['usable']:,}; {left:,} left for the next run (no answer, or not now)")
+            if net.stopped:
+                log(f"  stopped ({net.stopped}); rerun to continue from here")
+                break
+    finally:
+        out.close()
+        prov.close()
+    log(f"{written:,} entities written, {left:,} left for the next run; reference outcomes {dict(outcomes)}")
+    return 0
+
+
+def cmd_embed(args) -> int:
+    backend = make_backend(args.backend)
+    cid = face_config_id(backend)
+    config_path = FACES_DIR / cid / "config.json"
+    if not config_path.is_file():
+        write_json(config_path, {"config_id": cid, **backend.config()})
+    entities = list(latest(read_jsonl(ENTITIES_PATH), lambda r: r["qid"]).values())
+    refs = {r["sha256"]: image_text.PROJECT_ROOT / r["path"] for e in entities if e["type"] == "PERSON"
+            for r in e["refs"] if r.get("outcome") == "usable"}
+    ref_faces = embed_images(backend, [(sha, (lambda p=p: p.read_bytes())) for sha, p in sorted(refs.items())],
+                             FACES_DIR / cid / "refs.jsonl", MIN_FACE["reference"])
+    pin_path = FACES_DIR / cid / "consistency_pin.json"
+    pin = json.loads(pin_path.read_text(encoding="utf-8")) if pin_path.is_file() else None
+    if pin is not None and args.pin_consistency:
+        raise GalleryError(f"{pin_path} already pins {pin['threshold']}; delete it to derive again")
+    rows, summary = assemble(entities, ref_faces, None if pin is None else pin["threshold"])
+    if args.pin_consistency:
+        pin = {"threshold": summary["consistency_threshold"], "pinned_at": utcnow(),
+               "entities_with_faces": summary["entities_with_faces"],
+               "quantile": CONSISTENCY_QUANTILE}
+        write_json(pin_path, pin)
+        summary["pinned"] = True
+    summary["pin"] = pin
+    write_jsonl(FACES_DIR / cid / "gallery.jsonl", rows)
+    write_json(FACES_DIR / cid / "gallery_summary.json", summary)
+    population, _tally = _population(_ledger_read(args))
+    index = images.load_index("factify2")
+    by_sha: dict[str, str] = {}
+    for path, row in index.items():
+        if row.get("sha256"):
+            by_sha.setdefault(row["sha256"], path)
+    embed_images(backend, [(img["sha256"], (lambda p=by_sha[img["sha256"]]: image_text.read_bytes(p)))
+                           for img in population if img["sha256"] in by_sha],
+                 QUERY_FACES_DIR / cid / "factify2.jsonl", MIN_FACE["query"])
+    usable = Counter(r["usable_refs"] for r in rows if r["type"] == "PERSON")
+    log(f"[{args.backend}] config {cid}: {len(ref_faces):,} reference images, "
+        f"{len(population):,} calibration images; usable references per person {dict(sorted(usable.items()))}; "
+        f"consistency threshold {summary['consistency_threshold']} "
+        f"({'pinned' if summary['pinned'] else 'derived'}; derived now {summary['derived_now']}); "
+        f"{summary['people_with_usable_faces']:,} of {summary['people']:,} people have a usable "
+        "reference face, and verify can only answer 'no usable reference' for the rest")
+    return 0
+
+
+#: The published calibration: one entry per backend, aggregates only.
+CALIBRATION_REPORT = REPORTS / "gallery_calibration.json"
+_QID = re.compile(r"Q\d+")
+
+
+def public_report(report: dict[str, Any]) -> dict[str, Any]:
+    """The calibration report with no name and no QID: figures by rank only.
+    Refuses if an identifier is left anywhere in it."""
+    out = json.loads(json.dumps(report))
+    for part in (out, out.get("adjudicated") or {}):
+        figures = part.get("figures")
+        if figures:
+            figures["table"] = [{"rank": i, **{k: v for k, v in r.items() if k not in ("figure_qid", "label")}}
+                                for i, r in enumerate(figures["table"], 1)]
+
+    def check(value: Any) -> None:
+        if isinstance(value, dict):
+            for v in value.values():
+                check(v)
+        elif isinstance(value, list):
+            for v in value:
+                check(v)
+        elif isinstance(value, str) and _QID.fullmatch(value):
+            raise GalleryError(f"the published calibration would carry an identifier ({value})")
+
+    check(out)
+    return out
+
+
+def cmd_calibrate(args) -> int:
+    backend = make_backend(args.backend)
+    cid = face_config_id(backend)
+    gallery = Gallery(cid)
+    run_dir = _run_dir(args)
+    read = read_ledger(run_dir / "factify2.jsonl", "factify2")
+    population, tally = _population(read)
+    links = latest(read_jsonl(LINKS_PATH), lambda r: (r["type"], r["key"]))
+    query_faces = latest(read_jsonl(QUERY_FACES_DIR / cid / "factify2.jsonl"), lambda r: r["sha256"])
+    trials, more = build_trials(population, links, query_faces, gallery)
+    report = calibrate(trials, tally + more, gallery, query_faces, args.backend)
+    worklist = worklist_sizes(run_dir).get("factify2")
+    report["factify2_ledger"] = {
+        "run": run_dir.name, "images": len(read.images), "worklist": worklist,
+        "share_done": image_text._ratio(len(read.images), worklist, 4) if worklist else None,
+        "complete": bool(worklist) and len(read.images) >= worklist,
+        "note": "the full calibration needs the finished run; a partial ledger gives a partial population"}
+    report["adjudicated"] = None
+    path = decisions_path(args.backend)
+    decisions = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
+    decided = {k: v for k, v in decisions.items() if v is not None}
+    if decided:
+        ids = {trial_id(x) for x in trials}
+        relabelled = adjudicated(trials, decisions)
+        report["adjudicated"] = {
+            "decisions": dict(Counter(decided.values())), "by": "a person, by eye, on the review sheet",
+            "applied": sum(1 for k in decided if k in ids),
+            "not_among_these_trials": sum(1 for k in decided if k not in ids),
+            "left_undecided_in_file": len(decisions) - len(decided),
+            "note": "a trial without a decision keeps the claim's label",
+            **{k: v for k, v in calibrate(relabelled, tally + more, gallery, query_faces,
+                                          args.backend).items()
+               if k in ("trials", "vlm_precision", "bar", "threshold", "at_threshold", "fmr_over_tar",
+                        "cost_in_true_accepts", "bootstrap_95", "cross_validated", "figure_stratified",
+                        "look_alike_finding")}}
+    write_json(CALIBRATION_DIR / f"{args.backend}.json", report)
+    write_jsonl(CALIBRATION_DIR / f"{args.backend}_trials.jsonl", trials)
+    published = json.loads(CALIBRATION_REPORT.read_text(encoding="utf-8")) if CALIBRATION_REPORT.is_file() else {}
+    published[args.backend] = {"generated_at": utcnow(), **public_report(report)}
+    write_json(CALIBRATION_REPORT, published)
+    t = report["threshold"]
+    at = report["at_threshold"]
+    strat = report["figure_stratified"]
+    log(f"[{args.backend}] {report['trials']['headline']} trials; VLM precision (QID) "
+        f"{report['vlm_precision']['qid']}; bar FMR/TAR <= {report['bar']['max_fmr_over_tar']}; "
+        f"threshold {t['chosen']} ({t['chosen_by']}); TAR {at['tar']} FMR {at['fmr']} "
+        f"precision {at['precision']} (lower 95% {at['precision_lower_95']})")
+    log(f"  coverage: {report['coverage']['statement']}")
+    log(f"  figures: {report['figures']['concentration']['statement']}")
+    for r in report["figures"]["table"][:5]:
+        log(f"    {r['label'] or r['figure_qid']}: {r['trials']} trials, {r['right']} right, "
+            f"{r['wrong']} wrong; accepted {r['accepted_right']} right, {r['accepted_wrong']} wrong")
+    log(f"  figure-stratified at {strat.get('threshold')}: precision {strat.get('precision')} "
+        f"(lower 95% {strat.get('precision_lower_95')}), TAR {strat.get('tar')}, FMR {strat.get('fmr')}; "
+        f"threshold by the figure bound {strat.get('threshold_by_figure_bound')}")
+    if report["look_alike_finding"]:
+        log(f"  look-alikes: {report['look_alike_finding']['finding']}")
+    log(f"wrote {CALIBRATION_DIR / (args.backend + '.json')} (local) and {CALIBRATION_REPORT} (aggregates)")
+    return 0
+
+
+def cmd_verify(args) -> int:
+    backend = make_backend(args.backend)
+    gallery = Gallery(face_config_id(backend))
+    body = Path(args.image).read_bytes()
+    faces = backend.faces(load_bgr(body), MIN_FACE["query"])
+    threshold = args.threshold
+    if threshold is None and (CALIBRATION_DIR / f"{args.backend}.json").is_file():
+        report = json.loads((CALIBRATION_DIR / f"{args.backend}.json").read_text(encoding="utf-8"))
+        if report.get("face_config") == gallery.cid:
+            threshold = (report.get("threshold") or {}).get("chosen")
+    out = gallery.verify(faces, args.name, threshold, args.type)
+    log(json.dumps(out, indent=1, ensure_ascii=False))
+    return 0
+
+
+# --------------------------------------------------------------------------
+# the sample's report, and the review sheet a person checks
+# --------------------------------------------------------------------------
+
+
+def alias_families(scope: Sequence[dict[str, Any]], wiki: dict[str, dict[str, Any]],
+                   qids: Iterable[str], entity_type: str) -> dict[str, int]:
+    """qid -> how many of the build scope's name keys of that type ARE one of
+    the item's label or aliases: the names that collapse into it."""
+    by_nospace: dict[str, set[str]] = {}
+    for r in scope:
+        if r["type"] == entity_type:
+            by_nospace.setdefault(r["key"].replace(" ", ""), set()).add(r["key"])
+    out = {}
+    for qid in qids:
+        summary = wiki.get(qid) or {}
+        texts = [summary.get("label") or "", *summary.get("aliases", [])]
+        keys = set()
+        for t in texts:
+            folded = fold(t)
+            if folded:
+                keys |= by_nospace.get(folded.replace(" ", ""), set())
+        out[qid] = max(1, len(keys))
+    return out
+
+
+def linking_estimate(sample: dict[str, Any], links: dict[tuple[str, str], dict[str, Any]],
+                     wiki: dict[str, dict[str, Any]], scope: Sequence[dict[str, Any]],
+                     seed: int = SEED) -> dict[str, Any]:
+    """From the stratified random names: the share that link, and how many
+    distinct entities the build scope's names come to -- each linked name
+    weighted by 1 / (names that collapse into its entity), and by its stratum."""
+    import numpy as np
+
+    strata = sample["strata"]
+    drawn = [w for w in sample["names"] if "random" in w["why"]]
+    rows = []
+    for w in drawn:
+        link = links.get((w["type"], w["key"])) or {}
+        linked = link.get("status") in ("linked", "ambiguous")
+        rows.append({"stratum": w["stratum"], "type": w["type"], "linked": linked,
+                     "status": link.get("status"), "qid": link.get("qid") if linked else None})
+    families = {}
+    for t in TYPES:
+        families.update(alias_families(scope, wiki, {r["qid"] for r in rows if r["type"] == t and r["qid"]}, t))
+
+    def estimate(sampled: Sequence[dict[str, Any]]) -> dict[str, float]:
+        out: dict[str, float] = {}
+        for t in TYPES:
+            linked = entities = 0.0
+            for s, info in strata.items():
+                if not s.startswith(f"{t}|"):
+                    continue
+                members = [r for r in sampled if r["stratum"] == s]
+                if not members:
+                    continue
+                weight = info["size"] / len(members)
+                linked += weight * sum(r["linked"] for r in members)
+                entities += weight * sum(1 / families[r["qid"]] for r in members if r["qid"])
+            out[f"{t}_names_linked"] = linked
+            out[f"{t}_entities"] = entities
+        return out
+
+    point = estimate(rows)
+    rng = np.random.default_rng(seed)
+    by_stratum: dict[str, list[dict[str, Any]]] = {}
+    for r in rows:
+        by_stratum.setdefault(r["stratum"], []).append(r)
+    draws: dict[str, list[float]] = {k: [] for k in point}
+    for _ in range(BOOTSTRAP):
+        resample = [m[i] for m in by_stratum.values() for i in rng.integers(0, len(m), len(m))]
+        for k, v in estimate(resample).items():
+            draws[k].append(v)
+    names_in_scope = Counter(r["type"] for r in scope)
+    return {
+        "method": ("stratified random names (type x source x frequency band), each weighted by its "
+                   "stratum; an entity's share of a linked name is 1 / the build-scope names that "
+                   "are one of its label or aliases; 95% intervals by stratified bootstrap"),
+        "drawn": len(rows), "status": dict(Counter(r["status"] for r in rows)),
+        "by_stratum": {s: {"size": strata[s]["size"], "drawn": len(m),
+                           "linked": sum(r["linked"] for r in m)} for s, m in sorted(by_stratum.items())},
+        **{t: {"names_in_scope": names_in_scope[t],
+               "names_linked": round(point[f"{t}_names_linked"]),
+               "link_rate": image_text._ratio(point[f"{t}_names_linked"], names_in_scope[t], 4),
+               "distinct_entities": round(point[f"{t}_entities"]),
+               "distinct_entities_95": [round(float(np.quantile(draws[f"{t}_entities"], q)))
+                                        for q in (0.025, 0.975)]}
+           for t in TYPES}}
+
+
+def reference_yield(entities: Sequence[dict[str, Any]], assembled: dict[str, list[dict[str, Any]]]
+                    ) -> dict[str, Any]:
+    out: dict[str, Any] = {}
+    for t in TYPES:
+        mine = [e for e in entities if e["type"] == t]
+        if not mine:
+            continue
+        refs = [r for e in mine for r in e["refs"]]
+        usable = [r for r in refs if r.get("outcome") == "usable"]
+        out[t] = {"entities": len(mine),
+                  "candidates_per_entity": round(len(refs) / len(mine), 2),
+                  "outcomes": dict(Counter(r.get("outcome") for r in refs).most_common()),
+                  "fetched_usable_per_entity": dict(sorted(Counter(
+                      sum(r.get("outcome") == "usable" for r in e["refs"]) for e in mine).items())),
+                  "bytes_per_usable_image": (round(statistics.fmean(r["bytes"] for r in usable))
+                                             if usable else None),
+                  "licences": dict(Counter((r.get("licence") or {}).get("short_name")
+                                           for r in usable).most_common()),
+                  "restrictions": dict(Counter((r.get("licence") or {}).get("restrictions") or "none"
+                                               for r in usable).most_common()),
+                  "attribution_required": dict(Counter((r.get("licence") or {}).get("attribution_required")
+                                                       for r in usable).most_common())}
+    for backend, rows in assembled.items():
+        people = [r for r in rows if r["type"] == "PERSON"]
+        out.setdefault("faces", {})[backend] = {
+            "decisions": dict(Counter(ref["decision"] for r in people for ref in r["refs"]).most_common()),
+            "usable_references_per_person": dict(sorted(Counter(r["usable_refs"] for r in people).items())),
+            "people_with_none": sum(1 for r in people if not r["usable_refs"])}
+    return out
+
+
+def request_costs(provenance: Sequence[dict[str, Any]]) -> dict[str, Any]:
+    by_host = Counter(r["host"] for r in provenance if r.get("outcome") != "redirect")
+    by_stage = Counter(r["stage"] for r in provenance)
+    return {"requests_by_host": dict(by_host.most_common()), "requests_by_stage": dict(by_stage.most_common()),
+            "outcomes": dict(Counter(f"{r['stage']}:{r['outcome']}" for r in provenance).most_common()),
+            "bytes": sum(r.get("bytes") or 0 for r in provenance)}
+
+
+#: Which requests each part of the build makes, by provenance stage.
+STAGES = {"link": ("search", "entities", "type_check"), "commons": ("depicts", "category", "imageinfo"),
+          "media": ("download",)}
+
+
+def seconds_per_request(rows: Sequence[dict[str, Any]]) -> float | None:
+    """At WikimediaWorker's pace, measured on the sample's own answers: a
+    request start every WIKIMEDIA_DELAY, or the answer's time plus the policy's
+    pause when an API answer took over SLOW_API_S."""
+    times = []
+    for r in rows:
+        elapsed = r.get("elapsed_s") or 0.0
+        api = WIKIMEDIA_HOSTS.get(r.get("host")) == "action_api"
+        times.append(max(WIKIMEDIA_DELAY, elapsed + (SLOW_API_PAUSE if api and elapsed > SLOW_API_S else 0.0)))
+    return statistics.fmean(times) if times else None
+
+
+def projection(estimate: dict[str, Any], costs: dict[str, Any], fetched: dict[str, Any],
+               linked_now: int, provenance: Sequence[dict[str, Any]]) -> dict[str, Any]:
+    """The full build, from what the sample cost: requests per linked name and
+    per fetched entity, each at the pace WikimediaWorker keeps (its time per
+    request measured on the sample's answers), and disk."""
+    names = sum(estimate[t]["names_in_scope"] for t in TYPES)
+    entities = {t: estimate[t]["distinct_entities"] for t in TYPES}
+    stage = costs["requests_by_stage"]
+    fetched_entities = sum(fetched[t]["entities"] for t in TYPES if t in fetched)
+    total_entities = sum(entities.values())
+    per_unit = {"link": names / max(1, linked_now), "commons": total_entities / max(1, fetched_entities),
+                "media": total_entities / max(1, fetched_entities)}
+    requests = {part: sum(stage.get(s, 0) for s in stages) * per_unit[part] for part, stages in STAGES.items()}
+    pace = {part: seconds_per_request([r for r in provenance if r.get("stage") in stages
+                                       and r.get("host") in WIKIMEDIA_HOSTS and r.get("outcome") != "redirect"])
+            for part, stages in STAGES.items()}
+    hours = {part: round(requests[part] * (pace[part] or WIKIMEDIA_DELAY) / 3600, 1) for part in STAGES}
+    gb = sum(entities[t] * sum(k * v for k, v in fetched[t]["fetched_usable_per_entity"].items())
+             / max(1, fetched[t]["entities"]) * (fetched[t]["bytes_per_usable_image"] or 0)
+             for t in TYPES if t in fetched) / 1024 ** 3
+    return {"names_to_link": names, "entities": entities,
+            "requests": {part: round(v) for part, v in requests.items()},
+            "seconds_per_request": {part: None if v is None else round(v, 2) for part, v in pace.items()},
+            "hours": hours, "hours_total": round(sum(hours.values()), 1),
+            "wikimedia_delay_s": WIKIMEDIA_DELAY, "gb": round(gb, 2),
+            "note": ("the build scope's names as counted now; Factify2's VLM names grow as its run "
+                     "finishes (gallery_counts.json, projection). The parts run one after another "
+                     "through the one worker, so their hours add: an upper bound")}
+
+
+def sample_report() -> dict[str, Any]:
+    sample = json.loads(SAMPLE_PATH.read_text(encoding="utf-8"))
+    links = latest(read_jsonl(LINKS_PATH), lambda r: (r["type"], r["key"]))
+    wiki = latest(read_jsonl(WIKIDATA_PATH), lambda r: r["qid"])
+    # the sample pass's own rows: a full build that followed is not the sample
+    entities = [e for e in latest(read_jsonl(ENTITIES_PATH), lambda r: r["qid"]).values()
+                if e.get("pass") == PASS_ID]
+    scope = [r for r in read_jsonl(NAMES_PATH) if in_scope(r)]
+    sampled = [links[(w["type"], w["key"])] for w in sample["names"] if (w["type"], w["key"]) in links]
+    estimate = linking_estimate(sample, links, wiki, scope)
+    assembled, calibration = {}, {}
+    for backend in FACE_BACKENDS:
+        if (CALIBRATION_DIR / f"{backend}.json").is_file():
+            calibration[backend] = json.loads((CALIBRATION_DIR / f"{backend}.json").read_text(encoding="utf-8"))
+            cid = calibration[backend]["face_config"]
+            assembled[backend] = list(read_jsonl(FACES_DIR / cid / "gallery.jsonl"))
+    fetched = reference_yield(entities, assembled)
+    provenance = [r for r in read_jsonl(PROVENANCE_PATH) if r.get("pass") == PASS_ID]
+    costs = request_costs(provenance)
+
+    def headline(c: dict[str, Any]) -> dict[str, Any]:
+        keep = ("population", "trials", "vlm_precision", "bar", "threshold", "at_threshold", "fmr_over_tar",
+                "cost_in_true_accepts", "bootstrap_95", "cross_validated", "strata", "look_alike_finding",
+                "figures", "figure_stratified", "curve", "adjudicated")
+        published = public_report(c)  # figures by rank: no name, no QID
+        return {k: published[k] for k in keep if k in published}
+
+    def at_tar(c: dict[str, Any], tar: float) -> dict[str, Any] | None:
+        reach = [p for p in c["curve"] if p["tar"] is not None and p["tar"] >= tar]
+        return None if not reach else min(reach, key=lambda p: p["fmr"] if p["fmr"] is not None else 1)
+
+    bake_off = {b: {"face_config": c["face_config"], "threshold": c["threshold"],
+                    "at_threshold": c["at_threshold"],
+                    "lowest_fmr_at_tar": {str(t): at_tar(c, t) for t in (0.5, 0.7, 0.8, 0.9)}}
+                for b, c in calibration.items()}
+    return {
+        "generated_at": utcnow(), "pass": PASS_ID,
+        "what": ("the sample pass: the design validated on a sample before any full build. Aggregates "
+                 "only: no name, no record id, no file name"),
+        "sample": {"calibration_images": sample["population_images"],
+                   "ledger_images": sample["ledger_images"],
+                   "names": len(sample["names"]),
+                   "by_reason": dict(Counter(why for w in sample["names"] for why in set(w["why"]))),
+                   "link_status": dict(Counter(r["status"] for r in sampled))},
+        "linking": estimate,
+        "references": fetched,
+        "requests": costs,
+        "projection_full_build": projection(estimate, costs, fetched, len(sampled), provenance),
+        "calibration": {b: headline(c) for b, c in calibration.items()},
+        "why_calibrate_on_the_vlms_own_errors": {
+            b: c["look_alike_finding"] for b, c in calibration.items() if c.get("look_alike_finding")},
+        "bake_off": bake_off,
+        "notes": [
+            "Random strangers are not the VLM's errors: why_calibrate_on_the_vlms_own_errors compares the "
+            "two and shows what a threshold set on random pairs would accept of the VLM's own names. That "
+            "is why FMR is measured on the VLM's wrong names, never on random pairs.",
+            "The pilot's 47.8% VLM precision is APPROXIMATE: its reference is a loose token pattern over "
+            "the claim. calibration.<backend>.vlm_precision.qid is the QID-based figure that replaces it.",
+            "Calibration reads Factify2 TRAIN only, images every one of whose records is train; VERITE is "
+            "never read for any threshold.",
+            "This is a sample on the part of the Factify2 run done so far: the full calibration runs on "
+            "the server once the run finishes.",
+            "Organisations have entries and references only: no visual match is claimed for them.",
+            "Every reference's licence and attribution are recorded as Commons states them, in the local "
+            "entity ledger; nothing here is redistributable media."],
+    }
+
+
+def cmd_sample_report(args) -> int:
+    report = sample_report()
+    write_json(SAMPLE_REPORT, report)
+    log(json.dumps({k: report[k] for k in ("sample", "linking", "projection_full_build")}, indent=1))
+    for b, c in report["calibration"].items():
+        t, at = c["threshold"], c["at_threshold"]
+        log(f"[{b}] threshold {t['chosen']} ({t['chosen_by']}): TAR {at['tar']} FMR {at['fmr']} "
+            f"precision {at['precision']} (lower 95% {at['precision_lower_95']}); "
+            f"bar FMR/TAR <= {c['bar']['max_fmr_over_tar']}, here {c['fmr_over_tar']}")
+    log(f"wrote {SAMPLE_REPORT}")
+    return 0
+
+
+def _crop(body: bytes, box: Sequence[float], side: int = 160) -> str:
+    """A face crop, a little wider than its box, as an inline JPEG."""
+    import base64
+
+    from PIL import Image, ImageOps
+
+    with Image.open(io.BytesIO(body)) as img:
+        img = ImageOps.exif_transpose(img).convert("RGB")
+        x, y, w, h = box
+        m = 0.25 * max(w, h)
+        crop = img.crop((max(0, x - m), max(0, y - m), min(img.width, x + w + m), min(img.height, y + h + m)))
+        crop.thumbnail((side, side))
+        buf = io.BytesIO()
+        crop.save(buf, format="JPEG", quality=85)
+    return "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode("ascii")
+
+
+#: Side of the review sheet's face crops, in pixels.
+REVIEW_CROP = 224
+
+
+def _whole(body: bytes, box: Sequence[float], side: int = 480) -> str:
+    """The whole image, small, the scored face boxed: context for a reviewer."""
+    import base64
+
+    from PIL import Image, ImageDraw, ImageOps
+
+    with Image.open(io.BytesIO(body)) as img:
+        img = ImageOps.exif_transpose(img).convert("RGB")
+        scale = min(1.0, side / max(img.width, img.height))
+        small = img.resize((max(1, round(img.width * scale)), max(1, round(img.height * scale))))
+        x, y, w, h = (v * scale for v in box)
+        ImageDraw.Draw(small).rectangle((x, y, x + w, y + h), outline=(255, 0, 0), width=3)
+        buf = io.BytesIO()
+        small.save(buf, format="JPEG", quality=80)
+    return "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode("ascii")
+
+
+#: What a person may decide a reviewed face is.
+DECISIONS = ("vlm", "claim", "neither", "unsure")
+
+
+def merge_decision_slots(path: Path, ids: Sequence[str]) -> int:
+    """Adds a null slot, in sheet order, for every trial not yet in the
+    decisions file. A decision already written is never changed or dropped."""
+    current = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
+    new = [i for i in dict.fromkeys(ids) if i not in current]
+    if new or not path.is_file():
+        write_json(path, {**current, **{i: None for i in new}})
+    return len(new)
+
+
+def trial_id(trial: dict[str, Any]) -> str:
+    return f"{trial['sha256'][:12]}:{trial['key']}"
+
+
+def decisions_path(backend: str) -> Path:
+    return REVIEW_DIR / f"{backend}_decisions.json"
+
+
+def adjudicated(trials: Sequence[dict[str, Any]], decisions: dict[str, str | None]) -> list[dict[str, Any]]:
+    """Trials relabelled by a PERSON's decisions: whom the face is. "vlm" makes
+    the VLM's name right; "claim" makes it right only when the VLM named the
+    claim's figure (then the two columns are one person), wrong otherwise;
+    "neither" makes it wrong; "unsure" takes the trial out. A trial with no
+    decision (absent, or null in the file) keeps the claim's label, so a
+    partial adjudication is usable."""
+    unknown = sorted(set(decisions.values()) - set(DECISIONS) - {None})
+    if unknown:
+        raise GalleryError(f"decisions may only be {DECISIONS} or null, not {unknown}")
+    out = []
+    for x in trials:
+        d = decisions.get(trial_id(x))
+        if d == "unsure":
+            continue
+        if d is None or x["label"] == "unlinked":
+            out.append(x)
+        else:
+            right = d == "vlm" or (d == "claim" and x["label"] == "right")
+            out.append({**x, "label": "right" if right else "wrong", "adjudicated": d})
+    return out
+
+
+def cmd_review(args) -> int:
+    """A sheet a PERSON reads: each decisive trial's face beside the reference
+    it matched, with the reference's Commons page, licence and attribution.
+    Local only (it shows corpus images); the adjudication is a person's."""
+    backend = make_backend(args.backend)
+    gallery = Gallery(face_config_id(backend))
+    report = json.loads((CALIBRATION_DIR / f"{args.backend}.json").read_text(encoding="utf-8"))
+    t = report["threshold"]["chosen"]
+    trials = list(read_jsonl(CALIBRATION_DIR / f"{args.backend}_trials.jsonl"))
+    query_faces = latest(read_jsonl(QUERY_FACES_DIR / gallery.cid / "factify2.jsonl"), lambda r: r["sha256"])
+    index = images.load_index("factify2")
+    by_sha: dict[str, str] = {}
+    for path, row in index.items():
+        if row.get("sha256"):
+            by_sha.setdefault(row["sha256"], path)
+    # Every name labelled wrong that the gallery scores as plausibly the person
+    # -- above its own consistency threshold -- is on the sheet, not only those
+    # accepted at the provisional threshold: whether they are look-alikes or the
+    # claim's figure is simply not pictured decides the false-accept rate.
+    summary = json.loads((FACES_DIR / gallery.cid / "gallery_summary.json").read_text(encoding="utf-8"))
+    plausible = summary["consistency_threshold"] if t is None else min(t, summary["consistency_threshold"])
+    accepted_wrong = sorted((x for x in trials if x["label"] != "right" and x["scorable"]
+                             and x["score"] >= plausible), key=lambda x: -x["score"])
+    rejected_right = sorted((x for x in trials if x["label"] == "right" and x["scorable"]
+                             and (t is None or x["score"] < t)),
+                            key=lambda x: image_text._priority(SEED, x["sha256"] + (x["key"] or "")))
+    queue = accepted_wrong + rejected_right[:args.rejected]
+
+    def reference_cell(qid: str, faces: Sequence[dict[str, Any]]) -> str:
+        best = gallery.best(faces, qid) if gallery.refs.get(qid) else None
+        if best is None:
+            return "<td>(no usable reference)</td>"
+        ref = best["reference"]
+        lic, att = ref.get("licence") or {}, ref.get("attribution") or {}
+        crop = _crop((image_text.PROJECT_ROOT / ref["path"]).read_bytes(), best["reference_face"]["box"])
+        return (f"<td><img src='{crop}'><br>{html.escape((gallery.entities.get(qid) or {}).get('label') or qid)}"
+                f"<br>score {best['score']:.3f}<br><a href='{html.escape(ref.get('page_url') or '')}'>"
+                f"{html.escape(ref.get('title') or '')}</a><br>{html.escape(lic.get('short_name') or '')}; "
+                f"{html.escape(att.get('artist') or '')}</td>")
+
+    cells = []
+    for n, x in enumerate(queue, 1):
+        faces = query_faces[x["sha256"]]["faces"]
+        best = gallery.best(faces, x["qid"])
+        body = image_text.read_bytes(by_sha[x["sha256"]])
+        box = faces[best["query_face"]]["box"]
+        kind = ((("ACCEPTED" if t is not None and x["score"] >= t else "PLAUSIBLE") + ", labelled wrong")
+                if x in accepted_wrong else "REJECTED, labelled right")
+        cells.append(
+            f"<tr><td><b>{n}</b></td><td><img src='{_crop(body, box, REVIEW_CROP)}'><br>trial "
+            f"<code>{html.escape(trial_id(x))}</code><br>{x['faces']} face(s) in the image<br>"
+            f"<details><summary>whole image</summary><img class='whole' src='{_whole(body, box)}'>"
+            f"</details></td>{reference_cell(x['qid'], faces)}{reference_cell(x['figure_qid'], faces)}"
+            f"<td><b>{kind}</b><br>VLM said: {html.escape(x['name'])}<br>threshold {t}</td></tr>")
+    written = merge_decision_slots(decisions_path(args.backend), [trial_id(x) for x in queue])
+    page = ("<!doctype html><meta charset='utf-8'><title>Gallery review</title>"
+            "<style>body{font:14px sans-serif;margin:16px}td{vertical-align:top;padding:6px;"
+            f"border-bottom:1px solid #ccc}}img{{max-width:{REVIEW_CROP}px}}img.whole{{max-width:480px}}"
+            "</style>"
+            f"<h1>Gallery review: {args.backend}, threshold {t}, {len(queue)} faces</h1>"
+            "<p>Columns: the face in the Factify2 TRAIN image (open <i>whole image</i> for context: the "
+            "face scored is boxed); the reference of the person the VLM named; the reference of the "
+            "person the claim names. The labels come from the claim, which may name someone the image "
+            "does not show. For each row decide, by looking, whom the face is, and write it against "
+            f"the row's trial in <code>{html.escape(str(decisions_path(args.backend)))}</code> (every "
+            "trial on this sheet is already there, as <code>null</code>):</p><ul>"
+            "<li><code>\"vlm\"</code>: the person the VLM named (second column);</li>"
+            "<li><code>\"claim\"</code>: the person the claim names (third column);</li>"
+            "<li><code>\"neither\"</code>: someone else;</li>"
+            "<li><code>\"unsure\"</code>: you cannot tell (the trial leaves the adjudicated figures).</li>"
+            "</ul><p>When the VLM named the claim's person both columns show them: <code>\"vlm\"</code> "
+            "if it is them, <code>\"neither\"</code> if not. A <code>null</code> keeps the claim's label, "
+            "so part of the sheet is usable; the rows labelled wrong come first because they set the "
+            "false-accept rate. <code>calibrate</code> reports adjudicated figures beside the raw ones.</p>"
+            f"<table>{''.join(cells)}</table>")
+    path = REVIEW_DIR / f"{args.backend}.html"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(page, encoding="utf-8")
+    log(f"{len(accepted_wrong)} names labelled wrong scoring at least {plausible:.3f} and "
+        f"{min(len(rejected_right), args.rejected)} rejected names labelled right -> {path}; "
+        f"{written} new trial slots in {decisions_path(args.backend)}")
+    return 0
+
+
+# --------------------------------------------------------------------------
+# status and the command line
+# --------------------------------------------------------------------------
+
+
+def cmd_status(args) -> int:
+    out: dict[str, Any] = {"names": None, "claim_ner": {}}
+    if NAMES_PATH.is_file():
+        types = Counter(r["type"] for r in read_jsonl(NAMES_PATH))
+        out["names"] = dict(types)
+    directory = CLAIM_NER_DIR / config_id_of(ner_config())
+    if directory.is_dir():
+        for path in sorted(directory.glob("*.jsonl")):
+            if not path.name.endswith(".torn.jsonl"):
+                out["claim_ner"][path.stem] = sum(1 for _ in read_jsonl(path))
+    out["links"] = dict(Counter(r["status"] for r in latest(
+        read_jsonl(LINKS_PATH), lambda r: (r["type"], r["key"])).values()))
+    entities = latest(read_jsonl(ENTITIES_PATH), lambda r: r["qid"])
+    out["entities"] = dict(Counter(e["type"] for e in entities.values()))
+    out["reference_outcomes"] = dict(Counter(r.get("outcome") for e in entities.values() for r in e["refs"]))
+    log(json.dumps(out, indent=2))
+    return 0
+
+
+def _datasets(text: str) -> list[str]:
+    names = [s.strip() for s in text.split(",") if s.strip()]
+    unknown = sorted(set(names) - set(CLAIM_DATASETS))
+    if unknown:
+        raise argparse.ArgumentTypeError(f"not an image-bearing corpus: {', '.join(unknown)}")
+    return names
+
+
+def _models(text: str) -> list[str]:
+    names = [s.strip() for s in text.split(",") if s.strip()]
+    unknown = sorted(set(names) - set(MODEL_CHOICES))
+    if unknown:
+        raise argparse.ArgumentTypeError(f"unknown model {', '.join(unknown)}; choose from "
+                                         f"{', '.join(MODEL_CHOICES)}")
+    return names
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    sub = parser.add_subparsers(dest="command", required=True)
+    f = sub.add_parser("fetch-models", help="download the pinned weights (network)")
+    f.add_argument("--only", type=_models, default=list(DEFAULT_MODELS),
+                   help=f"comma-separated, from {', '.join(MODEL_CHOICES)} "
+                        f"(default {','.join(DEFAULT_MODELS)}; auraface is the bake-off contrast)")
+    c = sub.add_parser("count", help="names in our corpora, before anything is fetched; offline")
+    c.add_argument("--ledger-dir", default=None,
+                   help="image_text run directory (default: the one under the current row schema)")
+    c.add_argument("--claims", type=_datasets, default=list(CLAIM_DATASETS),
+                   help="comma-separated corpora whose claim text NER reads (default: every "
+                        "image-bearing corpus)")
+    c.add_argument("--no-claims", action="store_true", help="the VLM's names only")
+    c.add_argument("--device", choices=("cuda", "cpu"), default=None)
+    k = sub.add_parser("link", help="names to Wikidata items: the sample, or --all (network)")
+    k.add_argument("--random", type=int, default=SAMPLE_RANDOM,
+                   help=f"stratified random names, for the linking rate (default {SAMPLE_RANDOM})")
+    k.add_argument("--dry-run", action="store_true", help="size the work; no request, no write")
+    k.add_argument("--refresh-entities", action="store_true",
+                   help="fetch every stored item's summary again (network)")
+    f2 = sub.add_parser("fetch", help="Commons references through the gates: the sample, or --all (network)")
+    f2.add_argument("--budget-gb", type=float, default=1.0, help="transfer budget (default 1 GiB)")
+    f2.add_argument("--regate", action="store_true",
+                    help="judge rendition-refused references again from their quarantined bytes; offline")
+    for p in (k, f2):
+        p.add_argument("--all", action="store_true",
+                       help="the full build: every name in --scope (linked names, for fetch), not the sample")
+        p.add_argument("--scope", type=_datasets, default=list(BUILD_SCOPE),
+                       help=f"comma-separated corpora the gallery is built for (default "
+                            f"{','.join(BUILD_SCOPE)}); widening it later adds, never redoes")
+    e = sub.add_parser("embed", help="faces of references and calibration images; offline, CPU")
+    e.add_argument("--pin-consistency", action="store_true",
+                   help="pin the consistency threshold derived now, so later additions leave "
+                        "every existing entry as it is")
+    a = sub.add_parser("calibrate", help="threshold and its cost, Factify2 train only; offline")
+    v = sub.add_parser("verify", help="one 1:1 verification, with the reference it matched")
+    v.add_argument("--image", required=True)
+    v.add_argument("--name", required=True)
+    v.add_argument("--type", choices=TYPES, default="PERSON")
+    v.add_argument("--threshold", type=float, default=None,
+                   help="default: the calibrated one for this face configuration, if any")
+    r = sub.add_parser("review", help="a local HTML sheet of decisive trials, for a person to check")
+    r.add_argument("--rejected", type=int, default=20, help="rejected right names to include")
+    sub.add_parser("sample-report", help="data/reports/gallery_sample.json from the sample's stages")
+    for p in (k, e, a):
+        p.add_argument("--ledger-dir", default=None,
+                       help="image_text run directory (default: the one under the current row schema)")
+    for p in (e, a, v, r):
+        p.add_argument("--backend", choices=FACE_BACKENDS, default="sface")
+    sub.add_parser("status", help="offline counts")
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = build_parser().parse_args(argv)
+    commands = {"fetch-models": cmd_fetch_models, "count": cmd_count, "link": cmd_link,
+                "fetch": cmd_fetch, "embed": cmd_embed, "calibrate": cmd_calibrate,
+                "verify": cmd_verify, "review": cmd_review, "sample-report": cmd_sample_report,
+                "status": cmd_status}
+    return commands[args.command](args)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

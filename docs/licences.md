@@ -148,3 +148,134 @@ that permits research use; see the section-10 table in `docs/data_card.md`.
   legal code. No access request. The README also states: "Given the graphic
   nature of some images, we do not release them directly. Instead, we do
   publicly release the URLs of the FC articles and the images."
+
+## The entity gallery: its sources and its models (added 2026-10-21)
+
+The entity gallery (`scripts/gallery.py`) is not a dataset in the register. Its
+two sources and the models it runs are recorded here on the same terms: the
+quotes are verbatim (wiki markup removed), and the raw copies are in
+`data/interim/licences/gallery_*`. All were retrieved on 2026-10-21.
+
+| Source or model | Licence as stated | Where it was read | Use here |
+| --- | --- | --- | --- |
+| Wikidata items | CC0 (structured data) | Wikidata:Licensing | labels, aliases, classes, image claims |
+| Commons reference images | **per file**, as each file page states | imageinfo `extmetadata`, recorded per image | references; never published |
+| dslim/bert-base-NER @ `d1a3e8f` | MIT | model card front matter | claim-text NER |
+| YuNet `face_detection_yunet_2023mar.onnx` @ `3cc26e7` | MIT | LICENSE and README | face detection |
+| SFace `face_recognition_sface_2021dec.onnx` @ `3d70824` | Apache-2.0 | LICENSE and README | face embedding |
+| AuraFace `glintr100.onnx` @ `af6d057` | Apache-2.0 | model card, LICENSE.md | bake-off contrast only, not adopted |
+| InsightFace model packs (`buffalo_l`, ...) | "for non-commercial research only" | python-package README | **excluded** |
+
+Weights are fetched to `models/` (ignored) by `gallery.py fetch-models`, which
+checks each file's sha256, and each licence file's sha256, against the values
+read on 2026-10-21. A licence text that changes is read again before anything
+is fetched.
+
+### Wikidata
+- <https://www.wikidata.org/wiki/Wikidata:Licensing> (raw wikitext):
+  > All structured data (i.e. the main, Property, Lexeme, and EntitySchema namespaces) is released into the public domain under Creative Commons Zero. Text in other namespaces is copyrighted and available under the Creative Commons Attribution-ShareAlike 4.0 License.
+
+### Wikimedia Commons
+- <https://commons.wikimedia.org/wiki/Commons:Licensing> (raw wikitext):
+  > Wikimedia Commons only accepts free content, that is, images and other media files that are not subject to copyright restrictions which would prevent them being used by anyone, anytime, for any purpose. The use may however be restricted by issues not related to copyright […]
+
+  > Media licensed exclusively under non-commercial only licenses (like CC BY-NC-SA) are not accepted either.
+
+  > The license that applies to an image or media file must be indicated clearly on the file description page using a copyright tag. All information required by that license must be provided on the description page.
+
+  So the licence is per file. For every reference the gallery records Commons's
+  `LicenseShortName`, `LicenseUrl`, `UsageTerms`, `AttributionRequired`,
+  `Copyrighted`, `Restrictions`, `Artist` and `Credit`, exactly as the API
+  returns them. These live in `data/gallery/entities.jsonl`, which is local.
+  `Restrictions` carries the non-copyright limits Commons flags, such as
+  `personality` (rights of the person pictured) and `trademarked`. On the sample,
+  the usable person references were mostly GODL-India (103), public domain
+  (83) and CC BY / BY-SA variants. 24 carry `personality`; 230 require
+  attribution.
+
+### Request rate: Wikimedia's robot policy (read 2026-10-21)
+Not a licence, but the terms on which these sources are read. Raw copies are
+`data/interim/licences/gallery_robot_policy.wikitext` and
+`gallery_api_etiquette.wikitext`.
+
+- <https://wikitech.wikimedia.org/wiki/Robot_policy> (last edited 2026-03-16), Action API rules:
+  > If unauthenticated, keep the concurrency of your requests to 1 at a time, and below 5 requests per second overall.
+
+  > Avoid using expensive API endpoints: if your request takes more than 1 second to serve, please wait 5 seconds before making another request.
+
+  Media API rules (`upload.wikimedia.org`):
+  > Always keep a total concurrency of at most 2, and limit your total download speed to 25 Mbps (as measured over 10 second intervals).
+
+  > Only use originals or one of our standard thumbnail sizes, which you can see in mediawiki.org.
+
+  Generally applicable rules:
+  > When we reply with a 429 Too Many Requests status code respect the delay specified by the Retry-After header sent with the response.
+
+  > Always request content with an `Accept-Encoding: gzip` HTTP header to reduce bandwidth usage. This is not necessary when you are directly requesting media files (i.e. images or video) which are already in a compressed format.
+
+  Rules for other resources ("Gerrit, GitLab, Phabricator, and other wikimedia.org services"), applied here too:
+  > Pause crawling for at least 15 minutes if you receive a 5xx status code.
+- <https://www.mediawiki.org/wiki/API:Etiquette>:
+  > Making your requests in series rather than in parallel, by waiting for one request to finish before sending a new request, should result in a safe request rate.
+
+`gallery.WikimediaWorker` keeps one request in flight in all. It starts at most
+one request per second on each of `www.wikidata.org`, `commons.wikimedia.org`,
+`upload.wikimedia.org` and `thumb.wikimedia.org`, so at most two a second reach
+the Action API, and thumbnails arrive at about 1.5 Mbit/s. After an API answer
+that took over a second it waits five seconds. A 429's Retry-After (a minute
+when none is given), a maxlag refusal, and a 502, 503 or 504 (fifteen
+minutes) hold the whole host. A 500 on one file is that file's answer, a
+thumbnail that cannot be rendered, and holds only its own retries. A request
+that still gets no answer, or a "not now", after its retries leaves its entity
+for the next run; it is never recorded as a missing file. API calls send
+`maxlag` and ask for gzip; media requests do not.
+References are the standard 960-pixel thumbnail. Every other host keeps the
+data layer's five seconds.
+
+Three of the policy's rules are not met, and that is said here rather than
+glossed over:
+- **No authentication.** The policy asks a client that makes "a significant
+  number of requests" to give a URL listing its address ranges, or to
+  "Authenticate your requests using an on-wiki account when you are making API
+  requests". The gallery does neither. Authenticating would mean creating an
+  account and accepting its terms on the project's behalf, which is a
+  person's decision. So the gallery stays within the unauthenticated limits
+  quoted above.
+- **robots.txt.** The policy says "Honor every directive in our robots.txt
+  file". The wikis' robots.txt disallows `/w/` to unnamed agents, and that
+  covers `/w/api.php`. The same policy gives the Action API rules quoted above
+  for bots. The gallery takes those as the rule for an API client, and
+  robots.txt as the rule for crawlers.
+- **No dumps.** The policy says to "Consider if dumps are more efficient than
+  live requests". The build needs the records of about 7,000 entities and
+  their images, and a Wikidata or Commons dump has to be downloaded and parsed
+  whole, so live requests were used.
+
+### Models
+- dslim/bert-base-NER, <https://huggingface.co/dslim/bert-base-NER>, model card front matter: `license: mit`.
+- YuNet, <https://huggingface.co/opencv/face_detection_yunet> (OpenCV Zoo):
+  > All files in this directory are licensed under [MIT License](./LICENSE).
+
+  LICENSE: "MIT License", "Copyright (c) 2020 Shiqi Yu". The README does not
+  state the training data; it points to `libfacedetection.train`.
+- SFace, <https://huggingface.co/opencv/face_recognition_sface> (OpenCV Zoo):
+  > All files in this directory are licensed under [Apache 2.0 License](./LICENSE).
+
+  > Model files encode MobileFaceNet instances trained on the SFace loss function, see the SFace paper for reference.
+
+  LICENSE: "Apache License Version 2.0, January 2004". The training data is
+  **not stated**. The SFace paper's experiments use CASIA-WebFace, VGGFace2
+  and MS-Celeb-1M; which of them trained this file is not said.
+- AuraFace, <https://huggingface.co/fal/AuraFace-v1>: model card front matter
+  `license: apache-2.0`; LICENSE.md is the Apache License 2.0 text. README:
+  > AuraFace was trained on a commercial dataset comprising face images from various sources.
+
+  Used only as the bake-off contrast, and only `glintr100.onnx`, behind YuNet.
+  The same repository ships `scrfd_10g_bnkps.onnx`, `1k3d68.onnx`,
+  `2d106det.onnx` and `genderage.onnx`, the file names of InsightFace's
+  model packs. They are never fetched. Adopting AuraFace is a licence
+  decision for a person, with data in hand.
+- InsightFace, <https://github.com/deepinsight/insightface/tree/master/python-package>, README:
+  > The library code is released under the **MIT License**, for academic and commercial use. **The pretrained models provided with this library are for non-commercial research only**, whether downloaded automatically or manually.
+
+  Excluded: the brief rules out a model that needs a commercial licence.

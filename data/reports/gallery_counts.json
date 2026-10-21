@@ -1,0 +1,305 @@
+{
+ "generated_at": "2026-10-20T19:40:20+00:00",
+ "what": "distinct NORMALISED NAMES of people and organisations in our corpora, before anything is fetched. Names, not entities: a surname and the full name count as two until linking resolves both to one Wikidata item. Aggregates only; the name table stays in data/interim/gallery/.",
+ "image_text": {
+  "run": "93cd9d679720",
+  "row_schema": "image_text/3",
+  "not_read": {
+   "6d7b684d52ad": "row schema 1: an earlier run under an older parser, superseded",
+   "a8bf99f892ae": "row schema 1: an earlier run under an older parser, superseded",
+   "ca472bc97895": "row schema 2: an earlier run under an older parser, superseded"
+  },
+  "datasets": {
+   "verite": {
+    "rows": 607,
+    "images": 607,
+    "images_in_worklist": 607,
+    "share_done": 1.0,
+    "status": {
+     "failed": 1,
+     "ok": 547,
+     "partial": 59
+    },
+    "entity_errors": {
+     "no_free_line": 57,
+     "truncated": 2
+    },
+    "images_naming": {
+     "PERSON": 99,
+     "ORG": 104
+    },
+    "rows_without_forced_marks": 0,
+    "torn_tail_bytes": 0
+   },
+   "averimatec": {
+    "rows": 1345,
+    "images": 1345,
+    "images_in_worklist": 1345,
+    "share_done": 1.0,
+    "status": {
+     "ok": 1274,
+     "partial": 71
+    },
+    "entity_errors": {
+     "no_free_line": 64,
+     "truncated": 7
+    },
+    "images_naming": {
+     "PERSON": 271,
+     "ORG": 320
+    },
+    "rows_without_forced_marks": 0,
+    "torn_tail_bytes": 0
+   },
+   "factify2": {
+    "rows": 2828,
+    "images": 2828,
+    "images_in_worklist": 45186,
+    "share_done": 0.0626,
+    "status": {
+     "ok": 2786,
+     "partial": 42
+    },
+    "entity_errors": {
+     "no_free_line": 22,
+     "truncated": 20
+    },
+    "images_naming": {
+     "PERSON": 1184,
+     "ORG": 1728
+    },
+    "rows_without_forced_marks": 0,
+    "torn_tail_bytes": 0
+   }
+  },
+  "projection": {
+   "factify2": {
+    "method": "V(n) = K n^beta fitted by least squares in log-log over prefixes [1000, 1500, 2000, 2500] and all 2,828 images done (sha256 order: a random sample), evaluated at the work list's size; an extrapolation, not a measurement",
+    "images_done": 2828,
+    "images_in_worklist": 45186,
+    "PERSON_all": {
+     "now": 901,
+     "beta": 0.819,
+     "projected": 8639
+    },
+    "PERSON_not_written": {
+     "now": 418,
+     "beta": 0.791,
+     "projected": 3764
+    },
+    "ORG_all": {
+     "now": 785,
+     "beta": 0.777,
+     "projected": 6716
+    },
+    "ORG_not_written": {
+     "now": 323,
+     "beta": 0.842,
+     "projected": 3325
+    }
+   }
+  },
+  "names_are": "the VLM's PERSON and ORG names, every line read through entities_of(forced='mark'); evidence is the independent OCR's (written / partly_written / not_written / no_ocr)"
+ },
+ "claims": {
+  "ner": {
+   "model": "dslim/bert-base-NER",
+   "revision": "d1a3e8f13f8c3566299d95fcfc9a8d2382a9affc",
+   "licence": "mit",
+   "config_id": "ad6f9e8fc1fd",
+   "clean": "html.unescape twice (Factify2 keeps &amp;amp;); URLs removed; whitespace collapsed; first 1500 characters"
+  },
+  "rows_read": "usable processed rows that carry at least one image",
+  "datasets": {
+   "verite": {
+    "cut": 0,
+    "records": 914,
+    "records_naming_ORG": 188,
+    "records_naming_PERSON": 333,
+    "spans_ORG": 236,
+    "spans_PERSON": 475
+   },
+   "factify2": {
+    "cut": 0,
+    "records": 37807,
+    "records_naming_ORG": 19958,
+    "records_naming_PERSON": 18784,
+    "spans_ORG": 34204,
+    "spans_PERSON": 29464
+   },
+   "fakeddit": {
+    "cut": 1,
+    "records": 142480,
+    "records_naming_ORG": 504,
+    "records_naming_PERSON": 1421,
+    "spans_ORG": 509,
+    "spans_PERSON": 1494
+   },
+   "averimatec": {
+    "cut": 0,
+    "records": 944,
+    "records_naming_ORG": 245,
+    "records_naming_PERSON": 372,
+    "spans_ORG": 330,
+    "spans_PERSON": 542
+   },
+   "m4fc": {
+    "cut": 0,
+    "records": 3441,
+    "records_naming_ORG": 699,
+    "records_naming_PERSON": 1270,
+    "spans_ORG": 907,
+    "spans_PERSON": 1794
+   },
+   "mocheg": {
+    "cut": 0,
+    "records": 11443,
+    "records_naming_ORG": 2751,
+    "records_naming_PERSON": 5180,
+    "spans_ORG": 3405,
+    "spans_PERSON": 7099
+   },
+   "dgm4": {
+    "cut": 0,
+    "records": 179295,
+    "records_naming_ORG": 57629,
+    "records_naming_PERSON": 149650,
+    "spans_ORG": 74805,
+    "spans_PERSON": 285675
+   }
+  }
+ },
+ "names": {
+  "PERSON": {
+   "distinct_names": 45692,
+   "overlap": {
+    "vlm_only": 631,
+    "claims_only": 44470,
+    "both": 591
+   },
+   "build_scope": {
+    "datasets": [
+     "verite",
+     "averimatec",
+     "factify2"
+    ],
+    "distinct_names": 6734,
+    "named_once": 4045
+   },
+   "vlm": {
+    "distinct_names": 1222,
+    "by_dataset": {
+     "verite": 106,
+     "averimatec": 304,
+     "factify2": 901
+    },
+    "mentions": 2388,
+    "mentions_by_evidence": {
+     "not_written": 1529,
+     "partly_written": 198,
+     "written": 661
+    },
+    "mentions_by_line": {
+     "free": 2388,
+     "forced": 0
+    },
+    "distinct_names_not_written": 637,
+    "distinct_names_only_on_forced_lines": 0,
+    "coverage": {
+     "top_100": 0.4858,
+     "top_500": 0.6977,
+     "top_1000": 0.907,
+     "top_2000": 1.0
+    }
+   },
+   "claims": {
+    "distinct_names": 45061,
+    "by_dataset": {
+     "verite": 200,
+     "factify2": 5633,
+     "fakeddit": 838,
+     "averimatec": 358,
+     "m4fc": 987,
+     "mocheg": 2261,
+     "dgm4": 38165
+    },
+    "mentions": 326165,
+    "coverage": {
+     "top_100": 0.1588,
+     "top_500": 0.2862,
+     "top_1000": 0.3655,
+     "top_2000": 0.4585,
+     "top_5000": 0.6003,
+     "top_10000": 0.7157,
+     "top_20000": 0.832
+    }
+   }
+  },
+  "ORG": {
+   "distinct_names": 16680,
+   "overlap": {
+    "vlm_only": 709,
+    "claims_only": 15559,
+    "both": 412
+   },
+   "build_scope": {
+    "datasets": [
+     "verite",
+     "averimatec",
+     "factify2"
+    ],
+    "distinct_names": 6131,
+    "named_once": 3605
+   },
+   "vlm": {
+    "distinct_names": 1121,
+    "by_dataset": {
+     "verite": 96,
+     "averimatec": 302,
+     "factify2": 785
+    },
+    "mentions": 2532,
+    "mentions_by_evidence": {
+     "not_written": 778,
+     "partly_written": 261,
+     "written": 1493
+    },
+    "mentions_by_line": {
+     "free": 2485,
+     "forced": 47
+    },
+    "distinct_names_not_written": 502,
+    "distinct_names_only_on_forced_lines": 23,
+    "coverage": {
+     "top_100": 0.5498,
+     "top_500": 0.7547,
+     "top_1000": 0.9522,
+     "top_2000": 1.0
+    }
+   },
+   "claims": {
+    "distinct_names": 15971,
+    "by_dataset": {
+     "verite": 125,
+     "factify2": 5121,
+     "fakeddit": 298,
+     "averimatec": 247,
+     "m4fc": 516,
+     "mocheg": 1410,
+     "dgm4": 10071
+    },
+    "mentions": 113329,
+    "coverage": {
+     "top_100": 0.2892,
+     "top_500": 0.4745,
+     "top_1000": 0.5736,
+     "top_2000": 0.6767,
+     "top_5000": 0.8153,
+     "top_10000": 0.9339,
+     "top_20000": 1.0
+    }
+   }
+  }
+ },
+ "verite": "VERITE's names count towards gallery membership, as an evaluation-time lookup of the claimed name would. Nothing is ever tuned on VERITE: the calibration reads Factify2 train only."
+}

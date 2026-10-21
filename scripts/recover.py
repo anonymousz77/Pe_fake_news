@@ -303,6 +303,16 @@ class Worker:
             return Resp(req.url, None, {}, b"", classify_exception(exc),
                         time.monotonic() - start)
 
+    def spacing(self, host: str) -> float:
+        """Seconds between two request starts to ``host``. Recovery never
+        overrides it; a subclass may, for a host whose operator publishes a
+        faster rate (scripts/gallery.py, Wikimedia)."""
+        return self.delay
+
+    def pause_after(self, host: str, resp: Resp) -> float:
+        """Seconds ``host`` stays idle after this response ends; none here."""
+        return 0.0
+
     def _park(self, gen: Generator, req: Req) -> None:
         self._seq += 1
         if req.url is None:
@@ -358,10 +368,13 @@ class Worker:
             req, gen = self.queues[host].popleft()
             if not self.queues[host]:
                 del self.queues[host]
-            self.next_ok[host] = self.clock() + self.delay
+            self.next_ok[host] = self.clock() + self.spacing(host)
             if self.budget_bytes is not None and self.bytes_in > self.budget_bytes:
                 raise BudgetExceeded(f"transferred {self.bytes_in:,} bytes")
             resp = self.transport(req)
+            pause = self.pause_after(host, resp)
+            if pause:
+                self.next_ok[host] = max(self.next_ok[host], self.clock() + pause)
             self.requests += 1
             self.bytes_in += len(resp.body)
             if progress is not None and self.requests % every == 0:

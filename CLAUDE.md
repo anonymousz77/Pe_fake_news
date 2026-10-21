@@ -215,6 +215,111 @@ EVENT / DATE).
   the gallery accepts a wrong name (FMR / TAR), measured on the VLM's own
   wrong names.
 
+## Entity gallery: standing rules
+
+`scripts/gallery.py` verifies identity against a gallery of known entities:
+Wikidata items with reference images from Wikimedia Commons. It is how the
+"a VLM name is a candidate" rule above is honoured.
+
+- **1:1 only.** `Gallery.verify` answers whether an image shows the entity a
+  CLAIMED name resolves to, and returns the reference it matched (Commons page,
+  licence, attribution, face box) so a person can check it. It never searches
+  the gallery for an unnamed face.
+- **Built from the names our corpora use**, never from Wikidata at large
+  (`count` reports them first). The gallery is not a register dataset: it lives
+  in `data/gallery/` (ignored), outside `sources.yaml`, as the bible does.
+- **Scope: VERITE, AVerImaTeC and Factify2** (`BUILD_SCOPE`, the November
+  path). DGM4 is left out: it is a synthetic corpus not chosen for training,
+  and its captions alone name 38,165 people. Scope is per corpus on both sides
+  (VLM names and claim names). Widening it (`--scope`) adds and never rebuilds:
+  `link --all` and `fetch --all` skip what is done and checkpoint every chunk,
+  and `embed --pin-consistency` pins the consistency threshold, so existing
+  entries do not change. Re-run `calibrate` after widening: more entities can
+  give a name more candidates.
+- **Clean licences, kept that way.** Every reference's licence and attribution
+  are recorded exactly as Commons states them. Media, faces, embeddings and the
+  per-entity tables never enter git; only aggregates
+  (`data/reports/gallery_*.json`, no name, no record id) are published.
+- **Fetching follows the data layer's discipline, at Wikimedia's published
+  pace.** One worker, one request in flight (`gallery.WikimediaWorker`):
+  - On `www.wikidata.org`, `commons.wikimedia.org`, `upload.wikimedia.org` and
+    `thumb.wikimedia.org`, at most one request starts per second.
+  - After an API answer that took over a second, the next waits 5 s.
+  - A 429's Retry-After, a maxlag refusal, and a 502, 503 or 504 (15 min) hold
+    the whole host. Every other host keeps 5 s.
+  - A lookup or download that gets no answer, or a "not now", after its
+    retries leaves the entity for the next run. It is never recorded as a
+    missing file or as "no type match".
+
+  The quotes behind this, and the policy points the gallery does not meet (no
+  on-wiki authentication, the robots.txt `/w/` line, no dumps), are in
+  `docs/licences.md`. `recover.Worker` itself is unchanged for recovery. API
+  calls send `maxlag` and ask for gzip; media requests do not. The User-Agent
+  names the anonymised repository URL; `PE_FAKE_NEWS_UA_CONTACT` overrides it
+  from the environment, never from tracked code. Thumbnails come at a standard
+  width (960). Every reference passes the three gates, then two more: the bytes
+  are the rendition the API described, and they are not an image of any corpus.
+  Rejected images that decode are quarantined in `data/gallery/rejected/`.
+- **A name links only to an EXACT label or alias of the right type**: P31 Q5 for
+  a person, an instance of a subclass of Q43229 for an organisation. A name
+  whose candidates don't dominate each other is kept, linked to the most-linked
+  candidate, and marked `ambiguous`.
+- **References must agree.** A person's reference faces are checked against
+  their medoid. The threshold is the 0.999 quantile of similarities between
+  different entities' medoids, taken from gallery references only. When two
+  references disagree, Wikidata's own image (P18) is kept.
+- **Calibration is the deliverable, and it reads Factify2 TRAIN only**: only
+  images every one of whose records is train. VERITE is never read for any
+  threshold.
+  - Trials are the VLM's own names produced from appearance alone (no word of
+    the name in the OCR text).
+  - A trial is right or wrong by QID against the figure the claim names: the
+    probe's list first, otherwise the claim's single NER person.
+  - The threshold is the lowest one at which the one-sided 95% lower bound of
+    accepted-name precision reaches 0.90. A point-estimate threshold is
+    reported beside it and never presented as the bound.
+  - The cost in true accepts is always reported. Random-pair FMR is a labelled
+    contrast, never an input.
+  - **Why: the VLM's wrong names are look-alikes, not strangers.** On the
+    sample's trials, scored against the full gallery, the right names' faces
+    reach at most 0.281 against random strangers. Yet 12 of the 18 scorable
+    wrong VLM names score above every stranger. A threshold set on random pairs
+    (0.263) would accept 14 of 20 wrong VLM names: precision 0.63, not 0.90.
+    `calibrate` measures this every run (`look_alike_finding`).
+  - **Coverage ceiling, stated beside every calibration.** 1,123 of the
+    gallery's 3,459 people have no usable reference face; 1,009 of them have
+    no Commons reference at all. Verify can only answer "no usable reference"
+    for them, whatever the threshold. `calibrate` reports it (`coverage`), and
+    so does `embed`.
+  - **Per figure, always.** Every run reports:
+    - per-figure counts;
+    - the concentration: the top-two share and the effective number of
+      figures;
+    - a figure-stratified estimate, where every figure weighs the same and the
+      intervals come from resampling figures;
+    - the pooled numbers without the top two figures.
+
+    When the top two carry more than half the trials, the report says the
+    pooled number is about those two people, not the method. The full
+    population is 510 train-only images. About a fifth show one person, the
+    most-named figure.
+  - **Adjudication is a person's**, on the `review` sheet, and partial is
+    usable. The decisions file has a null slot per trial, in sheet order, and a
+    null keeps the claim's label. Decisions are keyed by image and name, so
+    they carry over to the full calibration.
+  - The published `data/reports/gallery_calibration.json` gives figures by rank
+    only, never a name or QID. `public_report` refuses otherwise.
+- **The pilot's 47.8% is approximate**: its reference is a loose token pattern
+  over the claim. Say so wherever it appears; the QID-based precision from
+  `calibrate` replaces it.
+- **Organisations get entries and references only.** No ORG answer claims a
+  visual match: logo matching is a different model and a different problem.
+- **Models.** YuNet (MIT) finds faces, SFace (Apache-2.0) embeds them; both
+  are pinned by sha256 beside their licence files. AuraFace (Apache-2.0, training
+  data described only as "a commercial dataset") is a bake-off contrast. Adopting
+  it is a licence decision for a person to make, with the data in hand. InsightFace's
+  packs are excluded: their models are "for non-commercial research only".
+
 ## Layout
 
 ```
@@ -244,6 +349,7 @@ scripts/bible.py           evidence-store build: fetch, date, quarantine, index,
 scripts/retrieve.py        time-filtered retrieval; the date predicate lives in the SQL
 scripts/redtest.py         red-teams that predicate against the REAL index, then rolls back
 scripts/image_text.py      image-to-text: description, entities, OCR per distinct image; resumable
+scripts/gallery.py         entity gallery: names, Wikidata links, Commons references, faces, 1:1 verify, calibration
 tests/                     contract tests, offline
 data/sources.yaml          the register (tracked)
 data/placeholders.yaml     content hashes of evidence-free images (tracked, versioned)
@@ -260,6 +366,8 @@ data/processed/records/    the processed layer (ignored)
 data/processed/splits/     <name>_{train,val,test}.csv, record_id,split only
 data/reports/              generated tables and figures
 data/bible/                the evidence store (ignored)
+data/gallery/              the entity gallery: links, Commons references + licences, faces (ignored)
+data/interim/gallery/      name table, claim NER cache, calibration faces and trials (ignored)
 data/interim/image_text/<config_id>/<dataset>.jsonl  one row per distinct image (ignored)
 models/                    model weights, configs.paths.MODELS (ignored; refused by prepush_check)
 docs/                      hand-written prose (tracked)
@@ -399,6 +507,19 @@ python scripts/image_text.py run --through fakeddit --fakeddit-n N   # + nested 
 python scripts/image_text.py recheck --n 3                # fresh process; finished rows must be byte-identical
 python scripts/image_text.py status                       # offline counts per ledger
 PE_FAKE_NEWS_GPU_TESTS=1 pytest -q tests/test_image_text.py   # the model-backed tests
+
+python scripts/gallery.py fetch-models                    # pinned NER, YuNet, SFace (network)
+python scripts/gallery.py count                           # names in our corpora, before any fetch
+python scripts/gallery.py link --dry-run                  # size the sample offline
+python scripts/gallery.py link && python scripts/gallery.py fetch   # the sample: Wikidata, then Commons (network)
+python scripts/gallery.py link --all && python scripts/gallery.py fetch --all --budget-gb 8   # the build; resumable
+python scripts/gallery.py embed --backend sface --pin-consistency   # faces; CPU, offline; pin once, after the build
+python scripts/gallery.py embed --backend sface           # faces; CPU, offline
+python scripts/gallery.py calibrate --backend sface       # Factify2 train only
+python scripts/gallery.py review --backend sface          # a local sheet for a person to check
+python scripts/gallery.py sample-report                   # data/reports/gallery_sample.json
+python scripts/gallery.py verify --image P --name "N"     # one 1:1 verification
+PE_FAKE_NEWS_GALLERY_MODELS=1 pytest -q tests/test_gallery.py  # the pinned-weight tests
 ```
 
 ### `--scan` before `--report`, on a small machine
