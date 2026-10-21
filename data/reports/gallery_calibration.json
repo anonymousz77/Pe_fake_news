@@ -1,6 +1,6 @@
 {
  "sface": {
-  "generated_at": "2026-10-21T22:48:26+00:00",
+  "generated_at": "2026-10-21T23:08:41+00:00",
   "backend": "sface",
   "face_config": "b6abc4a9f987",
   "coverage": {
@@ -904,6 +904,191 @@
    "complete": false,
    "note": "the full calibration needs the finished run; a partial ledger gives a partial population"
   },
-  "adjudicated": null
+  "adjudicated": {
+   "decisions": {
+    "vlm": 22,
+    "neither": 1
+   },
+   "by": "a person, by eye, on the review sheet",
+   "applied": 23,
+   "not_among_these_trials": 0,
+   "left_undecided_in_file": 0,
+   "note": "a trial without a decision keeps the claim's label",
+   "trials": {
+    "total": 44,
+    "headline": 44,
+    "excluded_same_photo": 0,
+    "forced_lines": 0,
+    "by_label": {
+     "right": 31,
+     "wrong": 12,
+     "unlinked": 1
+    },
+    "unscorable": {
+     "no_usable_reference": 1,
+     "name_unlinked": 1
+    }
+   },
+   "vlm_precision": {
+    "qid": 0.7045,
+    "names": 44,
+    "right": 31,
+    "excluding_unlinked": 0.7209,
+    "token_rule_on_probe_list_images": 0.561,
+    "note": "the pilot's 47.8% is APPROXIMATE: its reference is a loose token pattern over the claim. This QID-based figure replaces it; the token rule is recomputed beside it on the same images for comparison"
+   },
+   "bar": {
+    "accepted_name_precision": 0.9,
+    "max_fmr_over_tar": 0.2649,
+    "rule": "p*TAR / (p*TAR + (1-p)*FMR) >= 0.90, i.e. FMR/TAR <= p / (9 (1 - p))"
+   },
+   "threshold": {
+    "chosen": 0.4383,
+    "chosen_by": "one-sided 95% lower bound of accepted-name precision >= 0.90",
+    "by_bound": 0.4383,
+    "by_point_estimate": 0.3115
+   },
+   "at_threshold": {
+    "threshold": 0.4383,
+    "right": 31,
+    "wrong": 13,
+    "accepted_right": 31,
+    "accepted_wrong": 0,
+    "tar": 1.0,
+    "fmr": 0.0,
+    "fmr_upper_95": 0.2058,
+    "precision": 1.0,
+    "precision_lower_95": 0.9079
+   },
+   "fmr_over_tar": 0.0,
+   "cost_in_true_accepts": {
+    "right_names": 31,
+    "rejected": 0,
+    "rejected_unscorable": {},
+    "rejected_below_threshold": 0
+   },
+   "bootstrap_95": {
+    "tar": [
+     1.0,
+     1.0
+    ],
+    "fmr": [
+     0.0,
+     0.0
+    ],
+    "precision": [
+     1.0,
+     1.0
+    ]
+   },
+   "cross_validated": {
+    "bound": {
+     "rule": "bound",
+     "fold_thresholds": [
+      null,
+      null,
+      null,
+      null,
+      null
+     ],
+     "accepted_right": 0,
+     "accepted_wrong": 0,
+     "tar": 0.0,
+     "fmr": 0.0,
+     "precision": null
+    },
+    "point": {
+     "rule": "point",
+     "fold_thresholds": [
+      0.371,
+      0.2811,
+      0.371,
+      0.371,
+      0.371
+     ],
+     "accepted_right": 31,
+     "accepted_wrong": 4,
+     "tar": 1.0,
+     "fmr": 0.3077,
+     "precision": 0.8857
+    }
+   },
+   "figure_stratified": {
+    "what": "every figure weighs the same: each trial counts 1 / its figure's trials; 95% intervals by resampling figures",
+    "figures": 17,
+    "threshold": 0.4383,
+    "vlm_precision": 0.7193,
+    "tar": 1.0,
+    "fmr": 0.0,
+    "precision": 1.0,
+    "precision_lower_95": 1.0,
+    "bootstrap_95": {
+     "vlm_precision": [
+      0.5463,
+      0.8761
+     ],
+     "tar": [
+      1.0,
+      1.0
+     ],
+     "fmr": [
+      0.0,
+      0.0
+     ],
+     "precision": [
+      1.0,
+      1.0
+     ]
+    },
+    "threshold_by_figure_bound": 0.371,
+    "note": "the threshold at which the one-sided 95% lower bound of figure-weighted precision reaches 0.90; when it is above the pooled one, the pooled threshold leans on the most-tried figures",
+    "pooled_without_top_two_figures": {
+     "threshold": 0.4383,
+     "right": 17,
+     "wrong": 10,
+     "accepted_right": 17,
+     "accepted_wrong": 0,
+     "tar": 1.0,
+     "fmr": 0.0,
+     "fmr_upper_95": 0.2589,
+     "precision": 1.0,
+     "precision_lower_95": 0.8384
+    }
+   },
+   "look_alike_finding": {
+    "what": "the VLM's wrong names against random strangers: the right names' faces, each scored against a random other person in the gallery (seeded). A contrast, never an input",
+    "random_strangers": {
+     "pairs": 31,
+     "max_score": 0.3053,
+     "median_score": 0.1647,
+     "accepted_at_threshold": 0
+    },
+    "vlm_wrong_names": {
+     "wrong": 13,
+     "scorable": 11,
+     "median_score": 0.2811,
+     "above_every_stranger": 3,
+     "accepted_at_threshold": 0
+    },
+    "right_names_median_score": 0.6198,
+    "if_calibrated_on_random_pairs": {
+     "threshold": 0.2009,
+     "rule": "the lowest threshold at which p*TAR / (p*TAR + (1-p)*FMR) >= 0.90 with FMR measured on random strangers (point estimate), p the VLM's QID precision",
+     "on_the_vlms_own_names": {
+      "threshold": 0.2009,
+      "right": 31,
+      "wrong": 13,
+      "accepted_right": 31,
+      "accepted_wrong": 9,
+      "tar": 1.0,
+      "fmr": 0.6923,
+      "fmr_upper_95": 0.8873,
+      "precision": 0.775,
+      "precision_lower_95": 0.6402
+     }
+    },
+    "finding": "Scored against a random other person, the right names' faces reach at most 0.305 (median 0.165); 3 of the 11 scorable wrong names the VLM gave score above every stranger. A threshold calibrated on random pairs would sit at 0.201; on the VLM's own names it accepts 9 of 13 wrong names, an accepted-name precision of 0.775 against the 0.9 required. A random-pair false-match rate measures strangers; the names a gallery must refuse are the look-alikes the VLM chose, so the threshold is calibrated on those."
+   }
+  }
  }
 }
