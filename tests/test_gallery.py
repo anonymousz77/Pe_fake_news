@@ -1066,6 +1066,24 @@ def test_the_claimed_figure_comes_from_the_probe_list_first_then_from_one_ner_pe
     assert gallery.claimed_figure(row("3", "Kale Khan said so"), spans) is None, "nothing says it is pictured"
 
 
+def test_everyone_an_images_claims_name_is_collected_not_only_the_figure():
+    spans = {"1": {"spans": [_span("Kale Khan", "PERSON")]}, "2": {"spans": [_span("Ganeshi Lal", "PERSON")]}}
+    rows = [{"record_id": "1", "text": "Putin's spokesman Kale Khan (file photo) spoke today"},
+            {"record_id": "2", "text": "Ganeshi Lal met Modi"}]
+    assert gallery.claimed_figure(rows[0], spans) == ("probe_list", "vladimir putin"), \
+        "the figure is the listed one, though the man pictured is the spokesman"
+    assert gallery.claim_people(rows, spans) == ["Ganeshi Lal", "Kale Khan", "Narendra Modi", "Vladimir Putin"]
+
+
+def test_a_name_a_claims_text_carries_whole_is_flagged_for_review():
+    assert gallery.mentioned("Melania Trump", "First Lady Melania Trump (@FLOTUS) poses")
+    assert gallery.mentioned("Narendra Modi", "and PM @narendramodi pose for a photo"), "a handle"
+    assert gallery.mentioned("Donald Trump", "US President @realDonaldTrump"), "inside a longer handle"
+    assert not gallery.mentioned("Narendra Modi", "PM Modi spoke"), "a surname alone is not the name"
+    assert gallery.mentioned("Modi", "PM Modi spoke") and not gallery.mentioned("Ali", "in Australia"), \
+        "a one-word name must be a whole word"
+
+
 def test_the_population_is_factify2_train_images_only():
     read = gallery.LedgerRead("factify2")
     names = [{"type": "PERSON", "name": "Amit Shah", "basis": "seen", "forced": False,
@@ -1079,6 +1097,7 @@ def test_the_population_is_factify2_train_images_only():
     index = {"p/a": {"sha256": "a" * 64}, "p/b": {"sha256": "b" * 64}, "p/c": {"sha256": "c" * 64}}
     population, tally = gallery.calibration_population(read, rows, index, {})
     assert [p["sha256"] for p in population] == ["a" * 64]
+    assert population[0]["claim_people"] == ["Narendra Modi"] and population[0]["claim_text"] == "Photo of Modi"
     assert tally["not_train_only"] == 1 and tally["no_figure_named"] == 1
     with pytest.raises(gallery.GalleryError):
         gallery.assert_factify2_train(["1", "3"], {r["record_id"]: r["split"] for r in rows})
@@ -1108,6 +1127,31 @@ def test_a_trial_resolves_its_name_exactly_as_verification_does(tmp_path):
     assert tally["images_with_trials"] == 1
 
 
+def test_a_name_is_right_when_the_claims_name_that_person_not_only_the_figure(tmp_path):
+    bases, entities, faces = _people()
+    links = [{"type": "PERSON", "key": "narendra modi", "status": "linked", "qid": "Q1"}]
+    g = _gallery_on_disk(tmp_path, entities, faces, links, aliases={"Q4": ["Raj Lal"], "Q5": ["Raj Lal"]})
+
+    def said(name):
+        return {"type": "PERSON", "name": name, "evidence": "not_written", "forced": False,
+                "confidence": 0.9, "basis": "seen"}
+
+    population = [{"sha256": "img1", "figure_source": "probe_list", "figure_key": "narendra modi",
+                   "claim_people": ["Narendra Modi", "Person Q2", "Raj Lal"],
+                   "claim_text": "Photo: PM @narendramodi with Person Q2 and Raj Lal",
+                   "names": [said("Narendra Modi"), said("Person Q2"), said("Person Q4"), said("Person Q6")]}]
+    query = {"img1": {"faces": [_face(_vec(7000, bases["Q2"]))]}}
+    trials, _tally = gallery.build_trials(population, {("PERSON", "narendra modi"): links[0]}, query, g)
+    by = {t["name"]: t for t in trials}
+    assert by["Person Q2"]["label"] == "right" and by["Person Q2"]["figure_label"] == "wrong", \
+        "a person the claims name beside the figure, correctly named, is right"
+    assert by["Narendra Modi"]["label"] == by["Narendra Modi"]["figure_label"] == "right"
+    assert by["Person Q4"]["label"] == "wrong", "a claim name that could be two people decides nothing"
+    assert by["Person Q6"]["label"] == "wrong" and by["Person Q6"]["claim_qids"] == ["Q1", "Q2"]
+    assert by["Narendra Modi"]["named_in_claim_text"], "a handle carries the name"
+    assert not by["Person Q6"]["named_in_claim_text"]
+
+
 def _trial(label, score, sha="s", faces=1):
     return {"sha256": sha, "label": label, "scorable": score is not None, "score": score,
             "forced": False, "same_photo": False, "faces": faces, "figure_source": "probe_list",
@@ -1135,15 +1179,18 @@ def test_a_persons_decisions_relabel_trials_and_unsure_takes_one_out():
               {**_trial("right", 0.6, "b" * 64), "key": "putin"},
               {**_trial("wrong", 0.5, "c" * 64), "key": "x"},
               {**_trial("unlinked", None, "d" * 64), "key": "y"},
-              {**_trial("right", 0.55, "e" * 64), "key": "modi"},
-              {**_trial("wrong", 0.4, "f" * 64), "key": "z"}]
+              {**_trial("right", 0.55, "e" * 64), "key": "modi", "figure_qid": "Q1", "qids": ["Q1"]},
+              {**_trial("wrong", 0.4, "f" * 64), "key": "z"},
+              {**_trial("right", 0.65, "0" * 64), "key": "barr", "figure_qid": "Q1", "qids": ["Q9"]}]
     decisions = {gallery.trial_id(trials[0]): "vlm", gallery.trial_id(trials[1]): "neither",
                  gallery.trial_id(trials[2]): "unsure", gallery.trial_id(trials[4]): "claim",
-                 gallery.trial_id(trials[5]): None}
+                 gallery.trial_id(trials[5]): None, gallery.trial_id(trials[6]): "claim"}
     out = {x["key"]: x for x in gallery.adjudicated(trials, decisions)}
     assert out["peskov"]["label"] == "right", "the face is the person the VLM named"
     assert out["putin"]["label"] == "wrong" and "x" not in out and out["y"]["label"] == "unlinked"
     assert out["modi"]["label"] == "right", "the VLM named the claim's person, and the face is them"
+    assert out["barr"]["label"] == "wrong", \
+        "labelled right because the claims name the VLM's person too, but the face is the figure"
     assert out["z"]["label"] == "wrong" and "adjudicated" not in out["z"], "null is undecided: a partial sheet works"
     with pytest.raises(gallery.GalleryError):
         gallery.adjudicated(trials, {gallery.trial_id(trials[0]): "probably"})
@@ -1156,6 +1203,43 @@ def test_the_decisions_file_gains_slots_and_never_loses_a_decision(tmp_path):
     path.write_text(json.dumps({"a": "vlm", "b": None}), encoding="utf-8")
     assert gallery.merge_decision_slots(path, ["c", "a"]) == 1
     assert json.loads(path.read_text(encoding="utf-8")) == {"a": "vlm", "b": None, "c": None}
+
+
+def test_the_next_sheet_holds_every_plausible_name_whatever_its_label_and_nothing_decided():
+    trials = [{**_trial("right", 0.8, "a" * 64), "key": "accepted"},    # where an unseen false accept sits
+              {**_trial("wrong", 0.7, "b" * 64), "key": "lookalike"},
+              {**_trial("right", 0.6, "c" * 64), "key": "decided"},
+              {**_trial("right", 0.3, "d" * 64), "key": "low"},
+              {**_trial("right", None, "e" * 64), "key": "unscorable"},
+              {**_trial("wrong", 0.2, "f" * 64), "key": "handle", "named_in_claim_text": True},
+              {**_trial("wrong", 0.1, "1" * 64), "key": "stranger", "named_in_claim_text": False},
+              {**_trial("unlinked", None, "2" * 64), "key": "nobody"}]
+    decided = [gallery.trial_id(trials[2])]
+    queue = gallery.review_queue(trials, decided, floor=0.38, rejected=20)
+    parts = [(part, x["key"]) for part, x in queue]
+    assert parts[:2] == [("plausible", "accepted"), ("plausible", "lookalike")], \
+        "everything at or above the floor, labelled right or wrong, by falling score"
+    assert sorted(parts[2:4]) == [("rejected_right", "low"), ("rejected_right", "unscorable")]
+    assert parts[4:] == [("named_in_claim_text", "handle")], "decided, unlinked and plain wrong names stay off"
+    assert len(gallery.review_queue(trials, decided, floor=0.38, rejected=1)) == 4, "rejected right names: a sample"
+
+
+def test_a_partial_ledger_reports_a_candidate_and_never_sets_the_threshold(tmp_path):
+    bases, entities, faces = _people()
+    g = _gallery_on_disk(tmp_path, entities, faces, [])
+    trials = ([{**_trial("right", 0.9, f"r{i}"), "key": f"r{i}"} for i in range(40)]
+              + [{**_trial("wrong", 0.85, f"w{i}"), "key": f"w{i}"} for i in range(3)]
+              + [{**_trial("wrong", 0.3, f"x{i}"), "key": f"x{i}"} for i in range(40)])
+    trials = [{**x, "qid": "Q1", "figure_qid": "Q1"} for x in trials]
+    query = {x["sha256"]: {"faces": [_face(_vec(7000 + i, bases["Q1"]))]} for i, x in enumerate(trials)}
+    partial = gallery.calibrate(trials, Counter(), g, query, "sface",
+                                {"images": 10, "worklist": 100, "complete": False})
+    t = partial["threshold"]
+    assert t["chosen"] is None and t["candidate"] == 0.9 and t["candidate_by"].startswith("one-sided")
+    assert t["chosen_by"].startswith("unset") and "10 of 100 images" in t["chosen_by"]
+    assert partial["at_threshold"]["threshold"] == 0.9, "every figure is still reported, at the candidate"
+    full = gallery.calibrate(trials, Counter(), g, query, "sface", {"images": 100, "worklist": 100, "complete": True})
+    assert full["threshold"]["chosen"] == full["threshold"]["candidate"] == 0.9
 
 
 def _figure_trial(figure, label, score, i):

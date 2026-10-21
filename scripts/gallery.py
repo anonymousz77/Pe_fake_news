@@ -28,8 +28,11 @@ A VLM name is a candidate, never a verification. On the image_text pilot (run
 alone were the figure the claim names: 47.8%. That figure is APPROXIMATE. The
 probe's reference is a loose token pattern over the claim text ("gandhi"
 counts Rahul Gandhi as Mahatma Gandhi, "trump" counts Melania as Donald), so a
-right name can be scored wrong and a wrong one right. The QID-based precision
-this block measures replaces it once it exists.
+right name can be scored wrong and a wrong one right. It is also UNDERSTATED:
+it scored a name against one figure per image, so a person the claim names
+beside that figure, correctly named, counted as wrong. The first QID-based
+figure here (0.5455, the 2026-10-21 sample pass) carried the same defect. A
+name is now scored against everyone the image's claims name.
 
 Identity is decided here instead, against a gallery of known entities:
 Wikidata items with reference images on Wikimedia Commons, each image's licence
@@ -1439,6 +1442,20 @@ def claimed_figure(row: dict[str, Any], spans: dict[str, dict[str, Any]]) -> tup
     return ("claim_ner", keys.pop()) if len(keys) == 1 else None
 
 
+def claim_people(rows: Iterable[dict[str, Any]], spans: dict[str, dict[str, Any]]) -> list[str]:
+    """Every person an image's claims name: the probe's listed figures their
+    text matches, and claim NER's PERSON spans. A VLM name is right when it is
+    any of them -- not only the one figure, which a claim may name beside the
+    person pictured ("the minister's spokesman, pictured, said ...")."""
+    names: set[str] = set()
+    for row in rows:
+        text = row.get("text") or ""
+        names |= {name for name, claim, _token in image_text.PUBLIC_FIGURES if re.search(claim, text, re.I)}
+        names |= {s["text"] for s in (spans.get(str(row["record_id"])) or {}).get("spans", [])
+                  if s["type"] == "PERSON"}
+    return sorted(names)
+
+
 def assert_factify2_train(record_ids: Iterable[str], split: dict[str, str]) -> None:
     """Calibration reads Factify2 TRAIN and nothing else: never VERITE, never
     val or test. Raises on any record that is not a Factify2 train record."""
@@ -1451,13 +1468,16 @@ def assert_factify2_train(record_ids: Iterable[str], split: dict[str, str]) -> N
 def calibration_population(read: LedgerRead, rows: Iterable[dict[str, Any]],
                            index: dict[str, dict[str, Any]], spans: dict[str, dict[str, Any]]
                            ) -> tuple[list[dict[str, Any]], Counter]:
-    """Factify2 TRAIN claim images whose claim names exactly one figure and says
-    an image shows them: the probe's population, its figures taken from the
-    probe's list first and from claim NER otherwise.
+    """Factify2 TRAIN claim images whose claims say an image shows someone and
+    name one figure: exactly one of the probe's listed figures (other people
+    may be named beside it), or else exactly one person by claim NER. The
+    probe's population.
 
     An image any val or test record also uses is left out, so neither split is
-    ever read. The figure is the reference a VLM name is scored against: that
-    is what makes a name right or wrong."""
+    ever read. The figure is the image's stratum for per-figure reporting. What
+    a VLM name is scored against is everyone the image's claims name
+    (claim_people): scoring against the figure alone counted a correctly
+    named bystander the claim also names as wrong."""
     if read.dataset != "factify2":
         raise GalleryError(f"calibration reads the Factify2 ledger, not {read.dataset!r}")
     split: dict[str, str] = {}
@@ -1484,8 +1504,11 @@ def calibration_population(read: LedgerRead, rows: Iterable[dict[str, Any]],
         source, key = sorted(figures, key=lambda f: f[0] != "probe_list")[0]
         assert_factify2_train(img["record_ids"], split)
         tally[f"images_{source}"] += 1
+        claims = claims_of.get(sha, [])
         out.append({"sha256": sha, "record_ids": list(img["record_ids"]),
-                    "figure_source": source, "figure_key": key, "names": img["names"]})
+                    "figure_source": source, "figure_key": key, "names": img["names"],
+                    "claim_people": claim_people(claims, spans),
+                    "claim_text": "\n".join(r.get("text") or "" for r in claims)})
     return out, tally
 
 
@@ -2314,12 +2337,30 @@ def clopper_pearson_upper(k: int, n: int, alpha: float = 0.05) -> float | None:
     return float(beta.ppf(1 - alpha, k + 1, n - k))
 
 
+def mentioned(name: str, text: str) -> bool:
+    """Whether a claim's text carries a name whole: as consecutive words, or,
+    for a name of two words or more, run together inside one word as in a
+    handle or hashtag (@narendramodi, @realDonaldTrump). A review flag, never a
+    label: it is how a person the label rule could not resolve gets looked at."""
+    words, tokens = fold(name).split(), fold(text).split()
+    if not words:
+        return False
+    if any(tokens[i:i + len(words)] == words for i in range(len(tokens) - len(words) + 1)):
+        return True
+    joined = "".join(words)
+    return len(words) > 1 and any(joined in t for t in tokens)
+
+
 def build_trials(population: Sequence[dict[str, Any]], links: dict[tuple[str, str], dict[str, Any]],
                  query_faces: dict[str, dict[str, Any]], gallery: Gallery | None
                  ) -> tuple[list[dict[str, Any]], Counter]:
     """One trial per name the VLM produced from appearance alone on a
-    population image: right when it links to the figure the claim names, wrong
-    when it links to anyone else, unlinked when it links to no one."""
+    population image: right when it links to anyone the image's claims name,
+    wrong when it links to someone else, unlinked when it links to no one.
+
+    ``figure_label`` keeps the earlier rule beside it -- right only for the
+    figure -- because the figures first reported (the pilot's 47.8%, the
+    sample's 0.5455) were measured that way and understated by it."""
     token = {name_key(name, "PERSON"): re.compile(tok) for name, _c, tok in image_text.PUBLIC_FIGURES}
     out, tally = [], Counter()
     for img in population:
@@ -2328,6 +2369,15 @@ def build_trials(population: Sequence[dict[str, Any]], links: dict[tuple[str, st
         if figure_qid is None:
             tally["images_figure_unlinked"] += 1
             continue
+        claim_qids = {figure_qid}
+        for person in img.get("claim_people", ()):
+            if gallery is not None:
+                resolved = gallery.resolve(person)
+            else:
+                plink = links.get(("PERSON", name_key(person, "PERSON") or ""))
+                resolved = [plink["qid"]] if plink and plink.get("status") in ("linked", "ambiguous") else []
+            if len(resolved) == 1:  # a claim name that could be several people decides nothing
+                claim_qids.add(resolved[0])
         faces = (query_faces.get(img["sha256"]) or {}).get("faces") or []
         names = [n for n in img["names"] if n["type"] == "PERSON" and n["evidence"] == "not_written"]
         tally["images"] += 1
@@ -2341,11 +2391,14 @@ def build_trials(population: Sequence[dict[str, Any]], links: dict[tuple[str, st
                 qids = gallery.resolve(n["name"])
             else:
                 qids = [link["qid"]] if link and link.get("status") in ("linked", "ambiguous") else []
-            label = "unlinked" if not qids else "right" if figure_qid in qids else "wrong"
+            label = "unlinked" if not qids else "right" if claim_qids.intersection(qids) else "wrong"
             trial = {"sha256": img["sha256"], "figure_source": img["figure_source"],
                      "figure_key": img["figure_key"], "figure_qid": figure_qid,
                      "figure_ambiguous": figure.get("status") == "ambiguous", "name": n["name"],
                      "key": key, "qids": qids, "qid": qids[0] if qids else None, "label": label,
+                     "figure_label": "unlinked" if not qids else "right" if figure_qid in qids else "wrong",
+                     "claim_qids": sorted(claim_qids),
+                     "named_in_claim_text": mentioned(n["name"], img.get("claim_text") or ""),
                      "forced": n["forced"], "vlm_confidence": n["confidence"], "faces": len(faces),
                      "ambiguous_link": len(qids) > 1 or bool(link and link.get("status") == "ambiguous"),
                      "token_label": (None if img["figure_source"] != "probe_list" else
@@ -2656,8 +2709,12 @@ def figure_stratified(trials: Sequence[dict[str, Any]], t: float | None,
 
 
 def calibrate(trials: Sequence[dict[str, Any]], tally: Counter, gallery: Gallery,
-              query_faces: dict[str, Any], backend: str) -> dict[str, Any]:
-    """The report: the threshold, what it costs in true accepts, and the rest."""
+              query_faces: dict[str, Any], backend: str, ledger: dict[str, Any]) -> dict[str, Any]:
+    """The report: the candidate threshold, what it costs in true accepts, and
+    the rest. Only a calibration over the complete Factify2 run sets the
+    threshold (``ledger["complete"]``). Otherwise the candidate and every
+    figure at it are reported and the threshold stays unset, so verify gives
+    scores without deciding: a partial ledger gives a partial population."""
     headline = [x for x in trials if not x.get("same_photo") and not x["forced"]]
     named = [x for x in headline if x["label"] != "unlinked"]
     right = sum(1 for x in headline if x["label"] == "right")
@@ -2665,10 +2722,15 @@ def calibrate(trials: Sequence[dict[str, Any]], tally: Counter, gallery: Gallery
     r_max = None if p is None else image_text.max_false_accept_ratio(p)
     t_bound = choose_threshold(headline, "bound")
     t_point = choose_threshold(headline, "point")
-    chosen = t_bound if t_bound is not None else t_point
-    at = operating_point(headline, chosen)
+    candidate = t_bound if t_bound is not None else t_point
+    candidate_by = ("one-sided 95% lower bound of accepted-name precision >= 0.90" if t_bound is not None else
+                    "point estimate only: no threshold reaches 0.90 at the 95% lower bound on this many "
+                    "trials" if t_point is not None else
+                    "none: no threshold reaches 0.90 even as a point estimate")
+    of = f"{ledger['worklist']:,}" if ledger.get("worklist") else "an unknown number of"
+    at = operating_point(headline, candidate)
     rejected_right = [x for x in headline if x["label"] == "right"
-                      and not (chosen is not None and x["scorable"] and x["score"] >= chosen)]
+                      and not (candidate is not None and x["scorable"] and x["score"] >= candidate)]
     grid = sorted({round(x["score"], 2) for x in headline if x["scorable"]})
     strata = {}
     for name, test in (("one_face", lambda x: x["faces"] == 1), ("several_faces", lambda x: x["faces"] > 1),
@@ -2678,9 +2740,9 @@ def calibrate(trials: Sequence[dict[str, Any]], tally: Counter, gallery: Gallery
                        ("figure_link_ambiguous", lambda x: x.get("figure_ambiguous"))):
         subset = [x for x in headline if test(x)]
         if subset:
-            strata[name] = operating_point(subset, chosen)
+            strata[name] = operating_point(subset, candidate)
     probe_list = [x for x in headline if x["token_label"] is not None]
-    table = figure_table(headline, chosen)
+    table = figure_table(headline, candidate)
     top_two = {r["figure_qid"] for r in table[:2]}
     for r in table:
         r["label"] = (gallery.entities.get(r["figure_qid"]) or {}).get("label")
@@ -2688,9 +2750,11 @@ def calibrate(trials: Sequence[dict[str, Any]], tally: Counter, gallery: Gallery
         "backend": backend, "face_config": gallery.cid,
         "coverage": verification_coverage(gallery),
         "population": {"what": ("Factify2 TRAIN claim images (every record using the image is "
-                                "train) whose claim names exactly one figure and says an image "
-                                "shows them; the figure from the probe's list first, from claim "
-                                "NER otherwise"), **dict(sorted(tally.items()))},
+                                "train) whose claims say an image shows someone and name one figure: "
+                                "exactly one of the probe's listed figures, or else exactly one person "
+                                "by claim NER. The figure is the stratum for per-figure reporting; a "
+                                "name is scored against everyone the image's claims name"),
+                       **dict(sorted(tally.items()))},
         "trials": {"total": len(trials), "headline": len(headline),
                    "excluded_same_photo": sum(1 for x in trials if x.get("same_photo")),
                    "forced_lines": sum(1 for x in trials if x["forced"]),
@@ -2699,20 +2763,32 @@ def calibrate(trials: Sequence[dict[str, Any]], tally: Counter, gallery: Gallery
         "vlm_precision": {
             "qid": p, "names": len(headline), "right": right,
             "excluding_unlinked": image_text._ratio(right, len(named), 4),
+            "rule": ("right when the name resolves, by QID, to anyone the image's claims name: the "
+                     "probe's listed figures and claim NER's people. A claim name that resolves to "
+                     "several people decides nothing"),
+            "single_figure_rule": image_text._ratio(
+                sum(1 for x in headline if x.get("figure_label") == "right"), len(headline), 4),
             "token_rule_on_probe_list_images": image_text._ratio(
                 sum(1 for x in probe_list if x["token_label"] == "right"), len(probe_list), 4),
-            "note": ("the pilot's 47.8% is APPROXIMATE: its reference is a loose token pattern "
-                     "over the claim. This QID-based figure replaces it; the token rule is "
-                     "recomputed beside it on the same images for comparison")},
+            "note": ("The earlier figures carried a defect in this measurement: the pilot's 47.8% and "
+                     "the first QID-based figure (0.5455, the 2026-10-21 sample pass) scored a name "
+                     "against one figure per image, so a person the claims name beside that figure, "
+                     "correctly named, counted as wrong. Both were understated. single_figure_rule is "
+                     "that defective figure recomputed on these trials. The token rule is the pilot's "
+                     "own method on the same images: its loose token pattern, with the same defect. "
+                     "The pilot's 47.8% is also APPROXIMATE for that token pattern")},
         "bar": {"accepted_name_precision": TARGET_PRECISION,
                 "max_fmr_over_tar": None if r_max is None else round(r_max, 4),
                 "rule": "p*TAR / (p*TAR + (1-p)*FMR) >= 0.90, i.e. FMR/TAR <= p / (9 (1 - p))"},
-        "threshold": {"chosen": None if chosen is None else round(chosen, 4),
-                      "chosen_by": ("one-sided 95% lower bound of accepted-name precision >= 0.90"
-                                    if t_bound is not None else
-                                    "point estimate only: no threshold reaches 0.90 at the 95% "
-                                    "lower bound on this many trials" if t_point is not None else
-                                    "none: no threshold reaches 0.90 even as a point estimate"),
+        "threshold": {"chosen": (round(candidate, 4) if candidate is not None and ledger.get("complete")
+                                 else None),
+                      "chosen_by": (candidate_by if ledger.get("complete") else
+                                    "unset: only a calibration over the complete Factify2 run sets the "
+                                    f"threshold, and this ledger holds {ledger.get('images', 0):,} of {of} "
+                                    "images. The candidate, and every figure at it, are reported and "
+                                    "never adopted"),
+                      "candidate": None if candidate is None else round(candidate, 4),
+                      "candidate_by": candidate_by,
                       "by_bound": None if t_bound is None else round(t_bound, 4),
                       "by_point_estimate": None if t_point is None else round(t_point, 4)},
         "at_threshold": at,
@@ -2721,20 +2797,20 @@ def calibrate(trials: Sequence[dict[str, Any]], tally: Counter, gallery: Gallery
             "right_names": at["right"], "rejected": len(rejected_right),
             "rejected_unscorable": dict(Counter(x["unscorable"] for x in rejected_right if x["unscorable"])),
             "rejected_below_threshold": sum(1 for x in rejected_right if x["scorable"])},
-        "bootstrap_95": None if chosen is None else bootstrap(headline, chosen),
+        "bootstrap_95": None if candidate is None else bootstrap(headline, candidate),
         "cross_validated": {"bound": cross_validated(headline, "bound"),
                             "point": cross_validated(headline, "point")},
         "curve": [operating_point(headline, t) for t in grid],
         "strata": strata,
-        "figures": {"what": ("per figure the claims name, most trials first: trials and what the "
-                             "threshold accepts of them. Local report only: the published one "
+        "figures": {"what": ("per figure, the image's stratum, most trials first: trials and what the "
+                             "candidate threshold accepts of them. Local report only: the published one "
                              "gives ranks, never a name or QID"),
                     "concentration": concentration(table), "table": table},
-        "figure_stratified": {**(figure_stratified(headline, chosen) or {}),
+        "figure_stratified": {**(figure_stratified(headline, candidate) or {}),
                               "pooled_without_top_two_figures": operating_point(
-                                  [x for x in headline if x["figure_qid"] not in top_two], chosen)},
+                                  [x for x in headline if x["figure_qid"] not in top_two], candidate)},
         "look_alike_finding": look_alike_finding(
-            headline, random_pair_scores(headline, gallery, query_faces), chosen, p),
+            headline, random_pair_scores(headline, gallery, query_faces), candidate, p),
         "verite": "not read: calibration reads Factify2 train only",
     }
 
@@ -2803,6 +2879,9 @@ def cmd_link(args) -> int:
         want("PERSON", key, "probe_figure", name)
     for img in population:
         want("PERSON", img["figure_key"], f"figure_{img['figure_source']}")
+        for person in img["claim_people"]:  # what a VLM name is scored against
+            if key := name_key(person, "PERSON"):
+                want("PERSON", key, "claim_person_on_calibration_image")
     for key in calibration_names(population):
         want("PERSON", key, "vlm_name_on_calibration_image")
     scoped = [r for r in names if in_scope(r, args.scope)]
@@ -3091,13 +3170,15 @@ def cmd_calibrate(args) -> int:
     links = latest(read_jsonl(LINKS_PATH), lambda r: (r["type"], r["key"]))
     query_faces = latest(read_jsonl(QUERY_FACES_DIR / cid / "factify2.jsonl"), lambda r: r["sha256"])
     trials, more = build_trials(population, links, query_faces, gallery)
-    report = calibrate(trials, tally + more, gallery, query_faces, args.backend)
     worklist = worklist_sizes(run_dir).get("factify2")
-    report["factify2_ledger"] = {
+    ledger = {
         "run": run_dir.name, "images": len(read.images), "worklist": worklist,
         "share_done": image_text._ratio(len(read.images), worklist, 4) if worklist else None,
         "complete": bool(worklist) and len(read.images) >= worklist,
-        "note": "the full calibration needs the finished run; a partial ledger gives a partial population"}
+        "note": ("the full calibration needs the finished run; a partial ledger gives a partial "
+                 "population and never sets the threshold")}
+    report = calibrate(trials, tally + more, gallery, query_faces, args.backend, ledger)
+    report["factify2_ledger"] = ledger
     report["adjudicated"] = None
     path = decisions_path(args.backend)
     decisions = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
@@ -3105,14 +3186,20 @@ def cmd_calibrate(args) -> int:
     if decided:
         ids = {trial_id(x) for x in trials}
         relabelled = adjudicated(trials, decisions)
+        before = {trial_id(x): x["label"] for x in trials}
+        after = {trial_id(x): x["label"] for x in relabelled}
+        changes = Counter("taken_out" if k not in after else "unchanged" if before[k] == after[k]
+                          else f"{before[k]}_to_{after[k]}" for k in decided if k in before)
         report["adjudicated"] = {
             "decisions": dict(Counter(decided.values())), "by": "a person, by eye, on the review sheet",
             "applied": sum(1 for k in decided if k in ids),
             "not_among_these_trials": sum(1 for k in decided if k not in ids),
             "left_undecided_in_file": len(decisions) - len(decided),
-            "note": "a trial without a decision keeps the claim's label",
+            "relabelled": dict(sorted(changes.items())),
+            "note": ("a trial without a decision keeps its label; relabelled says how many decisions "
+                     "changed a label, and in which direction, and how many confirmed it"),
             **{k: v for k, v in calibrate(relabelled, tally + more, gallery, query_faces,
-                                          args.backend).items()
+                                          args.backend, ledger).items()
                if k in ("trials", "vlm_precision", "bar", "threshold", "at_threshold", "fmr_over_tar",
                         "cost_in_true_accepts", "bootstrap_95", "cross_validated", "figure_stratified",
                         "look_alike_finding")}}
@@ -3125,9 +3212,17 @@ def cmd_calibrate(args) -> int:
     at = report["at_threshold"]
     strat = report["figure_stratified"]
     log(f"[{args.backend}] {report['trials']['headline']} trials; VLM precision (QID) "
-        f"{report['vlm_precision']['qid']}; bar FMR/TAR <= {report['bar']['max_fmr_over_tar']}; "
-        f"threshold {t['chosen']} ({t['chosen_by']}); TAR {at['tar']} FMR {at['fmr']} "
+        f"{report['vlm_precision']['qid']} (scored against the figure alone, as first measured: "
+        f"{report['vlm_precision']['single_figure_rule']}); bar FMR/TAR <= {report['bar']['max_fmr_over_tar']}")
+    log(f"  threshold {t['chosen']} ({t['chosen_by']})")
+    log(f"  candidate {t['candidate']} ({t['candidate_by']}): TAR {at['tar']} FMR {at['fmr']} "
         f"precision {at['precision']} (lower 95% {at['precision_lower_95']})")
+    adj = report["adjudicated"]
+    if adj:
+        ta, aa = adj["threshold"], adj["at_threshold"]
+        log(f"  adjudicated ({adj['applied']} decisions; {adj['relabelled']}): VLM precision "
+            f"{adj['vlm_precision']['qid']}; candidate {ta['candidate']} ({ta['candidate_by']}): TAR "
+            f"{aa['tar']} FMR {aa['fmr']} precision {aa['precision']} (lower 95% {aa['precision_lower_95']})")
     log(f"  coverage: {report['coverage']['statement']}")
     log(f"  figures: {report['figures']['concentration']['statement']}")
     for r in report["figures"]["table"][:5]:
@@ -3390,7 +3485,10 @@ def sample_report() -> dict[str, Any]:
             "two and shows what a threshold set on random pairs would accept of the VLM's own names. That "
             "is why FMR is measured on the VLM's wrong names, never on random pairs.",
             "The pilot's 47.8% VLM precision is APPROXIMATE: its reference is a loose token pattern over "
-            "the claim. calibration.<backend>.vlm_precision.qid is the QID-based figure that replaces it.",
+            "the claim. It is also UNDERSTATED, like the first QID-based figure (0.5455): both scored a name "
+            "against one figure per image, so a person the claims name beside it, correctly named, counted "
+            "as wrong. calibration.<backend>.vlm_precision.qid scores a name against everyone the image's "
+            "claims name; single_figure_rule beside it is the defective figure on the same trials.",
             "Calibration reads Factify2 TRAIN only, images every one of whose records is train; VERITE is "
             "never read for any threshold.",
             "This is a sample on the part of the Factify2 run done so far: the full calibration runs on "
@@ -3435,8 +3533,9 @@ def _crop(body: bytes, box: Sequence[float], side: int = 160) -> str:
 REVIEW_CROP = 224
 
 
-def _whole(body: bytes, box: Sequence[float], side: int = 480) -> str:
-    """The whole image, small, the scored face boxed: context for a reviewer."""
+def _whole(body: bytes, box: Sequence[float] | None, side: int = 480) -> str:
+    """The whole image, small, the scored face boxed (if a face was scored):
+    context for a reviewer."""
     import base64
 
     from PIL import Image, ImageDraw, ImageOps
@@ -3445,8 +3544,9 @@ def _whole(body: bytes, box: Sequence[float], side: int = 480) -> str:
         img = ImageOps.exif_transpose(img).convert("RGB")
         scale = min(1.0, side / max(img.width, img.height))
         small = img.resize((max(1, round(img.width * scale)), max(1, round(img.height * scale))))
-        x, y, w, h = (v * scale for v in box)
-        ImageDraw.Draw(small).rectangle((x, y, x + w, y + h), outline=(255, 0, 0), width=3)
+        if box is not None:
+            x, y, w, h = (v * scale for v in box)
+            ImageDraw.Draw(small).rectangle((x, y, x + w, y + h), outline=(255, 0, 0), width=3)
         buf = io.BytesIO()
         small.save(buf, format="JPEG", quality=80)
     return "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode("ascii")
@@ -3477,10 +3577,10 @@ def decisions_path(backend: str) -> Path:
 def adjudicated(trials: Sequence[dict[str, Any]], decisions: dict[str, str | None]) -> list[dict[str, Any]]:
     """Trials relabelled by a PERSON's decisions: whom the face is. "vlm" makes
     the VLM's name right; "claim" makes it right only when the VLM named the
-    claim's figure (then the two columns are one person), wrong otherwise;
-    "neither" makes it wrong; "unsure" takes the trial out. A trial with no
-    decision (absent, or null in the file) keeps the claim's label, so a
-    partial adjudication is usable."""
+    claim's figure (then the two columns are one person), wrong otherwise --
+    whoever else the claims name, the face is the figure; "neither" makes it
+    wrong; "unsure" takes the trial out. A trial with no decision (absent, or
+    null in the file) keeps its label, so a partial adjudication is usable."""
     unknown = sorted(set(decisions.values()) - set(DECISIONS) - {None})
     if unknown:
         raise GalleryError(f"decisions may only be {DECISIONS} or null, not {unknown}")
@@ -3492,15 +3592,43 @@ def adjudicated(trials: Sequence[dict[str, Any]], decisions: dict[str, str | Non
         if d is None or x["label"] == "unlinked":
             out.append(x)
         else:
-            right = d == "vlm" or (d == "claim" and x["label"] == "right")
+            right = d == "vlm" or (d == "claim" and x["figure_qid"] in (x.get("qids") or []))
             out.append({**x, "label": "right" if right else "wrong", "adjudicated": d})
     return out
 
 
+def review_queue(trials: Sequence[dict[str, Any]], decided: Iterable[str], floor: float,
+                 rejected: int) -> list[tuple[str, dict[str, Any]]]:
+    """The trials a person looks at next, none already decided, in three parts.
+
+    1. Every trial the gallery scores as plausibly the person (at or above
+       ``floor``), WHATEVER its label, by falling score. An accepted name
+       labelled right is exactly where an unseen false accept would sit: a
+       bound that holds only because no one looked is not a bound.
+    2. Names labelled right that the gallery rejects at any threshold above the
+       floor (scoring below it, or unscorable): what they cost in true
+       accepts. A seeded sample of ``rejected``.
+    3. Names labelled wrong that a claim's text on the image carries although
+       no claim names them by QID (a handle, a spelling the linker missed):
+       the likely mislabels the label rule cannot see."""
+    done = set(decided)
+    todo = [x for x in trials if x["label"] != "unlinked" and trial_id(x) not in done]
+    high = [x for x in todo if x["scorable"] and x["score"] >= floor]
+    low = [x for x in todo if not (x["scorable"] and x["score"] >= floor)]
+    rejected_right = sorted((x for x in low if x["label"] == "right"),
+                            key=lambda x: image_text._priority(SEED, x["sha256"] + (x["key"] or "")))
+    named = sorted((x for x in low if x["label"] == "wrong" and x.get("named_in_claim_text")),
+                   key=lambda x: -(x["score"] if x["scorable"] else -1.0))
+    return ([("plausible", x) for x in sorted(high, key=lambda x: -x["score"])]
+            + [("rejected_right", x) for x in rejected_right[:rejected]]
+            + [("named_in_claim_text", x) for x in named])
+
+
 def cmd_review(args) -> int:
-    """A sheet a PERSON reads: each decisive trial's face beside the reference
-    it matched, with the reference's Commons page, licence and attribution.
-    Local only (it shows corpus images); the adjudication is a person's."""
+    """A sheet a PERSON reads: each trial still to decide (review_queue), its
+    face beside the reference it matched, with the reference's Commons page,
+    licence and attribution. Local only (it shows corpus images); the
+    adjudication is a person's."""
     backend = make_backend(args.backend)
     gallery = Gallery(face_config_id(backend))
     report = json.loads((CALIBRATION_DIR / f"{args.backend}.json").read_text(encoding="utf-8"))
@@ -3512,18 +3640,14 @@ def cmd_review(args) -> int:
     for path, row in index.items():
         if row.get("sha256"):
             by_sha.setdefault(row["sha256"], path)
-    # Every name labelled wrong that the gallery scores as plausibly the person
-    # -- above its own consistency threshold -- is on the sheet, not only those
-    # accepted at the provisional threshold: whether they are look-alikes or the
-    # claim's figure is simply not pictured decides the false-accept rate.
+    # The floor is the gallery's own consistency threshold: a score above it is
+    # plausibly the person, so it is looked at whether a threshold is set or not.
     summary = json.loads((FACES_DIR / gallery.cid / "gallery_summary.json").read_text(encoding="utf-8"))
-    plausible = summary["consistency_threshold"] if t is None else min(t, summary["consistency_threshold"])
-    accepted_wrong = sorted((x for x in trials if x["label"] != "right" and x["scorable"]
-                             and x["score"] >= plausible), key=lambda x: -x["score"])
-    rejected_right = sorted((x for x in trials if x["label"] == "right" and x["scorable"]
-                             and (t is None or x["score"] < t)),
-                            key=lambda x: image_text._priority(SEED, x["sha256"] + (x["key"] or "")))
-    queue = accepted_wrong + rejected_right[:args.rejected]
+    floor = summary["consistency_threshold"] if t is None else min(t, summary["consistency_threshold"])
+    decisions_file = decisions_path(args.backend)
+    decisions = json.loads(decisions_file.read_text(encoding="utf-8")) if decisions_file.is_file() else {}
+    decided = [k for k, v in decisions.items() if v is not None]
+    queue = review_queue(trials, decided, floor, args.rejected)
 
     def reference_cell(qid: str, faces: Sequence[dict[str, Any]]) -> str:
         best = gallery.best(faces, qid) if gallery.refs.get(qid) else None
@@ -3538,46 +3662,63 @@ def cmd_review(args) -> int:
                 f"{html.escape(att.get('artist') or '')}</td>")
 
     cells = []
-    for n, x in enumerate(queue, 1):
-        faces = query_faces[x["sha256"]]["faces"]
-        best = gallery.best(faces, x["qid"])
+    for n, (part, x) in enumerate(queue, 1):
+        faces = (query_faces.get(x["sha256"]) or {}).get("faces") or []
+        best = gallery.best(faces, x["qid"]) if x["scorable"] else None
         body = image_text.read_bytes(by_sha[x["sha256"]])
-        box = faces[best["query_face"]]["box"]
-        kind = ((("ACCEPTED" if t is not None and x["score"] >= t else "PLAUSIBLE") + ", labelled wrong")
-                if x in accepted_wrong else "REJECTED, labelled right")
+        trial = f"trial <code>{html.escape(trial_id(x))}</code><br>{x['faces']} face(s) in the image"
+        if best is not None:
+            box = faces[best["query_face"]]["box"]
+            face = (f"<img src='{_crop(body, box, REVIEW_CROP)}'><br>{trial}<br><details><summary>whole "
+                    f"image</summary><img class='whole' src='{_whole(body, box)}'></details>")
+        else:
+            face = (f"<img class='whole' src='{_whole(body, None)}'><br>{trial}<br>no face is scored for "
+                    f"this name ({html.escape(str(x['unscorable']))}): decide whether the image shows the "
+                    "person the VLM named")
+        kind = {"plausible": (("ACCEPTED" if t is not None and x["score"] >= t else "PLAUSIBLE")
+                              + f", labelled {x['label']}"),
+                "rejected_right": (f"BELOW {floor:.3f}" if x["scorable"] else "UNSCORABLE") + ", labelled right",
+                "named_in_claim_text": "LABELLED WRONG, though a claim's text on the image carries the name",
+                }[part]
         cells.append(
-            f"<tr><td><b>{n}</b></td><td><img src='{_crop(body, box, REVIEW_CROP)}'><br>trial "
-            f"<code>{html.escape(trial_id(x))}</code><br>{x['faces']} face(s) in the image<br>"
-            f"<details><summary>whole image</summary><img class='whole' src='{_whole(body, box)}'>"
-            f"</details></td>{reference_cell(x['qid'], faces)}{reference_cell(x['figure_qid'], faces)}"
-            f"<td><b>{kind}</b><br>VLM said: {html.escape(x['name'])}<br>threshold {t}</td></tr>")
-    written = merge_decision_slots(decisions_path(args.backend), [trial_id(x) for x in queue])
+            f"<tr><td><b>{n}</b></td><td>{face}</td>{reference_cell(x['qid'], faces)}"
+            f"{reference_cell(x['figure_qid'], faces)}<td><b>{kind}</b><br>VLM said: "
+            f"{html.escape(x['name'])}<br>{'score ' + format(x['score'], '.3f') if x['scorable'] else ''}</td></tr>")
+    written = merge_decision_slots(decisions_file, [trial_id(x) for _part, x in queue])
+    parts = Counter(part for part, _x in queue)
+    shown = (f"threshold {t}" if t is not None else
+             f"threshold unset (candidate {report['threshold'].get('candidate')}, not adopted)")
     page = ("<!doctype html><meta charset='utf-8'><title>Gallery review</title>"
             "<style>body{font:14px sans-serif;margin:16px}td{vertical-align:top;padding:6px;"
             f"border-bottom:1px solid #ccc}}img{{max-width:{REVIEW_CROP}px}}img.whole{{max-width:480px}}"
             "</style>"
-            f"<h1>Gallery review: {args.backend}, threshold {t}, {len(queue)} faces</h1>"
+            f"<h1>Gallery review: {args.backend}, {shown}, {len(queue)} faces</h1>"
             "<p>Columns: the face in the Factify2 TRAIN image (open <i>whole image</i> for context: the "
             "face scored is boxed); the reference of the person the VLM named; the reference of the "
-            "person the claim names. The labels come from the claim, which may name someone the image "
-            "does not show. For each row decide, by looking, whom the face is, and write it against "
-            f"the row's trial in <code>{html.escape(str(decisions_path(args.backend)))}</code> (every "
-            "trial on this sheet is already there, as <code>null</code>):</p><ul>"
+            "image's figure, one of the people its claims name. A name is labelled right when the image's "
+            "claims name that person, which does not prove the image shows them, and wrong otherwise. "
+            "For each row decide, by looking, whom the face is, and write it against the row's trial in "
+            f"<code>{html.escape(str(decisions_file))}</code> (every trial on this sheet is already there, "
+            "as <code>null</code>):</p><ul>"
             "<li><code>\"vlm\"</code>: the person the VLM named (second column);</li>"
-            "<li><code>\"claim\"</code>: the person the claim names (third column);</li>"
+            "<li><code>\"claim\"</code>: the image's figure (third column);</li>"
             "<li><code>\"neither\"</code>: someone else;</li>"
             "<li><code>\"unsure\"</code>: you cannot tell (the trial leaves the adjudicated figures).</li>"
-            "</ul><p>When the VLM named the claim's person both columns show them: <code>\"vlm\"</code> "
-            "if it is them, <code>\"neither\"</code> if not. A <code>null</code> keeps the claim's label, "
-            "so part of the sheet is usable; the rows labelled wrong come first because they set the "
-            "false-accept rate. <code>calibrate</code> reports adjudicated figures beside the raw ones.</p>"
+            "</ul><p>When the VLM named the figure both columns show them: <code>\"vlm\"</code> if it is "
+            "them, <code>\"neither\"</code> if not. A <code>null</code> keeps the label, so part of the "
+            f"sheet is usable. No trial already decided is here ({len(decided)} are). First comes every "
+            f"name the gallery scores at or above {floor:.3f}, its consistency threshold, whatever its "
+            "label: an accepted name is where an unseen false accept would sit. Then names labelled right "
+            "that score below it or cannot be scored, then names labelled wrong that a claim's text on "
+            "the image carries. <code>calibrate</code> reports adjudicated figures beside the raw ones.</p>"
             f"<table>{''.join(cells)}</table>")
-    path = REVIEW_DIR / f"{args.backend}.html"
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(page, encoding="utf-8")
-    log(f"{len(accepted_wrong)} names labelled wrong scoring at least {plausible:.3f} and "
-        f"{min(len(rejected_right), args.rejected)} rejected names labelled right -> {path}; "
-        f"{written} new trial slots in {decisions_path(args.backend)}")
+    out = REVIEW_DIR / f"{args.backend}.html"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(page, encoding="utf-8")
+    log(f"{parts['plausible']} undecided names scoring at least {floor:.3f}, {parts['rejected_right']} labelled "
+        f"right below it or unscorable, {parts['named_in_claim_text']} labelled wrong that a claim's text "
+        f"carries ({len(decided)} trials decided already) -> {out}; {written} new trial slots in "
+        f"{decisions_file}")
     return 0
 
 

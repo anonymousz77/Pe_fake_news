@@ -273,19 +273,52 @@ Wikidata items with reference images from Wikimedia Commons. It is how the
   threshold.
   - Trials are the VLM's own names produced from appearance alone (no word of
     the name in the OCR text).
-  - A trial is right or wrong by QID against the figure the claim names: the
-    probe's list first, otherwise the claim's single NER person.
+  - A trial is right when its name resolves, by QID, to **anyone the image's
+    claims name**: the probe's listed figures and claim NER's people. A claim
+    name that could be several people decides nothing. Otherwise it is wrong.
+  - The figure (the probe's list first, otherwise the claim's single NER
+    person) is the image's stratum for per-figure reporting, not the reference.
+  - Until 2026-10-22 a name was scored against that one figure alone, and
+    every other person the claims named counted as wrong. That was a defect in
+    our measurement code, and it understated both earlier figures: the pilot's
+    47.8% and the sample's 0.5455. Corrected on the sample, the figure is
+    0.7045; the report keeps the defective one beside it
+    (`single_figure_rule`).
   - The threshold is the lowest one at which the one-sided 95% lower bound of
     accepted-name precision reaches 0.90. A point-estimate threshold is
     reported beside it and never presented as the bound.
+  - **Only a calibration over the complete Factify2 run sets the threshold**
+    (`factify2_ledger.complete`: the server's, once the run finishes).
+    - On a partial ledger, `calibrate` reports the candidate and every figure
+      at it, and leaves `threshold.chosen` null. `verify` then gives a score
+      and the matched reference, never a decision.
+    - The sample's adjudicated candidate, 0.4383, was not adopted, for three
+      reasons. Its bound clears 0.90 with no margin (31 of 31 accepted names
+      right). The bound rule finds no threshold in any cross-validation fold.
+      And it rests on 44 trials from 6.3% of the ledger.
   - The cost in true accepts is always reported. Random-pair FMR is a labelled
     contrast, never an input.
-  - **Why: the VLM's wrong names are look-alikes, not strangers.** On the
-    sample's trials, scored against the full gallery, the right names' faces
-    reach at most 0.281 against random strangers. Yet 12 of the 18 scorable
-    wrong VLM names score above every stranger. A threshold set on random pairs
-    (0.263) would accept 14 of 20 wrong VLM names: precision 0.63, not 0.90.
-    `calibrate` measures this every run (`look_alike_finding`).
+  - **Why: the VLM's wrong names are not random strangers.** There are two
+    measurements on the sample (44 trials, scored against the full gallery).
+    - **As first measured:** the right names' faces reach at most 0.281
+      against random strangers, yet 12 of the 18 scorable wrong VLM names
+      scored above every stranger. A threshold set on random pairs (0.263)
+      would accept 14 of 20 wrong names: precision 0.63.
+    - **Adjudicated:** 4 of the 10 scorable wrong names score above every
+      stranger (at most 0.285). A random-pair threshold (0.194) would accept 8
+      of 11 wrong names: precision 0.80.
+    - **Why they differ:** most of the first "wrong" names were right, because
+      the labels scored a name against one figure per image. Of the 8
+      highest-scoring wrong names, 7 were the person the VLM named. Five of
+      them are named in the claim itself, which the corrected rule now finds.
+      A person found the other two on the review sheet.
+    - The second measurement uses labels against everyone the claims name,
+      with the review applied. Corrected labels without the review give 3 of
+      12 above every stranger, and precision 0.75. The strangers are drawn
+      per right name, so their maximum moves with the labels.
+    - The point survives: random-pair calibration still fails 0.90, so the
+      threshold is calibrated on the VLM's own names. `calibrate` measures
+      this every run (`look_alike_finding`), raw and adjudicated.
   - **Coverage ceiling, stated beside every calibration.** 1,123 of the
     gallery's 3,459 people have no usable reference face; 1,009 of them have
     no Commons reference at all. Verify can only answer "no usable reference"
@@ -305,13 +338,30 @@ Wikidata items with reference images from Wikimedia Commons. It is how the
     most-named figure.
   - **Adjudication is a person's**, on the `review` sheet, and partial is
     usable. The decisions file has a null slot per trial, in sheet order, and a
-    null keeps the claim's label. Decisions are keyed by image and name, so
-    they carry over to the full calibration.
+    null keeps the label. Decisions are keyed by image and name, so they carry
+    over to the full calibration.
+  - **The sheet holds only undecided trials, in three parts:**
+    1. every trial the gallery scores at or above its consistency threshold,
+       whatever its label;
+    2. names labelled right that score below that floor, or cannot be scored;
+    3. names labelled wrong that a claim's text on the image carries, such as
+       handles like @narendramodi, which neither NER nor the probe's patterns
+       resolve.
+
+    An accepted name nobody looked at is where an unseen false accept would
+    sit, and a bound that holds only because no one looked is not a bound.
+    `calibrate` reports how many decisions changed a label, and in which
+    direction (`relabelled`).
   - The published `data/reports/gallery_calibration.json` gives figures by rank
     only, never a name or QID. `public_report` refuses otherwise.
-- **The pilot's 47.8% is approximate**: its reference is a loose token pattern
-  over the claim. Say so wherever it appears; the QID-based precision from
-  `calibrate` replaces it.
+- **The pilot's 47.8% is approximate and understated.**
+  - Approximate: its reference is a loose token pattern over the claim.
+  - Understated: it scored a name against one figure per image, so a person
+    the claim names beside that figure, correctly named, counted as wrong. The
+    sample's first QID-based figure, 0.5455, carried the same defect.
+  - Say so wherever either figure appears.
+  - Corrected on the sample, the QID-based precision is 0.7045 (0.75 with the
+    person's review). The full calibration replaces both.
 - **Organisations get entries and references only.** No ORG answer claims a
   visual match: logo matching is a different model and a different problem.
 - **Models.** YuNet (MIT) finds faces, SFace (Apache-2.0) embeds them; both
