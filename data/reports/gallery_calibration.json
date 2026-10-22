@@ -1,16 +1,16 @@
 {
  "sface": {
-  "generated_at": "2026-10-22T19:19:46+00:00",
+  "generated_at": "2026-10-22T20:36:50+00:00",
   "backend": "sface",
   "face_config": "b6abc4a9f987",
   "coverage": {
-   "people": 3459,
-   "with_usable_reference_faces": 2336,
-   "without": 1123,
-   "share_without": 0.3247,
-   "without_any_commons_reference": 1009,
-   "references_but_no_usable_face": 114,
-   "statement": "1,123 of the 3,459 people in the gallery have no usable reference face (1,009 have no Commons reference at all): for them verify can only answer 'no usable reference'. That is a ceiling on coverage, apart from the threshold. In calibration, a name that resolves only to such a person is unscorable, as is one that resolves to several people (verify refuses it): it counts as a rejection against TAR (cost_in_true_accepts; tar_scorable leaves it out), as coverage when a person confirms it (review_findings), and never as a true or a false accept."
+   "people": 3556,
+   "with_usable_reference_faces": 2390,
+   "without": 1166,
+   "share_without": 0.3279,
+   "without_any_commons_reference": 1049,
+   "references_but_no_usable_face": 117,
+   "statement": "1,166 of the 3,556 people in the gallery have no usable reference face (1,049 have no Commons reference at all): for them verify can only answer 'no usable reference'. That is a ceiling on coverage, apart from the threshold. In calibration, a name that resolves only to such a person is unscorable, as is one that resolves to several people (verify refuses it): it counts as a rejection against TAR (cost_in_true_accepts; tar_scorable leaves it out), as coverage when a person confirms it (review_findings), and never as a true or a false accept."
   },
   "population": {
    "what": "Factify2 TRAIN claim images (every record using the image is train) whose claims say an image shows someone and name one figure: exactly one of the probe's listed figures, or else exactly one person by claim NER. The figure is the stratum for per-figure reporting; a name is scored against everyone the image's claims name",
@@ -35,7 +35,8 @@
    },
    "unscorable": {
     "no_usable_reference": 1,
-    "name_unlinked": 1
+    "name_unlinked": 1,
+    "no_usable_face": 1
    }
   },
   "vlm_precision": {
@@ -79,7 +80,7 @@
     "statement": "the highest lower bound of accepted-name precision is 0.8171, at 0.5531: 23 of 24 accepted names right (0.9583). That clears 0.90 as a point estimate, on too few trials to certify it: at that precision about 103 accepted names would"
    },
    "by_bound": null,
-   "by_point_estimate": 0.371
+   "by_point_estimate": 0.3889
   },
   "at_threshold": {
    "threshold": 0.5531,
@@ -98,11 +99,12 @@
    "right_names": 31,
    "rejected": 8,
    "rejected_unscorable": {
-    "no_usable_reference": 1
+    "no_usable_reference": 1,
+    "no_usable_face": 1
    },
-   "rejected_below_threshold": 7,
-   "right_names_scorable": 30,
-   "tar_scorable": 0.7667,
+   "rejected_below_threshold": 6,
+   "right_names_scorable": 29,
+   "tar_scorable": 0.7931,
    "note": "TAR is (right names the gallery can score / right names) x tar_scorable: a name it cannot score is coverage, and tar_scorable is the recognizer's own rate without it"
   },
   "bootstrap_95": {
@@ -141,8 +143,8 @@
      0.4865,
      0.4383,
      0.4383,
-     0.371,
-     0.371
+     0.3889,
+     0.3889
     ],
     "accepted_right": 28,
     "accepted_wrong": 2,
@@ -156,109 +158,97 @@
     "threshold": 0.09,
     "right": 31,
     "wrong": 13,
-    "accepted_right": 30,
+    "accepted_right": 29,
     "accepted_wrong": 12,
-    "tar": 0.9677,
+    "tar": 0.9355,
     "fmr": 0.9231,
     "fmr_upper_95": 0.9961,
-    "precision": 0.7143,
-    "precision_lower_95": 0.5786
+    "precision": 0.7073,
+    "precision_lower_95": 0.5693
    },
    {
     "threshold": 0.15,
     "right": 31,
     "wrong": 13,
-    "accepted_right": 30,
+    "accepted_right": 29,
     "accepted_wrong": 11,
-    "tar": 0.9677,
+    "tar": 0.9355,
     "fmr": 0.8462,
     "fmr_upper_95": 0.9719,
-    "precision": 0.7317,
-    "precision_lower_95": 0.5952
+    "precision": 0.725,
+    "precision_lower_95": 0.5861
    },
    {
     "threshold": 0.21,
     "right": 31,
     "wrong": 13,
-    "accepted_right": 30,
+    "accepted_right": 29,
     "accepted_wrong": 10,
-    "tar": 0.9677,
+    "tar": 0.9355,
     "fmr": 0.7692,
     "fmr_upper_95": 0.934,
-    "precision": 0.75,
-    "precision_lower_95": 0.6129
+    "precision": 0.7436,
+    "precision_lower_95": 0.604
    },
    {
     "threshold": 0.23,
     "right": 31,
     "wrong": 13,
-    "accepted_right": 30,
+    "accepted_right": 29,
     "accepted_wrong": 8,
-    "tar": 0.9677,
+    "tar": 0.9355,
     "fmr": 0.6154,
     "fmr_upper_95": 0.8343,
-    "precision": 0.7895,
-    "precision_lower_95": 0.6521
+    "precision": 0.7838,
+    "precision_lower_95": 0.6436
    },
    {
     "threshold": 0.28,
     "right": 31,
     "wrong": 13,
-    "accepted_right": 30,
+    "accepted_right": 29,
     "accepted_wrong": 7,
-    "tar": 0.9677,
+    "tar": 0.9355,
     "fmr": 0.5385,
     "fmr_upper_95": 0.776,
-    "precision": 0.8108,
-    "precision_lower_95": 0.6738
+    "precision": 0.8056,
+    "precision_lower_95": 0.6656
    },
    {
     "threshold": 0.29,
     "right": 31,
     "wrong": 13,
-    "accepted_right": 30,
+    "accepted_right": 29,
     "accepted_wrong": 5,
-    "tar": 0.9677,
+    "tar": 0.9355,
     "fmr": 0.3846,
     "fmr_upper_95": 0.6452,
-    "precision": 0.8571,
-    "precision_lower_95": 0.7228
+    "precision": 0.8529,
+    "precision_lower_95": 0.7154
    },
    {
     "threshold": 0.3,
     "right": 31,
     "wrong": 13,
-    "accepted_right": 30,
+    "accepted_right": 29,
     "accepted_wrong": 5,
-    "tar": 0.9677,
+    "tar": 0.9355,
     "fmr": 0.3846,
     "fmr_upper_95": 0.6452,
-    "precision": 0.8571,
-    "precision_lower_95": 0.7228
+    "precision": 0.8529,
+    "precision_lower_95": 0.7154
    },
    {
     "threshold": 0.31,
     "right": 31,
     "wrong": 13,
-    "accepted_right": 30,
+    "accepted_right": 29,
     "accepted_wrong": 4,
-    "tar": 0.9677,
+    "tar": 0.9355,
     "fmr": 0.3077,
     "fmr_upper_95": 0.5726,
-    "precision": 0.8824,
-    "precision_lower_95": 0.7507
-   },
-   {
-    "threshold": 0.37,
-    "right": 31,
-    "wrong": 13,
-    "accepted_right": 30,
-    "accepted_wrong": 3,
-    "tar": 0.9677,
-    "fmr": 0.2308,
-    "fmr_upper_95": 0.4946,
-    "precision": 0.9091,
-    "precision_lower_95": 0.7815
+    "precision": 0.8788,
+    "precision_lower_95": 0.7437
    },
    {
     "threshold": 0.39,
@@ -660,7 +650,7 @@
      "right": 4,
      "wrong": 2,
      "unlinked": 0,
-     "scorable": 6,
+     "scorable": 5,
      "accepted_right": 2,
      "accepted_wrong": 0
     },
@@ -893,9 +883,9 @@
   "look_alike_finding": {
    "what": "the VLM's wrong names against random strangers: the right names' faces, each scored against a random other person in the gallery (seeded). A contrast, never an input",
    "random_strangers": {
-    "pairs": 30,
-    "max_score": 0.3435,
-    "median_score": 0.1631,
+    "pairs": 28,
+    "max_score": 0.3677,
+    "median_score": 0.1241,
     "accepted_at_threshold": 0
    },
    "vlm_wrong_names": {
@@ -905,24 +895,24 @@
     "above_every_stranger": 3,
     "accepted_at_threshold": 1
    },
-   "right_names_median_score": 0.6174,
+   "right_names_median_score": 0.6198,
    "if_calibrated_on_random_pairs": {
-    "threshold": 0.2134,
+    "threshold": 0.181,
     "rule": "the lowest threshold at which p*TAR / (p*TAR + (1-p)*FMR) >= 0.90 with FMR measured on random strangers (point estimate), p the VLM's QID precision",
     "on_the_vlms_own_names": {
-     "threshold": 0.2134,
+     "threshold": 0.181,
      "right": 31,
      "wrong": 13,
-     "accepted_right": 30,
+     "accepted_right": 29,
      "accepted_wrong": 10,
-     "tar": 0.9677,
+     "tar": 0.9355,
      "fmr": 0.7692,
      "fmr_upper_95": 0.934,
-     "precision": 0.75,
-     "precision_lower_95": 0.6129
+     "precision": 0.7436,
+     "precision_lower_95": 0.604
     }
    },
-   "finding": "Scored against a random other person, the right names' faces reach at most 0.344 (median 0.163); 3 of the 12 scorable wrong names the VLM gave score above every stranger. A threshold calibrated on random pairs would sit at 0.213; on the VLM's own names it accepts 10 of 13 wrong names, an accepted-name precision of 0.75 against the 0.9 required. A random-pair false-match rate measures strangers; the names a gallery must refuse are the look-alikes the VLM chose, so the threshold is calibrated on those."
+   "finding": "Scored against a random other person, the right names' faces reach at most 0.368 (median 0.124); 3 of the 12 scorable wrong names the VLM gave score above every stranger. A threshold calibrated on random pairs would sit at 0.181; on the VLM's own names it accepts 10 of 13 wrong names, an accepted-name precision of 0.7436 against the 0.9 required. A random-pair false-match rate measures strangers; the names a gallery must refuse are the look-alikes the VLM chose, so the threshold is calibrated on those."
   },
   "verite": "not read: calibration reads Factify2 train only",
   "factify2_ledger": {
@@ -938,44 +928,37 @@
    "names": 6734,
    "mentions": 32669,
    "resolve": {
-    "to_one_person": 3403,
-    "to_several": 505,
-    "to_no_one": 2826
+    "to_one_person": 3498,
+    "to_several": 523,
+    "to_no_one": 2713
    },
    "collapse": {
-    "people": 3078,
-    "people_with_two_names_or_more": 266,
-    "names_in_them": 591,
+    "people": 3167,
+    "people_with_two_names_or_more": 270,
+    "names_in_them": 601,
     "most_names_for_one_person": 6
    },
    "plausible_aliases_not_collapsing": {
-    "names": 227,
-    "mentions": 1791,
-    "share_of_mentions": 0.0548,
+    "names": 230,
+    "mentions": 1762,
+    "share_of_mentions": 0.0539,
     "with_vlm_mentions": 21,
     "by_outcome": {
-     "several": 87,
-     "unresolved": 140
+     "several": 91,
+     "unresolved": 139
     },
     "by_rule": {
      "surname": {
-      "names": 73,
-      "mentions": 1310,
+      "names": 77,
+      "mentions": 1337,
       "unresolved": 23,
-      "several": 50,
-      "someone_else": 0
-     },
-     "spelling": {
-      "names": 44,
-      "mentions": 126,
-      "unresolved": 44,
-      "several": 0,
+      "several": 54,
       "someone_else": 0
      },
      "initials_or_middle": {
-      "names": 58,
-      "mentions": 175,
-      "unresolved": 58,
+      "names": 56,
+      "mentions": 162,
+      "unresolved": 56,
       "several": 0,
       "someone_else": 0
      },
@@ -984,6 +967,13 @@
       "mentions": 173,
       "unresolved": 15,
       "several": 34,
+      "someone_else": 0
+     },
+     "spelling": {
+      "names": 45,
+      "mentions": 83,
+      "unresolved": 45,
+      "several": 0,
       "someone_else": 0
      },
      "spacing": {
@@ -996,7 +986,7 @@
     },
     "names_that_could_be_several_people": 3
    },
-   "statement": "Of 6,734 person names, 3,403 resolve to one person; 591 of them collapse into the 266 people who have two names or more. 227 names (1,791 of 32,669 mentions) plausibly name a gallery person they do not resolve to: 140 resolve to no one, 87 to several people and 0 to someone else",
+   "statement": "Of 6,734 person names, 3,498 resolve to one person; 601 of them collapse into the 270 people who have two names or more. 230 names (1,762 of 32,669 mentions) plausibly name a gallery person they do not resolve to: 139 resolve to no one, 91 to several people and 0 to someone else",
    "labels": {
     "trials_not_labelled_right": 13,
     "an_alias_gap_may_decide": {},
@@ -1005,13 +995,19 @@
    },
    "resolution_rules": {
     "what": "over the build scope's person names, what each resolver rule changes against an exact key: spacing looks a name up by its letters, as linking does; one_word lets a one-word name resolve only to the one gallery person who holds it, never through a nickname alias, and makes a word with two readings or more ambiguous",
+    "cost_by_design": {
+     "names": 407,
+     "mentions": 3377,
+     "share_of_mentions": 0.1034,
+     "statement": "407 names that resolved to one person (3,377 mentions, 10.3% of all) now refuse rather than guess: the word is several people's, or only a nickname. A design choice, not a regression: a guess checks one person's face, and nothing downstream can tell a wrong guess from a right one"
+    },
     "spacing": {
-     "names_changed": 27,
-     "mentions": 174,
+     "names_changed": 21,
+     "mentions": 68,
      "by_change": {
       "no_one_to_one": {
-       "names": 20,
-       "mentions": 155
+       "names": 14,
+       "mentions": 49
       },
       "one_to_several": {
        "names": 7,
@@ -1020,124 +1016,134 @@
      },
      "resolved_to_one_person_no_longer": {
       "names": 7,
-      "mentions": 19
+      "mentions": 19,
+      "share_of_mentions": 0.0006
      }
     },
     "one_word": {
-     "names_changed": 521,
-     "mentions": 3973,
+     "names_changed": 535,
+     "mentions": 4015,
      "by_change": {
       "no_one_to_several": {
-       "names": 111,
-       "mentions": 427
+       "names": 119,
+       "mentions": 444
       },
       "one_to_no_one": {
-       "names": 38,
-       "mentions": 94
-      },
-      "one_to_several": {
-       "names": 357,
-       "mentions": 3240
-      },
-      "several_to_several": {
-       "names": 15,
-       "mentions": 212
-      }
-     },
-     "resolved_to_one_person_no_longer": {
-      "names": 395,
-      "mentions": 3334
-     }
-    },
-    "both": {
-     "names_changed": 547,
-     "mentions": 4146,
-     "by_change": {
-      "no_one_to_one": {
-       "names": 19,
-       "mentions": 154
-      },
-      "no_one_to_several": {
-       "names": 111,
-       "mentions": 427
-      },
-      "one_to_no_one": {
-       "names": 38,
-       "mentions": 94
+       "names": 36,
+       "mentions": 89
       },
       "one_to_several": {
        "names": 364,
-       "mentions": 3259
+       "mentions": 3269
       },
       "several_to_several": {
-       "names": 15,
-       "mentions": 212
+       "names": 16,
+       "mentions": 213
       }
      },
      "resolved_to_one_person_no_longer": {
-      "names": 402,
-      "mentions": 3353
+      "names": 400,
+      "mentions": 3358,
+      "share_of_mentions": 0.1028
      }
     },
-    "statement": "Against an exact key, the rules change how 547 names resolve (4,146 mentions): spacing 27, one_word 521. 402 names that resolved to one person no longer do: verify refuses them"
+    "both": {
+     "names_changed": 555,
+     "mentions": 4082,
+     "by_change": {
+      "no_one_to_one": {
+       "names": 13,
+       "mentions": 48
+      },
+      "no_one_to_several": {
+       "names": 119,
+       "mentions": 444
+      },
+      "one_to_no_one": {
+       "names": 36,
+       "mentions": 89
+      },
+      "one_to_several": {
+       "names": 371,
+       "mentions": 3288
+      },
+      "several_to_several": {
+       "names": 16,
+       "mentions": 213
+      }
+     },
+     "resolved_to_one_person_no_longer": {
+      "names": 407,
+      "mentions": 3377,
+      "share_of_mentions": 0.1034
+     }
+    },
+    "statement": "407 names that resolved to one person (3,377 mentions, 10.3% of all) now refuse rather than guess: the word is several people's, or only a nickname. A design choice, not a regression: a guess checks one person's face, and nothing downstream can tell a wrong guess from a right one. Against an exact key, the rules change how 555 names resolve (4,082 mentions): spacing 21, one_word 535"
    },
    "no_one": {
     "what": "the build scope's person names that resolve to no one, by the first cause that applies: an alias gap; a one-word name the resolver refuses; what Wikidata's search answered at linking",
-    "names": 2826,
-    "mentions": 6027,
-    "share_of_mentions": 0.1845,
+    "names": 2713,
+    "mentions": 5600,
+    "share_of_mentions": 0.1714,
     "by_cause": {
+     "held": {
+      "names": 17,
+      "mentions": 25,
+      "one_word_names": 0,
+      "single_mention_names": 13,
+      "share_of_mentions": 0.0008
+     },
      "a_gallery_person": {
-      "names": 140,
-      "mentions": 552,
+      "names": 139,
+      "mentions": 499,
       "one_word_names": 38,
-      "single_mention_names": 84,
-      "share_of_mentions": 0.0169
+      "single_mention_names": 86,
+      "share_of_mentions": 0.0153
      },
      "refused_one_word": {
-      "names": 38,
-      "mentions": 94,
-      "one_word_names": 38,
-      "single_mention_names": 22,
-      "share_of_mentions": 0.0029
+      "names": 36,
+      "mentions": 89,
+      "one_word_names": 36,
+      "single_mention_names": 21,
+      "share_of_mentions": 0.0027
      },
      "no_item": {
-      "names": 1648,
-      "mentions": 3002,
-      "one_word_names": 208,
-      "single_mention_names": 1228,
-      "share_of_mentions": 0.0919
+      "names": 1537,
+      "mentions": 2652,
+      "one_word_names": 207,
+      "single_mention_names": 1169,
+      "share_of_mentions": 0.0812
      },
      "no_exact_item": {
-      "names": 270,
-      "mentions": 525,
-      "one_word_names": 101,
-      "single_mention_names": 188,
-      "share_of_mentions": 0.0161
+      "names": 264,
+      "mentions": 503,
+      "one_word_names": 100,
+      "single_mention_names": 185,
+      "share_of_mentions": 0.0154
      },
      "name_only": {
-      "names": 80,
-      "mentions": 164,
-      "one_word_names": 74,
+      "names": 76,
+      "mentions": 148,
+      "one_word_names": 70,
       "single_mention_names": 48,
-      "share_of_mentions": 0.005
+      "share_of_mentions": 0.0045
      },
      "name_or_thing": {
-      "names": 210,
-      "mentions": 485,
-      "one_word_names": 202,
-      "single_mention_names": 136,
+      "names": 209,
+      "mentions": 484,
+      "one_word_names": 201,
+      "single_mention_names": 135,
       "share_of_mentions": 0.0148
      },
      "not_a_person": {
-      "names": 440,
-      "mentions": 1205,
-      "one_word_names": 302,
-      "single_mention_names": 288,
-      "share_of_mentions": 0.0369
+      "names": 435,
+      "mentions": 1200,
+      "one_word_names": 298,
+      "single_mention_names": 283,
+      "share_of_mentions": 0.0367
      }
     },
-    "statement": "2,826 person names (6,027 of 32,669 mentions) resolve to no one. Linking failures with the person in the gallery, by rule: 140 (552 mentions). One-word names the resolver refuses: 38 (94 mentions). No Wikidata item by that name: 1,648 (3,002 mentions), and items that begin with it but are not it: 270 (525 mentions) -- people Wikidata does not have, or forms its search cannot match. Exactly a name item, a surname or first name alone: 80 (164 mentions); exactly something that is no person: 440 (1,205 mentions); both: 210 (485 mentions)"
+    "statement": "2,713 person names (5,600 of 32,669 mentions) resolve to no one. Exact matches held for a person's check: 17 (25 mentions). Linking failures with the person in the gallery, by rule: 139 (499 mentions). One-word names the resolver refuses: 36 (89 mentions). No Wikidata item by that name: 1,537 (2,652 mentions), and items that begin with it but are not it: 264 (503 mentions) -- people Wikidata does not have, or forms its search cannot match. Exactly a name item, a surname or first name alone: 76 (148 mentions); exactly something that is no person: 435 (1,200 mentions); both: 209 (484 mentions)"
    }
   },
   "adjudicated": {
@@ -1160,9 +1166,10 @@
     "confirmed_right": {
      "names": 35,
      "recognised": 31,
-     "recognition_failures": 3,
+     "recognition_failures": 2,
      "coverage": {
-      "no_usable_reference": 1
+      "no_usable_reference": 1,
+      "no_usable_face": 1
      }
     },
     "confirmed_wrong": {
@@ -1185,16 +1192,16 @@
       "side_on": 2
      },
      "recognition_failures": {
-      "median_face_side": 38.2,
-      "median_eye_span": 5.6,
-      "median_eye_mouth": 21.8,
-      "median_nose_offset": 1.07,
+      "median_face_side": 41.2,
+      "median_eye_span": 5.3,
+      "median_eye_mouth": 21.9,
+      "median_nose_offset": 1.13,
       "side_on": 2
      }
     },
     "recognition_failures_by_cause": {
      "pose": 2,
-     "size": 1,
+     "size": 0,
      "both": 0,
      "neither": 0,
      "rules": {
@@ -1203,10 +1210,10 @@
      },
      "remedies": {
       "pose": "references in more poses, a side view for a side view",
-      "size": "none in the gallery: a floor below which a face is too small to verify, and a larger image"
+      "size": "none in the gallery: under the 20 px floor verify answers no_usable_face, and only a larger image helps"
      }
     },
-    "statement": "A person confirmed 35 names right. The gallery scores 31 at or above its floor of 0.381; 3 below it, among different people's faces -- recognition failures, not label errors: they lower TAR, and they are the recognizer's limit on these images (pose: 2, size: 1, both: 0, neither: 0); 1 it cannot score -- coverage, never a true accept. 4 decisions changed a label (label noise): wrong to right: 4 (2 at or above the floor, 2 below it, 0 unscorable)"
+    "statement": "A person confirmed 35 names right. The gallery scores 31 at or above its floor of 0.381; 2 below it, among different people's faces -- recognition failures, not label errors: they lower TAR, and they are the recognizer's limit on these images (pose: 2, size: 0, both: 0, neither: 0); 2 it cannot score -- coverage, never a true accept. 4 decisions changed a label (label noise): wrong to right: 4 (2 at or above the floor, 2 below it, 0 unscorable)"
    },
    "trials": {
     "total": 44,
@@ -1220,7 +1227,8 @@
     },
     "unscorable": {
      "no_usable_reference": 1,
-     "name_unlinked": 1
+     "name_unlinked": 1,
+     "no_usable_face": 1
     }
    },
    "vlm_precision": {
@@ -1265,11 +1273,12 @@
     "right_names": 35,
     "rejected": 4,
     "rejected_unscorable": {
-     "no_usable_reference": 1
+     "no_usable_reference": 1,
+     "no_usable_face": 1
     },
-    "rejected_below_threshold": 3,
-    "right_names_scorable": 34,
-    "tar_scorable": 0.9118,
+    "rejected_below_threshold": 2,
+    "right_names_scorable": 33,
+    "tar_scorable": 0.9394,
     "note": "TAR is (right names the gallery can score / right names) x tar_scorable: a name it cannot score is coverage, and tar_scorable is the recognizer's own rate without it"
    },
    "bootstrap_95": {
@@ -1308,14 +1317,14 @@
       0.2811,
       0.2285,
       0.2784,
-      0.2811,
-      0.2811
+      0.2878,
+      0.2878
      ],
-     "accepted_right": 34,
+     "accepted_right": 33,
      "accepted_wrong": 4,
-     "tar": 0.9714,
+     "tar": 0.9429,
      "fmr": 0.4444,
-     "precision": 0.8947
+     "precision": 0.8919
     }
    },
    "figure_stratified": {
@@ -1345,7 +1354,7 @@
       1.0
      ]
     },
-    "threshold_by_figure_bound": 0.371,
+    "threshold_by_figure_bound": 0.3889,
     "note": "the threshold at which the one-sided 95% lower bound of figure-weighted precision reaches 0.90; when it is above the pooled one, the pooled threshold leans on the most-tried figures",
     "pooled_without_top_two_figures": {
      "threshold": 0.4383,
@@ -1363,36 +1372,36 @@
    "look_alike_finding": {
     "what": "the VLM's wrong names against random strangers: the right names' faces, each scored against a random other person in the gallery (seeded). A contrast, never an input",
     "random_strangers": {
-     "pairs": 34,
-     "max_score": 0.2913,
-     "median_score": 0.162,
+     "pairs": 32,
+     "max_score": 0.3457,
+     "median_score": 0.148,
      "accepted_at_threshold": 0
     },
     "vlm_wrong_names": {
      "wrong": 9,
      "scorable": 8,
      "median_score": 0.2535,
-     "above_every_stranger": 2,
+     "above_every_stranger": 1,
      "accepted_at_threshold": 0
     },
-    "right_names_median_score": 0.6094,
+    "right_names_median_score": 0.6151,
     "if_calibrated_on_random_pairs": {
-     "threshold": 0.179,
+     "threshold": 0.181,
      "rule": "the lowest threshold at which p*TAR / (p*TAR + (1-p)*FMR) >= 0.90 with FMR measured on random strangers (point estimate), p the VLM's QID precision",
      "on_the_vlms_own_names": {
-      "threshold": 0.179,
+      "threshold": 0.181,
       "right": 35,
       "wrong": 9,
-      "accepted_right": 34,
+      "accepted_right": 33,
       "accepted_wrong": 6,
-      "tar": 0.9714,
+      "tar": 0.9429,
       "fmr": 0.6667,
       "fmr_upper_95": 0.9023,
-      "precision": 0.85,
-      "precision_lower_95": 0.7253
+      "precision": 0.8462,
+      "precision_lower_95": 0.7188
      }
     },
-    "finding": "Scored against a random other person, the right names' faces reach at most 0.291 (median 0.162); 2 of the 8 scorable wrong names the VLM gave score above every stranger. A threshold calibrated on random pairs would sit at 0.179; on the VLM's own names it accepts 6 of 9 wrong names, an accepted-name precision of 0.85 against the 0.9 required. A random-pair false-match rate measures strangers; the names a gallery must refuse are the look-alikes the VLM chose, so the threshold is calibrated on those."
+    "finding": "Scored against a random other person, the right names' faces reach at most 0.346 (median 0.148); 1 of the 8 scorable wrong names the VLM gave score above every stranger. A threshold calibrated on random pairs would sit at 0.181; on the VLM's own names it accepts 6 of 9 wrong names, an accepted-name precision of 0.8462 against the 0.9 required. A random-pair false-match rate measures strangers; the names a gallery must refuse are the look-alikes the VLM chose, so the threshold is calibrated on those."
    }
   }
  }

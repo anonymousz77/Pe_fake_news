@@ -439,6 +439,9 @@ SEARCH = {
     "Narendra": [_hit("Q1", "Narendra Modi")],
     "BJP": [_hit("Q80", "Bharatiya Janata Party", "alias", "BJP")],
     "Apple": [_hit("Q89", "apple")],
+    # prefix search does not see "P. Chidambaram" in "P Chidambaram"
+    "P. Chidambaram": [_hit("Q90", "P. Chidambaram")],
+    "S. S. Ahluwalia": [_hit("Q91", "S. S. Ahluwalia")],
 }
 ENTITIES = {"Q1": _entity("Q1", "Narendra Modi", sitelinks=200, images=["Modi 1.jpg"]),
             "Q50": _entity("Q50", "Modi", p31=("Q101352",)),
@@ -446,6 +449,7 @@ ENTITIES = {"Q1": _entity("Q1", "Narendra Modi", sitelinks=200, images=["Modi 1.
             "Q70": _entity("Q70", "Rahul Gandhi", sitelinks=90),
             "Q80": _entity("Q80", "Bharatiya Janata Party", p31=("Q7278",)),
             "Q89": _entity("Q89", "apple", p31=("Q1364",)),
+            "Q90": _entity("Q90", "P. Chidambaram"), "Q91": _entity("Q91", "S. S. Ahluwalia"),
             # classes: a party is a political organisation is an organisation; a fruit is a food
             "Q7278": _entity("Q7278", "political party", p31=(), subclass_of=("Q7210356",)),
             "Q7210356": _entity("Q7210356", "political organization", p31=(), subclass_of=("Q43229",)),
@@ -500,6 +504,35 @@ def test_a_name_links_only_to_an_exact_label_of_the_right_type(net):
     assert status["bjp"] == ("linked", "Q80"), "an organisation by alias, its classes walked up to Q43229"
     assert status["apple"][0] == "no_type_match", "a fruit's classes never reach an organisation"
     assert entities["Q1"]["images"] == ["Modi 1.jpg"] and entities["Q1"]["sitelinks"] == 200
+
+
+def test_initials_are_searched_dotted_and_spaced_too_never_respelled(net):
+    d = gallery.dotted_initials
+    assert d("P Chidambaram") == "P. Chidambaram" and d("SS Ahluwalia") == "S. S. Ahluwalia", \
+        "a lone initial, and initials run together"
+    assert d("K.S. Eshwarappa") == "K. S. Eshwarappa" and d("Narendra S Tomar") == "Narendra S. Tomar"
+    assert d("M. K. Stalin") is None and d("Rahul Gandhi") is None and d("Shahi Tharoor") is None, \
+        "already the form, or no initials: a misspelling is never touched"
+    assert d("BJP", "ORG") is None and d("Kumar S") is None, "an acronym is no person's; a last word stays"
+    make, _holder, _ledger = net
+    rows, _entities = gallery.link_names(make(_wikidata()), _todo(
+        ("PERSON", "P Chidambaram", "P Chidambaram"), ("PERSON", "SS Ahluwalia", "SS Ahluwalia"),
+        ("PERSON", "Shahi Tharoor", "Shahi Tharoor")))
+    by = {r["key"]: r for r in rows}
+    assert (by["p chidambaram"]["status"], by["p chidambaram"]["qid"]) == ("linked", "Q90")
+    assert (by["ss ahluwalia"]["status"], by["ss ahluwalia"]["qid"]) == ("linked", "Q91"), \
+        "found under the dotted form; exact is still same_name, the same letters"
+    assert by["p chidambaram"]["queries"] == ["P Chidambaram", "P. Chidambaram"]
+    assert by["shahi tharoor"]["queries"] == ["Shahi Tharoor"] and by["shahi tharoor"]["status"] == "no_result"
+
+    due = gallery.link_due
+    assert due(None, "P Chidambaram", "PERSON", {}) and due({"status": "error"}, "x", "PERSON", {})
+    assert due({"status": "no_result", "query": "P Chidambaram"}, "P Chidambaram", "PERSON", {}), \
+        "searched only as written: search again"
+    assert not due(by["p chidambaram"], "P Chidambaram", "PERSON", {}), "a name that linked keeps its link"
+    both = {"status": "no_result", "query": "P Chidambaram", "queries": ["P Chidambaram", "P. Chidambaram"]}
+    assert not due(both, "P Chidambaram", "PERSON", {}), "both forms searched: done"
+    assert not due({"status": "no_result", "query": "Shahi Tharoor"}, "Shahi Tharoor", "PERSON", {})
 
 
 def test_requests_to_one_host_start_a_second_apart_and_every_one_is_logged(net):
@@ -927,10 +960,14 @@ def _vec(seed, base=None, noise=NOISE):
     return (v / np.linalg.norm(v)).astype("float32")
 
 
-def _face(vec, box=(10, 10, 100, 100), dh="0000000000000000"):
+#: Eyes, nose and mouth corners of a face-on face in the default box: 37 px eyes to mouth.
+FACE_ON = [[40, 45], [70, 45], [55, 62], [43, 82], [67, 82]]
+
+
+def _face(vec, box=(10, 10, 100, 100), dh="0000000000000000", landmarks=FACE_ON):
     import base64
 
-    return {"box": list(box), "landmarks": [[0, 0]] * 5, "score": 0.99, "dhash": dh,
+    return {"box": list(box), "landmarks": [list(p) for p in landmarks], "score": 0.99, "dhash": dh,
             "embedding": base64.b64encode(vec.tobytes()).decode("ascii")}
 
 
@@ -1049,6 +1086,16 @@ def test_verification_returns_the_reference_it_matched_so_a_person_can_check_it(
     org = g.verify(query, "Some Party", 0.5, entity_type="ORG")
     assert org["in_gallery"] and org["match"] is None, "an organisation's match is never claimed"
 
+    # eyes to mouth 18 px, under the 20 px floor: no score, whatever the threshold
+    small = [_face(_vec(5000, bases["Q1"]), landmarks=[[40, 45], [70, 45], [55, 55], [43, 63], [67, 63]])]
+    tiny = g.verify(small, "Narendra Modi", threshold=0.5)
+    assert tiny["reason"].startswith("no_usable_face") and tiny["match"] is None and tiny["score"] is None
+    assert tiny["query_face"]["eye_mouth"] == 18.0 and tiny["per_reference"] == [], \
+        "a score from an 18 px face is noise presented as a measurement: none is shown"
+    both = g.verify(small + [_face(_vec(6000, bases["Q2"]))], "Narendra Modi", threshold=0.5)
+    assert both["reason"].startswith("no_usable_face"), \
+        "the face that best matches is under the floor: a larger stranger's face does not answer for it"
+
 
 # --------------------------------------------------------------------------
 # calibration: Factify2 train only, scored on the VLM's own wrong names
@@ -1141,6 +1188,14 @@ def test_a_trial_resolves_its_name_exactly_as_verification_does(tmp_path):
     assert g.verify([face], "Raj Lal", 0.5)["match"] is None and g.verify([face], "Raj Lal", 0.5)["score"] is None
     assert by["Nobody Here"]["label"] == "unlinked" and by["Nobody Here"]["unscorable"] == "name_unlinked"
     assert tally["images_with_trials"] == 1
+
+    small = {**face, "landmarks": [[30, 40], [70, 40], [50, 48], [40, 58], [60, 58]]}  # 18 px eyes to mouth
+    trials, _tally = gallery.build_trials(population, {("PERSON", "narendra modi"): links[0]},
+                                          {"img1": {"faces": [small]}}, g)
+    modi = {t["name"]: t for t in trials}["Narendra Damodardas"]
+    assert modi["unscorable"] == "no_usable_face" and not modi["scorable"] and modi["score"] is None, \
+        "under the floor a trial is never scored, as verify never scores it"
+    assert modi["eye_mouth"] == 18.0, "and the face it would have been is kept, for the review"
 
 
 def test_a_name_is_right_when_the_claims_name_that_person_not_only_the_figure(tmp_path):
@@ -1484,7 +1539,11 @@ def test_aliases_that_collapse_and_plausible_aliases_that_do_not_are_counted(tmp
     assert rules["one_word"]["by_change"] == {"one_to_several": {"names": 1, "mentions": 50},
                                               "no_one_to_several": {"names": 1, "mentions": 10}}, \
         "Modi stops resolving through Modigliani's nickname; Gandhi, two people's word, is ambiguous"
-    assert rules["one_word"]["resolved_to_one_person_no_longer"] == {"names": 1, "mentions": 50}
+    assert rules["one_word"]["resolved_to_one_person_no_longer"] == {"names": 1, "mentions": 50,
+                                                                      "share_of_mentions": round(50 / 413, 4)}
+    cost = rules["cost_by_design"]
+    assert cost["names"] == 1 and "refuse rather than guess" in cost["statement"], "a design choice, stated"
+    assert "12.1% of all" in rules["statement"], "the cost leads the statement"
     assert rules["both"]["names_changed"] == 3
     assert "Modigliani" not in json.dumps(gallery.public_report({"r": rules})), "names stay in the local report"
 
@@ -1525,6 +1584,38 @@ def test_a_name_resolves_by_its_letters_and_a_word_only_to_the_one_person_who_ho
     assert g.resolve("Narendra Modi") == ["Q1"] and g.resolve("Modi", "ORG") == []
 
 
+def test_a_held_link_keeps_its_match_and_reason_and_resolves_no_one_until_released(store, tmp_path):
+    root, _use = store
+    linked = {"schema": "gallery_link/1", "type": "PERSON", "key": "k sasikala", "query": "K Sasikala",
+              "queries": ["K Sasikala", "K. Sasikala"], "status": "linked", "qid": "Q2",
+              "candidates": [{"qid": "Q2", "label": "K. Sasikala", "description": "botanist", "sitelinks": 1}]}
+    gallery.write_jsonl(gallery.LINKS_PATH, [{"type": "PERSON", "key": "sasikala", "status": "linked", "qid": "Q2"},
+                                             linked])
+    reasons = root / "reasons.json"
+    gallery.write_json(reasons, {"k sasikala": "an exact match by initials to a botanist: another person"})
+    assert gallery.main(["link", "--hold", "k sasikala", "--reasons", str(reasons), "--by", "the person"]) == 0
+    row = gallery.latest(gallery.read_jsonl(gallery.LINKS_PATH), lambda r: r["key"])["k sasikala"]
+    assert row["status"] == "held" and row["held"]["qid"] == "Q2" and row["held"]["status"] == "linked"
+    assert row["held"]["because"].startswith("an exact match by initials") and row["held"]["by"] == "the person", \
+        "the reason is recorded, so a later pass revisits the hold rather than rediscovering it"
+    assert not gallery.link_due(row, "K Sasikala", "PERSON", {}), "a held link is never searched again"
+
+    bases, entities, faces = _people()
+    entities[1]["label"] = "K. Sasikala"
+    aliases = {"Q2": ["Kumari Sasikala"]}
+    g = _gallery_on_disk(tmp_path / "g", entities, faces, list(gallery.read_jsonl(gallery.LINKS_PATH)), aliases)
+    assert g.resolve("K Sasikala") == [], "held: not even that person's own label resolves the name"
+    assert g.resolve("Kumari Sasikala") == ["Q2"], "the person stays in the gallery under their other names"
+    with pytest.raises(gallery.GalleryError):
+        gallery.main(["link", "--hold", "nobody linked", "--because", "x", "--by", "the person"])
+
+    assert gallery.main(["link", "--release", "k sasikala", "--by", "the person"]) == 0
+    back = gallery.latest(gallery.read_jsonl(gallery.LINKS_PATH), lambda r: r["key"])["k sasikala"]
+    assert (back["status"], back["qid"], back["released"]["by"]) == ("linked", "Q2", "the person")
+    g = _gallery_on_disk(tmp_path / "g2", entities, faces, list(gallery.read_jsonl(gallery.LINKS_PATH)), aliases)
+    assert g.resolve("K Sasikala") == ["Q2"], "released, the link counts again"
+
+
 def test_names_that_resolve_to_no_one_are_kept_apart_by_why(tmp_path):
     bases, entities, faces = _people()
     labels = {"Q1": "Narendra Modi", "Q2": "Ana Higueras", "Q3": "Robert Mueller"}
@@ -1550,6 +1641,73 @@ def test_names_that_resolve_to_no_one_are_kept_apart_by_why(tmp_path):
     assert out["names"] == 8 and out["mentions"] == 39 and out["share_of_mentions"] == round(39 / 104, 4)
     assert out["by_cause"]["no_item"]["single_mention_names"] == 1
     assert "mueller" not in json.dumps(gallery.public_report({"n": out})), "names stay in the local report"
+
+
+#: A side-on face: the nose past the far eye (1.17 eye spans off the eyes' midpoint).
+SIDE_ON = [[40, 45], [52, 45], [60, 60], [48, 80], [56, 80]]
+
+
+class _ColourFaces:
+    """A face backend for the census: the faces an image shows, by its colour."""
+
+    def __init__(self, by_colour):
+        self.by_colour = by_colour
+
+    def faces(self, bgr, min_side):
+        b, g_, r = (int(v) for v in bgr[0, 0])
+        return self.by_colour.get((r, g_, b), [])
+
+
+def test_the_side_view_census_counts_what_commons_holds_by_pose_and_stores_nothing(net, tmp_path, media_root,
+                                                                                   monkeypatch):
+    bases, entities, faces = _people()
+    entities[0].update(label="Narendra Modi", commons_category="Narendra Modi")
+    g = _gallery_on_disk(tmp_path, entities, faces, [])
+    monkeypatch.setattr(placeholders, "registry", lambda: {})
+    colours = {"side": (10, 20, 30), "front": (40, 50, 60), "group": (70, 80, 90), "stranger": (100, 110, 120)}
+    # a title need not be ASCII
+    names = {"side": "Modì side.png", "front": "Modi front.png", "group": "Modi group.png",
+             "stranger": "Modi rally.png"}
+    files = {n: _info(n, f"https://upload.wikimedia.org/{k}") for k, n in names.items()}
+    files["Q1r0.jpg"] = _info("Q1r0.jpg", "https://upload.wikimedia.org/taken")
+    bodies = {k: _png(colours[k], (64, 48)) for k in names}
+    modi = lambda seed: _vec(seed, bases["Q1"])  # noqa: E731
+    backend = _ColourFaces({
+        colours["side"]: [_face(modi(1), landmarks=SIDE_ON)],
+        colours["front"]: [_face(modi(2))],
+        colours["group"]: [_face(_vec(3, bases["Q9"])), _face(modi(4))],   # two alike in size: the medoid picks
+        colours["stranger"]: [_face(_vec(5, bases["Q7"]), landmarks=SIDE_ON)]})
+
+    def handler(host, q, url):
+        if host == "upload.wikimedia.org":
+            return 200, {}, bodies[url.rsplit("/", 1)[-1]]
+        if q.get("list") == "search":
+            return _json({"query": {"search": [{"title": f"File:{n}"} for n in
+                                               ("Q1r0.jpg", names["side"], names["front"], names["group"])]}})
+        if q.get("list") == "categorymembers":
+            return _json({"query": {"categorymembers": [{"title": f"File:{names['stranger']}"}]}})
+        if q.get("prop") == "imageinfo":
+            pages = {str(i): files[t[5:]] for i, t in enumerate(q["titles"].split("|"))}
+            return _json({"query": {"pages": pages}})
+        return 404, {}, b""
+
+    make, _holder, _ledger = net
+    before = sorted(x for x in media_root.rglob("*") if x.is_file() and x.name != "provenance.jsonl")
+    report, side = gallery.side_view_census(make(handler), backend, g, [("Q1", 100)], faces, 0.381,
+                                            per_person=20, corpus=frozenset())
+    person = report["local"]["people"][0]
+    assert person["commons"] == {"listed": 5, "drawn": 4, "passed_gates": 4, "one_face": 4, "side_on": 2,
+                                 "side_on_agreeing": 1, "face_on_agreeing": 2}, \
+        "the file the gallery already took is not drawn; a group photo counts when the medoid picks its face"
+    assert sorted((t, agrees) for t, agrees, _v in side["Q1"]) == [("File:Modi rally.png", False),
+                                                                   ("File:Modì side.png", True)], \
+        "a side-on face that does not agree with the medoid may be someone else: never counted as kept"
+    assert person["gallery"] == {"usable": 4, "usable_side_on": 0, "refused": 0, "refused_side_on": 0}
+    assert report["people_with_a_side_view_the_gallery_would_keep"] == 1 and report["enough"]["met"]
+    after = sorted(x for x in media_root.rglob("*") if x.is_file() and x.name != "provenance.jsonl")
+    assert after == before, "a measurement stores nothing"
+    published = json.dumps(gallery.public_report(report))
+    assert "Modi" not in published and "File:" not in published, "titles and names stay local"
 
 
 def test_the_alignment_maps_the_template_onto_itself():

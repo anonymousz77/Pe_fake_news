@@ -65,6 +65,7 @@ do not allow redistribution, so it stays local.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import html
 import io
 import json
@@ -903,6 +904,8 @@ def face_model_path(which: str) -> Path:
 PASS_ID = "gallery-2026-10"
 #: ...and the full build (link/fetch --all), so either can be told apart later.
 BUILD_PASS_ID = "gallery-build-2026-10"
+#: Tags the link rows a person's hold or release writes (offline).
+HELD_PASS_ID = "gallery-holds-2026-10"
 LINKS_PATH = GALLERY / "links.jsonl"
 WIKIDATA_PATH = GALLERY / "wikidata.jsonl"
 ENTITIES_PATH = GALLERY / "entities.jsonl"
@@ -1322,18 +1325,31 @@ def link_names(net: Net, todo: Sequence[dict[str, Any]], *,
     """Link rows for ``todo`` ({type, key, query}), and the items they reach.
     Three passes, each through the one worker: search; the exact candidates'
     data (an item in ``known`` is not fetched again); for organisations, the
-    type check (``classes`` carries the class hierarchy from call to call)."""
-    known = known or {}
-    found: dict[tuple[str, str], tuple[list[dict[str, Any]] | None, str | None]] = {}
+    type check (``classes`` carries the class hierarchy from call to call).
 
-    def search(row: dict[str, Any]):
+    A person's name with initials is searched twice, as written and with them
+    dotted and spaced (dotted_initials), and the answers are pooled; exact
+    still means same_name. A search that got no answer makes the name an
+    error to retry, never a "no"."""
+    known = known or {}
+    answers: dict[tuple[str, str], list[tuple[list[dict[str, Any]] | None, str | None]]] = {}
+
+    def search(row: dict[str, Any], query: str):
         doc, err = yield from api_json(net, WIKIDATA_API, {
-            "action": "wbsearchentities", "search": row["query"], "language": "en", "uselang": "en",
+            "action": "wbsearchentities", "search": query, "language": "en", "uselang": "en",
             "type": "item", "limit": SEARCH_LIMIT, "format": "json", "maxlag": MAXLAG},
             f"{row['type']}:{row['key']}", "search")
-        found[(row["type"], row["key"])] = ((doc.get("search") or []) if doc is not None else None, err)
+        answers.setdefault((row["type"], row["key"]), []).append(
+            ((doc.get("search") or []) if doc is not None else None, err))
 
-    net.run(search(r) for r in todo)
+    queries = {(r["type"], r["key"]): [r["query"], *filter(None, [dotted_initials(r["query"], r["type"])])]
+               for r in todo}
+    net.run(search(r, q) for r in todo for q in queries[(r["type"], r["key"])])
+    found: dict[tuple[str, str], tuple[list[dict[str, Any]] | None, str | None]] = {}
+    for k, got in answers.items():
+        failed_search = next(((None, err) for results, err in got if results is None), None)
+        pooled = list({hit["id"]: hit for results, _err in got for hit in results or []}.values())
+        found[k] = failed_search or (pooled, None)
     wanted: dict[str, set[str]] = {}
     for r in todo:
         for qid in exact_candidates(found[(r["type"], r["key"])][0] or [], r["key"]):
@@ -1347,7 +1363,7 @@ def link_names(net: Net, todo: Sequence[dict[str, Any]], *,
     for r in todo:
         results, err = found[(r["type"], r["key"])]
         rows.append({"schema": "gallery_link/1", "pass": net.log.pass_id, "type": r["type"], "key": r["key"],
-                     "query": r["query"], "at": utcnow(),
+                     "query": r["query"], "queries": queries[(r["type"], r["key"])], "at": utcnow(),
                      **decide(r["type"], r["key"], results, err, entities, orgs, unchecked, failed)})
     return rows, entities
 
@@ -1417,6 +1433,30 @@ def query_for(row: dict[str, Any], glued: dict[tuple[str, str], dict[str, Any]])
         if twin is not None:
             return twin["display"]
     return row["display"]
+
+
+_DOTTED = re.compile(r"(?:[a-z]\.)+[a-z]?", re.I)
+
+
+def dotted_initials(query: str, entity_type: str = "PERSON") -> str | None:
+    """A person's name with its initials dotted and spaced, the form Wikidata
+    labels use and its prefix search needs ("P Chidambaram" is found only as
+    "P. Chidambaram"), or None when there is none to dot or it already reads
+    so. An initial is a lone letter, a run of two or three consonants
+    ("SS Ahluwalia": "S. S. Ahluwalia"; _INITIALS), or letters already dotted
+    ("K.S."), before the last word. The letters stay the letters: this is a
+    form, never a spelling."""
+    if entity_type != "PERSON":
+        return None
+    words = query.split()
+    out = []
+    for i, word in enumerate(words):
+        letters = word.replace(".", "")
+        initials = (i < len(words) - 1 and letters.isalpha()
+                    and (len(letters) == 1 or _INITIALS.fullmatch(letters.lower()) or _DOTTED.fullmatch(word)))
+        out.append(" ".join(f"{c.upper()}." for c in letters) if initials else word)
+    dotted = " ".join(out)
+    return dotted if dotted != " ".join(words) else None
 
 
 #: The figures the recognition probe lists, by name key, with the name searched.
@@ -1614,12 +1654,14 @@ def store(body: bytes, examined: dict[str, Any], directory: Path) -> Path:
     return path
 
 
-def commons_candidates(net: Net, entities: Sequence[dict[str, Any]]
-                       ) -> tuple[dict[str, list[tuple[str, str]]], set[str]]:
+def commons_candidates(net: Net, entities: Sequence[dict[str, Any]], *, limit: int = COMMONS_SEARCH_LIMIT,
+                       cap: int | None = None) -> tuple[dict[str, list[tuple[str, str]]], set[str]]:
     """(qid -> [(File: title, source)], qids whose search got no answer). In
     order: the item's own image (P18; for an organisation its logo, P154,
     first), files whose structured data says they depict the item, then files
-    in its Commons category."""
+    in its Commons category. ``limit`` files per listing; at most ``cap`` per
+    item (CANDIDATES, the references a build takes, by default), and the
+    category is listed only while fewer are found."""
     out: dict[str, list[tuple[str, str]]] = {}
     failed: set[str] = set()
     for e in entities:
@@ -1629,7 +1671,7 @@ def commons_candidates(net: Net, entities: Sequence[dict[str, Any]]
 
     def depicts(e: dict[str, Any]):
         doc, _err = yield from api_json(net, COMMONS_API, {
-            "action": "query", "list": "search", "srnamespace": 6, "srlimit": COMMONS_SEARCH_LIMIT,
+            "action": "query", "list": "search", "srnamespace": 6, "srlimit": limit,
             "srsearch": f"haswbstatement:P180={e['qid']} filetype:bitmap", "format": "json",
             "maxlag": MAXLAG}, f"depicts:{e['qid']}", "depicts")
         if doc is None:
@@ -1640,7 +1682,7 @@ def commons_candidates(net: Net, entities: Sequence[dict[str, Any]]
     def category(e: dict[str, Any]):
         doc, _err = yield from api_json(net, COMMONS_API, {
             "action": "query", "list": "categorymembers", "cmtype": "file",
-            "cmtitle": f"Category:{e['commons_category']}", "cmlimit": COMMONS_SEARCH_LIMIT,
+            "cmtitle": f"Category:{e['commons_category']}", "cmlimit": limit,
             "format": "json", "maxlag": MAXLAG}, f"category:{e['qid']}", "category")
         if doc is None:
             failed.add(e["qid"])
@@ -1650,7 +1692,7 @@ def commons_candidates(net: Net, entities: Sequence[dict[str, Any]]
     people = [e for e in entities if e["type"] == "PERSON"]
     net.run(depicts(e) for e in people)
     net.run(category(e) for e in people
-            if e["commons_category"] and len({t for t, _s in out[e["qid"]]}) < CANDIDATES["PERSON"])
+            if e["commons_category"] and len({t for t, _s in out[e["qid"]]}) < (cap or CANDIDATES["PERSON"]))
     kinds = {e["qid"]: e["type"] for e in entities}
     for qid, found in out.items():
         seen: set[str] = set()
@@ -1659,7 +1701,7 @@ def commons_candidates(net: Net, entities: Sequence[dict[str, Any]]
             if title.replace("_", " ") not in seen:
                 seen.add(title.replace("_", " "))
                 unique.append((title, source))
-        out[qid] = unique[:CANDIDATES[kinds[qid]]]
+        out[qid] = unique[:cap or CANDIDATES[kinds[qid]]]
     return out, failed
 
 
@@ -2206,6 +2248,45 @@ def assemble(entities: Sequence[dict[str, Any]], ref_faces: dict[str, dict[str, 
 # --------------------------------------------------------------------------
 
 
+#: A face is side-on when its nose sits this many eye spans or more from the
+#: eyes' midpoint, along the eye line: turned so far that the nose has passed
+#: the far eye.
+SIDE_ON = 0.5
+#: The smallest face verify scores, eyes to mouth (face_geometry): the smallest
+#: face the gallery recognised among the names a person confirmed on the
+#: sample (2026-10-22). Below it a score is noise presented as a measurement,
+#: and verify answers no_usable_face.
+MIN_EYE_MOUTH = 20.0
+
+
+def face_geometry(face: dict[str, Any]) -> dict[str, float | None]:
+    """A face's size and pose, from its box and five landmarks (eyes, nose,
+    mouth corners):
+
+    - face_side, the box's short side, and eye_span, how far apart the eyes are;
+    - eye_mouth, from the eyes' midpoint to the mouth's: a face turned left or
+      right keeps it, so it measures size apart from pose;
+    - nose_offset, the nose from the eyes' midpoint along the eye line, in eye
+      spans: about 0 face-on, SIDE_ON or more side-on. None when the eyes
+      coincide."""
+    (rx, ry), (lx, ly), (nx, ny), (rmx, rmy), (lmx, lmy) = face["landmarks"][:5]
+    ex, ey = lx - rx, ly - ry
+    span = math.hypot(ex, ey)
+    mx, my = (rx + lx) / 2, (ry + ly) / 2
+    return {"face_side": round(min(face["box"][2:]), 1), "eye_span": round(span, 1),
+            "eye_mouth": round(math.hypot((rmx + lmx) / 2 - mx, (rmy + lmy) / 2 - my), 1),
+            "nose_offset": round(((nx - mx) * ex + (ny - my) * ey) / span ** 2, 2) if span else None}
+
+
+def side_on(geometry: dict[str, Any]) -> bool:
+    return geometry.get("eye_span") == 0 or abs(geometry.get("nose_offset") or 0.0) >= SIDE_ON
+
+
+def too_small(face: dict[str, Any]) -> bool:
+    """Under MIN_EYE_MOUTH: a face verify never scores."""
+    return face_geometry(face)["eye_mouth"] < MIN_EYE_MOUTH
+
+
 #: How a name resolves (Gallery.resolve_key), beyond an exact key.
 RESOLVE_RULES = ("spacing", "one_word")
 
@@ -2233,9 +2314,12 @@ class Gallery:
                     self.refs.setdefault(qid, []).append(
                         (by_sha.get(ref["sha256"], {}), face, decode_embedding(face["embedding"])))
         self.index: dict[tuple[str, str], set[str]] = {}
+        held: dict[tuple[str, str], str] = {}
         for link in latest(read_jsonl(links_path), lambda r: (r["type"], r["key"])).values():
             if link.get("qid") and link["status"] in ("linked", "ambiguous"):
                 self.index.setdefault((link["type"], link["key"]), set()).add(link["qid"])
+            elif link["status"] == HELD:
+                held[(link["type"], link["key"])] = link["held"]["qid"]
         mononyms: dict[str, set[str]] = {}
         for summary in latest(read_jsonl(wikidata_path), lambda r: r["qid"]).values():
             entity = self.entities.get(summary["qid"])
@@ -2248,6 +2332,9 @@ class Gallery:
             label = name_key(summary.get("label") or "", entity["type"])
             if entity["type"] == "PERSON" and label and " " not in label:
                 mononyms.setdefault(label, set()).add(summary["qid"])
+        # a held link resolves its name to no one, not even through that person's own label
+        for key, qid in held.items():
+            self.index.get(key, set()).discard(qid)
         # spacing: a name is looked up by its letters, as linking's same_name matches it
         self.letters: dict[tuple[str, str], set[str]] = {}
         for (entity_type, key), qids in self.index.items():
@@ -2314,7 +2401,9 @@ class Gallery:
         returns the score and the reference it matched, for a person to check;
         it never falls back to another threshold. A name that resolves to
         several people is refused, unscored: verification is 1:1, and the best
-        of several candidates is a search among them."""
+        of several candidates is a search among them. So is a face under the
+        size floor: when the face that best matches is smaller than
+        MIN_EYE_MOUTH, the answer is no_usable_face, with no score."""
         qids = self.resolve(name, entity_type)
         out: dict[str, Any] = {"claimed_name": name, "entity_type": entity_type,
                                "entities": [{"qid": q, "label": (self.entities.get(q) or {}).get("label")}
@@ -2342,17 +2431,21 @@ class Gallery:
         if not faces:
             out["reason"] = "no_face_in_image"
             return out
-        best_qid, best = None, None
-        for q in usable:
-            found = self.best(faces, q)
-            for ref, _rf, vec in self.refs[q]:
-                out["per_reference"].append({"qid": q, "title": ref.get("title"), "score": round(max(
-                    float(decode_embedding(f["embedding"]) @ vec) for f in faces), 4)})
-            if found and (best is None or found["score"] > best["score"]):
-                best_qid, best = q, found
+        best_qid = usable[0]
+        best = self.best(faces, best_qid)
+        face = faces[best["query_face"]]
+        out["query_face"] = {**{k: face[k] for k in ("box", "landmarks", "score")}, **face_geometry(face)}
+        if too_small(face):
+            out["reason"] = (f"no_usable_face: the face that best matches is {out['query_face']['eye_mouth']} px "
+                             f"eyes to mouth, under the {MIN_EYE_MOUTH:g} px floor; a score from it would be "
+                             "noise presented as a measurement")
+            return out
+        scored = [f for f in faces if not too_small(f)]
+        for ref, _rf, vec in self.refs[best_qid]:
+            out["per_reference"].append({"qid": best_qid, "title": ref.get("title"), "score": round(max(
+                float(decode_embedding(f["embedding"]) @ vec) for f in scored), 4)})
         ref = best["reference"]
         out.update(score=round(best["score"], 4), matched_entity=best_qid,
-                   query_face={k: faces[best["query_face"]][k] for k in ("box", "landmarks", "score")},
                    matched_reference={"title": ref.get("title"), "page_url": ref.get("page_url"),
                                       "path": ref.get("path"), "sha256": ref.get("sha256"),
                                       "licence": ref.get("licence"), "attribution": ref.get("attribution"),
@@ -2480,37 +2573,16 @@ def build_trials(population: Sequence[dict[str, Any]], links: dict[tuple[str, st
                 else:
                     q = qids[0]
                     best = gallery.best(faces, q)
-                    trial.update(score=round(best["score"], 6), scorable=True, qid=q,
-                                 same_photo=best["same_photo"],
-                                 matched_reference=best["reference"].get("sha256"),
-                                 refs=len(gallery.refs[q]), **face_geometry(faces[best["query_face"]]))
+                    geometry = face_geometry(faces[best["query_face"]])
+                    if geometry["eye_mouth"] < MIN_EYE_MOUTH:  # as verify: under the floor, no score
+                        trial.update(unscorable="no_usable_face", qid=q, refs=len(gallery.refs[q]), **geometry)
+                    else:
+                        trial.update(score=round(best["score"], 6), scorable=True, qid=q,
+                                     same_photo=best["same_photo"],
+                                     matched_reference=best["reference"].get("sha256"),
+                                     refs=len(gallery.refs[q]), **geometry)
             out.append(trial)
     return out, tally
-
-
-#: A face is side-on when its nose sits this many eye spans or more from the
-#: eyes' midpoint, along the eye line: turned so far that the nose has passed
-#: the far eye.
-SIDE_ON = 0.5
-
-
-def face_geometry(face: dict[str, Any]) -> dict[str, float | None]:
-    """The scored face's size and pose, from its box and five landmarks (eyes,
-    nose, mouth corners):
-
-    - face_side, the box's short side, and eye_span, how far apart the eyes are;
-    - eye_mouth, from the eyes' midpoint to the mouth's: a face turned left or
-      right keeps it, so it measures size apart from pose;
-    - nose_offset, the nose from the eyes' midpoint along the eye line, in eye
-      spans: about 0 face-on, SIDE_ON or more side-on. None when the eyes
-      coincide."""
-    (rx, ry), (lx, ly), (nx, ny), (rmx, rmy), (lmx, lmy) = face["landmarks"][:5]
-    ex, ey = lx - rx, ly - ry
-    span = math.hypot(ex, ey)
-    mx, my = (rx + lx) / 2, (ry + ly) / 2
-    return {"face_side": round(min(face["box"][2:]), 1), "eye_span": round(span, 1),
-            "eye_mouth": round(math.hypot((rmx + lmx) / 2 - mx, (rmy + lmy) / 2 - my), 1),
-            "nose_offset": round(((nx - mx) * ex + (ny - my) * ey) / span ** 2, 2) if span else None}
 
 
 def verification_coverage(gallery: Gallery) -> dict[str, Any]:
@@ -2766,6 +2838,7 @@ def resolution_rules(names: Sequence[dict[str, Any]], gallery: Gallery) -> dict[
     verify now refuses, wrongly resolved ("Modi", Amedeo Modigliani) or not
     ("Trump", one of ten Trumps)."""
     mentions = {r["key"]: scope_mentions(r) for r in names}
+    total = sum(mentions.values())
     label = {q: e.get("label") for q, e in gallery.entities.items()}
     exact = {r["key"]: gallery.resolve_key(r["key"], rules=()) for r in names}
     out: dict[str, Any] = {}
@@ -2783,24 +2856,31 @@ def resolution_rules(names: Sequence[dict[str, Any]], gallery: Gallery) -> dict[
             b["names"] += 1
             b["mentions"] += mentions[key]
         lost = [c for c in changes if c[1] in ("one_to_no_one", "one_to_several")]
+        lost_mentions = sum(mentions[k] for k, _c, _n in lost)
         out[rule] = {"names_changed": len(changes), "mentions": sum(mentions[k] for k, _c, _n in changes),
                      "by_change": dict(sorted(by.items())),
-                     "resolved_to_one_person_no_longer": {"names": len(lost),
-                                                          "mentions": sum(mentions[k] for k, _c, _n in lost)}}
+                     "resolved_to_one_person_no_longer": {
+                         "names": len(lost), "mentions": lost_mentions,
+                         "share_of_mentions": image_text._ratio(lost_mentions, total, 4)}}
         local[rule] = [{"key": k, "change": c, "was": [label.get(q) or q for q in exact[k]], "now_people": n,
                         "mentions": mentions[k]}
                        for k, c, n in sorted(changes, key=lambda c: (-mentions[c[0]], c[0]))[:GAP_EXAMPLES]]
     both = out["both"]
+    lost = both["resolved_to_one_person_no_longer"]
+    cost = (f"{lost['names']:,} names that resolved to one person ({lost['mentions']:,} mentions, "
+            f"{(lost['share_of_mentions'] or 0):.1%} of all) now refuse rather than guess: the word is several "
+            "people's, or only a nickname. A design choice, not a regression: a guess checks one person's face, and "
+            "nothing downstream can tell a wrong guess from a right one")
     return {
         "what": ("over the build scope's person names, what each resolver rule changes against an exact key: "
                  "spacing looks a name up by its letters, as linking does; one_word lets a one-word name "
                  "resolve only to the one gallery person who holds it, never through a nickname alias, and "
                  "makes a word with two readings or more ambiguous"),
+        "cost_by_design": {**lost, "statement": cost},
         **out,
-        "statement": (f"Against an exact key, the rules change how {both['names_changed']:,} names resolve "
+        "statement": (f"{cost}. Against an exact key, the rules change how {both['names_changed']:,} names resolve "
                       f"({both['mentions']:,} mentions): spacing {out['spacing']['names_changed']:,}, one_word "
-                      f"{out['one_word']['names_changed']:,}. {both['resolved_to_one_person_no_longer']['names']:,} "
-                      "names that resolved to one person no longer do: verify refuses them"),
+                      f"{out['one_word']['names_changed']:,}"),
         "local": local}
 
 
@@ -2817,6 +2897,7 @@ def no_one_names(names: Sequence[dict[str, Any]], gallery: Gallery,
     """The build scope's person names that resolve to no one, by what is known
     of why, kept apart because each has its own fix. The first that applies:
 
+    - held: an exact match a person must check first (HELD);
     - a_gallery_person: an alias gap (alias_gaps) -- a variant of a gallery
       person's name. A linking failure with the entry in hand;
     - refused_one_word: a one-word name that matches only a nickname alias
@@ -2839,6 +2920,8 @@ def no_one_names(names: Sequence[dict[str, Any]], gallery: Gallery,
     total = sum(mentions.values())
 
     def cause(key: str) -> str:
+        if (links.get(("PERSON", key)) or {}).get("status") == HELD:
+            return "held"
         gap = gaps.get(key)
         if gap and gap["outcome"] == "unresolved":
             return "a_gallery_person"
@@ -2865,8 +2948,8 @@ def no_one_names(names: Sequence[dict[str, Any]], gallery: Gallery,
         b["single_mention_names"] += mentions[r["key"]] == 1
         examples.setdefault(c, []).append((mentions[r["key"]], r["key"]))
     n_mentions = sum(b["mentions"] for b in by.values())
-    order = ("a_gallery_person", "refused_one_word", "no_item", "no_exact_item", "name_only", "name_or_thing",
-             "not_a_person", "not_linked")
+    order = ("held", "a_gallery_person", "refused_one_word", "no_item", "no_exact_item", "name_only",
+             "name_or_thing", "not_a_person", "not_linked")
     by = {c: {**by[c], "share_of_mentions": image_text._ratio(by[c]["mentions"], total, 4)}
           for c in order if c in by}
 
@@ -2880,6 +2963,7 @@ def no_one_names(names: Sequence[dict[str, Any]], gallery: Gallery,
         "names": len(unresolved), "mentions": n_mentions,
         "share_of_mentions": image_text._ratio(n_mentions, total, 4), "by_cause": by,
         "statement": (f"{len(unresolved):,} person names ({n_mentions:,} of {total:,} mentions) resolve to no one. "
+                      f"Exact matches held for a person's check: {part('held')}. "
                       f"Linking failures with the person in the gallery, by rule: {part('a_gallery_person')}. "
                       f"One-word names the resolver refuses: {part('refused_one_word')}. No Wikidata item by "
                       f"that name: {part('no_item')}, and items that begin with it but are not it: "
@@ -3043,8 +3127,9 @@ def random_pair_scores(trials: Sequence[dict[str, Any]], gallery: Gallery, query
         if x["label"] != "right" or not x["scorable"]:
             continue
         others = [q for q in people if q != x["qid"]]
-        best = gallery.best(query_faces[x["sha256"]]["faces"], others[int(rng.integers(0, len(others)))])
-        if best is not None:
+        faces = query_faces[x["sha256"]]["faces"]
+        best = gallery.best(faces, others[int(rng.integers(0, len(others)))])
+        if best is not None and not too_small(faces[best["query_face"]]):  # what verify would score
             out.append(best["score"])
     return out
 
@@ -3380,7 +3465,79 @@ def refresh_entities() -> int:
     return 0
 
 
+#: A link a person must check before it counts: the exact match is kept in
+#: the row (``held``), with why and by whom it was held, and nothing resolves
+#: the name to it. Never searched again; ``link --release`` restores it.
+HELD = "held"
+
+
+def held_row(row: dict[str, Any], because: str, by: str) -> dict[str, Any]:
+    """The link row that holds ``row`` (a linked or ambiguous link): its match
+    and candidates kept under ``held`` with the reason, so a later pass
+    revisits the hold instead of rediscovering it."""
+    match = {k: row.get(k) for k in ("status", "qid", "candidates")}
+    return {**{k: row[k] for k in ("schema", "type", "key", "query") if k in row}, "queries": row.get("queries"),
+            "pass": HELD_PASS_ID, "at": utcnow(), "status": HELD, "held": {**match, "because": because, "by": by}}
+
+
+def released_row(row: dict[str, Any], by: str) -> dict[str, Any]:
+    """The link a held row kept, restored, with who released it."""
+    match = row["held"]
+    return {**{k: row[k] for k in ("schema", "type", "key", "query", "queries") if k in row},
+            "pass": HELD_PASS_ID, "at": utcnow(), "status": match["status"], "qid": match["qid"],
+            "candidates": match.get("candidates"), "released": {"from_hold": match["because"], "by": by}}
+
+
+def link_due(row: dict[str, Any] | None, query: str, entity_type: str, known: dict[str, Any]) -> bool:
+    """Whether a name is linked (again) this run, given its last link row:
+    never linked; an error; a "no type match" whose candidates' data never
+    arrived (a batch lost before failed batches were told apart); or a name
+    with initials that linked nothing and was never searched with them
+    dotted and spaced (link_names searches both forms). A name that linked
+    keeps its link."""
+    if row is None or row["status"] == "error":
+        return True
+    if row["status"] == "no_type_match" and any(q not in known for q in row.get("exact", [])):
+        return True
+    dotted = dotted_initials(query, entity_type)
+    return (row["status"] in ("no_result", "no_exact_match", "no_type_match") and dotted is not None
+            and dotted not in (row.get("queries") or [row.get("query")]))
+
+
+def cmd_hold(args) -> int:
+    """Hold or release links, offline: a hold keeps the match in the row with
+    its reason; a release restores the match a hold kept."""
+    if not args.by:
+        raise GalleryError("say who holds or releases them (--by)")
+    done = latest(read_jsonl(LINKS_PATH), lambda r: (r["type"], r["key"]))
+    reasons = json.loads(Path(args.reasons).read_text(encoding="utf-8")) if args.reasons else {}
+    rows, refused = [], []
+    for key in args.hold or args.release:
+        row = done.get(("PERSON", key))
+        because = reasons.get(key) or args.because
+        if args.hold and not because:
+            refused.append(f"{key}: no reason given (--because or --reasons)")
+        elif args.hold and row and row["status"] in ("linked", "ambiguous"):
+            rows.append(held_row(row, because, args.by))
+        elif args.release and row and row["status"] == HELD:
+            rows.append(released_row(row, args.by))
+        else:
+            refused.append(f"{key}: {row['status'] if row else 'never linked'}")
+    if refused:
+        raise GalleryError(f"nothing written; cannot {'hold' if args.hold else 'release'}: {'; '.join(refused)}")
+    ledger = JsonlLedger(LINKS_PATH)
+    ledger.open()
+    try:
+        ledger.append_many(rows)
+    finally:
+        ledger.close()
+    log(f"{'held' if args.hold else 'released'} {len(rows)} link(s) by {args.by}")
+    return 0
+
+
 def cmd_link(args) -> int:
+    if args.hold or args.release:
+        return cmd_hold(args)
     if args.refresh_entities:
         return refresh_entities()
     names = list(read_jsonl(NAMES_PATH))
@@ -3420,18 +3577,12 @@ def cmd_link(args) -> int:
     done = latest(read_jsonl(LINKS_PATH), lambda r: (r["type"], r["key"]))
     known = latest(read_jsonl(WIKIDATA_PATH), lambda r: r["qid"])
 
-    def needs_link(k: tuple[str, str]) -> bool:
-        """Never linked; an error; or a "no type match" whose candidates' data
-        never arrived (a batch lost before failed batches were told apart)."""
-        row = done.get(k)
-        return (row is None or row["status"] == "error"
-                or (row["status"] == "no_type_match" and any(q not in known for q in row.get("exact", []))))
-
-    todo = [w for k, w in wanted.items() if needs_link(k)]
+    todo = [w for k, w in wanted.items() if link_due(done.get(k), w["query"], w["type"], known)]
     whys = Counter(why for w in wanted.values() for why in set(w["why"]))
+    searches = sum(1 + (dotted_initials(w["query"], w["type"]) is not None) for w in todo)
     log(f"{'build' if args.all else 'sample'} (scope {','.join(args.scope)}): {len(wanted):,} names "
         f"({len(population):,} calibration images {dict(tally)}; by reason {dict(whys)}); "
-        f"{len(todo):,} to link: about {len(todo):,} searches and "
+        f"{len(todo):,} to link: about {searches:,} searches and "
         f"{math.ceil(len(todo) * 2 / BATCH):,}+ entity calls on www.wikidata.org, at most one "
         f"per {WIKIMEDIA_DELAY:g} s")
     if args.dry_run:
@@ -3783,6 +3934,7 @@ def cmd_calibrate(args) -> int:
     log(f"  aliases: {aliases.get('statement') or aliases['status']}")
     if "labels" in aliases:
         log(f"    {aliases['labels']['statement']}")
+        log(f"  COST BY DESIGN: {aliases['resolution_rules']['cost_by_design']['statement']}")
         log(f"    {aliases['resolution_rules']['statement']}")
         log(f"    {aliases['no_one']['statement']}")
     log(f"  figures: {report['figures']['concentration']['statement']}")
@@ -4186,7 +4338,9 @@ def review_findings(trials: Sequence[dict[str, Any]], relabelled: Sequence[dict[
     - pose: the face is side-on (SIDE_ON). References in more poses can help:
       the gallery recognises some side-on faces;
     - size: eyes to mouth, the face is smaller than every face the gallery
-      recognised. A floor no reference lifts.
+      recognised. A floor no reference lifts: under MIN_EYE_MOUTH a face is
+      never scored at all, and a confirmed name there is coverage
+      (no_usable_face).
 
     A face can have both, or neither."""
     before = {trial_id(x): x["label"] for x in trials}
@@ -4196,9 +4350,6 @@ def review_findings(trials: Sequence[dict[str, Any]], relabelled: Sequence[dict[
         if not x["scorable"]:
             return "unscorable"
         return "at_or_above_floor" if x["score"] >= floor else "below_floor"
-
-    def side_on(x: dict[str, Any]) -> bool:
-        return x.get("eye_span") == 0 or abs(x.get("nose_offset") or 0.0) >= SIDE_ON
 
     def faces(xs: Sequence[dict[str, Any]]) -> dict[str, Any] | None:
         def median(field_: str) -> float | None:
@@ -4252,8 +4403,8 @@ def review_findings(trials: Sequence[dict[str, Any]], relabelled: Sequence[dict[
                       "size": ("eyes to mouth, smaller than every face the gallery recognised among the confirmed "
                                f"names (the smallest: {smallest} px)")},
             "remedies": {"pose": "references in more poses, a side view for a side view",
-                         "size": ("none in the gallery: a floor below which a face is too small to verify, "
-                                  "and a larger image")}},
+                         "size": (f"none in the gallery: under the {MIN_EYE_MOUTH:g} px floor verify answers "
+                                  "no_usable_face, and only a larger image helps")}},
         "statement": (f"A person confirmed {len(right)} names right. The gallery scores {len(recognised)} at or "
                       f"above its floor of {floor:.3f}; {len(failures)} below it, among different people's "
                       "faces -- recognition failures, not label errors: they lower TAR, and they are the "
@@ -4327,8 +4478,10 @@ def cmd_review(args) -> int:
         ref = best["reference"]
         lic, att = ref.get("licence") or {}, ref.get("attribution") or {}
         crop = _crop((image_text.PROJECT_ROOT / ref["path"]).read_bytes(), best["reference_face"]["box"])
+        score = (f"face under the {MIN_EYE_MOUTH:g} px floor: no score" if too_small(faces[best["query_face"]])
+                 else f"score {best['score']:.3f}")
         return (f"<td><img src='{crop}'><br>{html.escape((gallery.entities.get(qid) or {}).get('label') or qid)}"
-                f"<br>score {best['score']:.3f}<br><a href='{html.escape(ref.get('page_url') or '')}'>"
+                f"<br>{score}<br><a href='{html.escape(ref.get('page_url') or '')}'>"
                 f"{html.escape(ref.get('title') or '')}</a><br>{html.escape(lic.get('short_name') or '')}; "
                 f"{html.escape(att.get('artist') or '')}</td>")
 
@@ -4402,6 +4555,236 @@ def cmd_review(args) -> int:
 # --------------------------------------------------------------------------
 
 
+# --------------------------------------------------------------------------
+# side views: does Commons hold the people's other poses? (a measurement)
+# --------------------------------------------------------------------------
+
+#: The people a side-view census looks at: the most mentioned.
+SIDE_VIEW_TOP = 50
+#: Commons files sampled per person, beyond the gallery's own references.
+SIDE_VIEW_PER_PERSON = 20
+#: Files a depicts search, or a category listing, returns per person.
+SIDE_VIEW_LISTED = 50
+#: Coverage is worth fetching for when this share of the people have a side
+#: view the gallery's consistency check would keep; below it, pose stays a
+#: stated limitation.
+SIDE_VIEW_ENOUGH = 0.5
+SIDE_VIEWS_LOCAL = GALLERY_INTERIM / "side_views.json"
+SIDE_VIEWS_REPORT = REPORTS / "gallery_side_views.json"
+SIDE_VIEWS_PASS = "gallery-side-views-2026-10"
+
+
+def people_by_mentions(names: Sequence[dict[str, Any]], gallery: Gallery) -> list[tuple[str, int]]:
+    """(qid, mentions) of gallery people, the most mentioned first: the build
+    scope's mentions of every name that resolves to that person alone."""
+    weight: Counter = Counter()
+    for r in names:
+        qids = gallery.resolve_key(r["key"])
+        if len(qids) == 1 and (gallery.entities.get(qids[0]) or {}).get("type") == "PERSON":
+            weight[qids[0]] += scope_mentions(r)
+    return sorted(weight.items(), key=lambda kv: (-kv[1], kv[0]))
+
+
+def side_view_census(net: Net, backend: FaceBackend, gallery: Gallery, people: Sequence[tuple[str, int]],
+                     ref_faces: dict[str, dict[str, Any]], floor: float, *,
+                     per_person: int = SIDE_VIEW_PER_PERSON, corpus: frozenset[str] | None = None,
+                     seed: int = SEED) -> tuple[dict[str, Any], dict[str, list[tuple[str, bool, Any]]]]:
+    """For each of ``people`` (qid, mentions), what the gallery holds and what
+    Commons offers, by pose. A MEASUREMENT: nothing is stored, nothing is
+    added to the gallery.
+
+    - In the gallery: each fetched reference's chosen face, side-on or not
+      (SIDE_ON), usable or refused by the consistency check.
+    - On Commons: up to ``per_person`` more files, drawn (seeded) from what
+      Commons lists as depicting the person or in their category, through the
+      same gates as a reference. A file counts when it shows one face, or one
+      face the person's medoid resolves, of reference size. A side-on face
+      AGREES when it scores at or above ``floor`` (the consistency threshold)
+      against the person's medoid: the check would keep it. One that does not
+      may be the person turned away, or someone else; only a person can say.
+
+    Returns the report (people's rows under ``local``) and, per qid, the
+    side-on faces found: (title, agrees, embedding)."""
+    import numpy as np
+
+    from scripts import recover
+
+    corpus = corpus_hashes() if corpus is None else corpus
+    entities = {q: (gallery.entities.get(q) or {}) for q, _m in people}
+    medoids: dict[str, Any] = {}
+    for q in entities:
+        vecs = {i: vec for i, (_ref, _face, vec) in enumerate(gallery.refs.get(q, []))}
+        if vecs:
+            medoids[q] = vecs[medoid_of(vecs)]
+    own_rows: dict[str, dict[str, Any]] = {}
+    for q in entities:
+        row = {"usable": 0, "usable_side_on": 0, "refused": 0, "refused_side_on": 0}
+        for ref in (gallery.rows.get(q) or {}).get("refs", []):
+            faces = (ref_faces.get(ref.get("sha256") or "") or {}).get("faces") or []
+            idx = ref["face"] if ref["decision"] == "usable" else choose_reference_face(faces)[0]
+            if idx is None or idx >= len(faces):
+                continue
+            kind = "usable" if ref["decision"] == "usable" else "refused"
+            row[kind] += 1
+            row[f"{kind}_side_on"] += side_on(face_geometry(faces[idx]))
+        own_rows[q] = row
+    listed, failed = commons_candidates(
+        net, [{**{k: e.get(k) for k in ("qid", "type", "commons_category")}, "images": [], "logos": []}
+              for e in entities.values() if e], limit=SIDE_VIEW_LISTED, cap=2 * SIDE_VIEW_LISTED)
+    drawn: dict[str, list[str]] = {}
+    for q, e in entities.items():
+        taken = {r["title"].replace("_", " ") for r in e.get("refs") or []}
+        fresh = [t for t, _s in listed.get(q, []) if t.replace("_", " ") not in taken]
+        drawn[q] = sorted(fresh, key=lambda t: hashlib.sha256(f"{seed}:{q}:{t}".encode()).hexdigest())[:per_person]
+    infos = image_info(net, [t for ts in drawn.values() for t in ts])
+    found: dict[str, dict[str, Any]] = {}
+
+    def download(q: str, title: str, info: dict[str, Any]):
+        url = info["rendition"]["url"]
+        resp, _chain = yield from recover.get(url, {"User-Agent": user_agent()}, net.log,
+                                              f"file:{url.rsplit('/', 1)[-1][:80]}", "side_view", net.clock)
+        gated = gate_reference(resp, info, corpus)
+        net.log.attempt(f"file:{url.rsplit('/', 1)[-1][:80]}", "side_view", resp,
+                        "ok" if gated["outcome"] == "usable" else "rejected",
+                        None if gated["outcome"] == "usable" else gated["outcome"])
+        got = {"outcome": gated["outcome"], "face": None}
+        if gated["outcome"] == "usable":
+            try:
+                faces = backend.faces(load_bgr(resp.body), MIN_FACE["reference"])
+            except Exception as exc:  # noqa: BLE001 -- a file the detector cannot read is a row
+                got["outcome"] = f"unreadable:{type(exc).__name__}"
+                found[f"{q}\n{title}"] = got
+                return
+            idx, decision = choose_reference_face(faces)
+            if idx is None and decision == "ambiguous_faces" and q in medoids:
+                sims = [float(decode_embedding(f["embedding"]) @ medoids[q]) for f in faces]
+                if max(sims) >= floor:
+                    idx, decision = int(np.argmax(sims)), "resolved_by_medoid"
+            got["decision"] = decision
+            if idx is not None:
+                vec = decode_embedding(faces[idx]["embedding"])
+                sim = float(vec @ medoids[q]) if q in medoids else None
+                got["face"] = {"side_on": side_on(face_geometry(faces[idx])), "similarity_to_medoid":
+                               None if sim is None else round(sim, 4), "agrees": sim is not None and sim >= floor,
+                               "vector": vec}
+        found[f"{q}\n{title}"] = got
+
+    try:
+        net.run(download(q, t, infos[t]) for q, ts in drawn.items() for t in ts
+                if eligible(infos.get(t) or {"missing": True}, "PERSON") is None)
+    except recover.BudgetExceeded as exc:
+        net.stopped = f"budget: {exc}"
+    rows, side_faces = [], {}
+    for rank, (q, mentions) in enumerate(people, 1):
+        got = [(t, found.get(f"{q}\n{t}")) for t in drawn.get(q, [])]
+        faces = [(t, g["face"]) for t, g in got if g and g["face"]]
+        side_faces[q] = [(t, f["agrees"], f["vector"]) for t, f in faces if f["side_on"]]
+        rows.append({"rank": rank, "qid": q, "label": entities[q].get("label"), "mentions": mentions,
+                     "listing_failed": q in failed, "has_medoid": q in medoids, "gallery": own_rows[q],
+                     "commons": {"listed": len(listed.get(q, [])), "drawn": len(drawn.get(q, [])),
+                                 "passed_gates": sum(1 for _t, g in got if g and g["outcome"] == "usable"),
+                                 "one_face": len(faces),
+                                 "side_on": sum(1 for _t, f in faces if f["side_on"]),
+                                 "side_on_agreeing": sum(1 for _t, f in faces if f["side_on"] and f["agrees"]),
+                                 "face_on_agreeing": sum(1 for _t, f in faces if not f["side_on"] and f["agrees"])},
+                     "side_on_files": [{"title": t, "similarity_to_medoid": f["similarity_to_medoid"]}
+                                       for t, f in faces if f["side_on"]]})
+
+    def count(test: Callable[[dict[str, Any]], bool]) -> int:
+        return sum(1 for r in rows if test(r))
+
+    n = len(rows)
+    keep = count(lambda r: r["gallery"]["usable_side_on"] or r["commons"]["side_on_agreeing"])
+    totals = {k: sum(r["commons"][k] for r in rows) for k in ("listed", "drawn", "passed_gates", "one_face",
+                                                               "side_on", "side_on_agreeing", "face_on_agreeing")}
+    enough = n > 0 and keep >= SIDE_VIEW_ENOUGH * n
+    return {
+        "what": (f"the {n} most-mentioned gallery people: their references by pose, and up to {per_person} more "
+                 "Commons files each, drawn from what Commons lists as depicting them or in their category, "
+                 "through the reference gates; a side-on face (SIDE_ON) agrees when it scores at or above the "
+                 f"consistency threshold ({floor:.4f}) against the person's medoid. A measurement: nothing is "
+                 "stored or added"),
+        "people": n, "per_person": per_person,
+        "gallery": {"people_with_a_usable_side_on_reference": count(lambda r: r["gallery"]["usable_side_on"]),
+                    **{k: sum(r["gallery"][k] for r in rows) for k in ("usable", "usable_side_on", "refused",
+                                                                       "refused_side_on")}},
+        "commons": {**totals,
+                    "people_with_a_side_on_face": count(lambda r: r["commons"]["side_on"]),
+                    "people_with_an_agreeing_side_on_face": count(lambda r: r["commons"]["side_on_agreeing"]),
+                    "people_without_a_medoid": count(lambda r: not r["has_medoid"]),
+                    "listings_failed": count(lambda r: r["listing_failed"])},
+        "people_with_a_side_view_the_gallery_would_keep": keep,
+        "enough": {"rule": f"at least {SIDE_VIEW_ENOUGH:.0%} of the people", "met": enough},
+        "statement": (f"Of the {n} most-mentioned people, {keep} have a side view the gallery would keep: one "
+                      "among their references, or a side-on Commons face that agrees with their medoid "
+                      f"({totals['side_on_agreeing']} agreeing of {totals['side_on']} side-on faces in "
+                      f"{totals['one_face']} single-face files drawn). "
+                      + ("Enough to fetch for." if enough else
+                         "Too thin to fetch for: pose stays a stated limitation.")),
+        "local": {"people": rows}}, side_faces
+
+
+def cmd_side_views(args) -> int:
+    backend = make_backend(args.backend)
+    cid = face_config_id(backend)
+    gallery = Gallery(cid)
+    names = [r for r in read_jsonl(NAMES_PATH) if r["type"] == "PERSON" and in_scope(r)]
+    people = people_by_mentions(names, gallery)[:args.top]
+    wanted = {sha for q, _m in people for r in (gallery.rows.get(q) or {}).get("refs", []) if (sha := r["sha256"])}
+    ref_faces = {r["sha256"]: r for r in read_jsonl(FACES_DIR / cid / "refs.jsonl") if r["sha256"] in wanted}
+    floor = consistency_floor(cid)
+    log(f"side views: the {len(people)} most-mentioned people, up to {args.per_person} Commons files each "
+        f"(about {len(people) * (args.per_person + 2) + len(people) // 2:,} requests, one a second per host); "
+        f"User-Agent: {user_agent()}")
+    prov = JsonlLedger(PROVENANCE_PATH)
+    prov.open()
+    try:
+        net = live_net(ProvenanceLog(prov, SIDE_VIEWS_PASS), int(args.budget_gb * 1024 ** 3))
+        report, side_faces = side_view_census(net, backend, gallery, people, ref_faces, floor,
+                                              per_person=args.per_person)
+    finally:
+        prov.close()
+    report["requests"] = dict(net.requests)
+    report["stopped"] = net.stopped
+    # the sample's pose failures, scored against the side-on faces found for their person
+    trials_path = CALIBRATION_DIR / f"{args.backend}_trials.jsonl"
+    decisions = decisions_path(args.backend)
+    if trials_path.is_file() and decisions.is_file():
+        query_faces = latest(read_jsonl(QUERY_FACES_DIR / cid / "factify2.jsonl"), lambda r: r["sha256"])
+        relabelled = adjudicated(list(read_jsonl(trials_path)),
+                                 json.loads(decisions.read_text(encoding="utf-8")))
+        rows = []
+        for x in relabelled:
+            if not (x.get("adjudicated") and x["label"] == "right" and x["scorable"] and x["score"] < floor
+                    and side_on(x) and x["qid"] in side_faces):
+                continue
+            faces = query_faces[x["sha256"]]["faces"]
+            best = gallery.best(faces, x["qid"])
+            vec = decode_embedding(faces[best["query_face"]]["embedding"])
+            scores = [(float(vec @ v), agrees) for _t, agrees, v in side_faces[x["qid"]]]
+            rows.append({"trial": trial_id(x), "score_now": round(x["score"], 4),
+                         "best_side_on": round(max((s for s, _a in scores), default=float("nan")), 4)
+                         if scores else None,
+                         "best_agreeing_side_on": round(max(s for s, a in scores if a), 4)
+                         if any(a for _s, a in scores) else None})
+        report["pose_failures"] = {
+            "what": ("the sample's confirmed side-on recognition failures, scored against the side-on Commons "
+                     "faces the census found for their person"),
+            "failures": len(rows),
+            "at_or_above_floor_against_an_agreeing_side_view": sum(
+                1 for r in rows if r["best_agreeing_side_on"] is not None and r["best_agreeing_side_on"] >= floor),
+            "local": {"trials": rows}}
+    write_json(SIDE_VIEWS_LOCAL, {"generated_at": utcnow(), "face_config": cid, **report})
+    write_json(SIDE_VIEWS_REPORT, {"generated_at": utcnow(), "face_config": cid, **public_report(report)})
+    log(f"  {report['statement']}")
+    if "pose_failures" in report:
+        p = report["pose_failures"]
+        log(f"  pose failures: {p['at_or_above_floor_against_an_agreeing_side_view']} of {p['failures']} reach "
+            f"the floor against an agreeing side view")
+    log(f"wrote {SIDE_VIEWS_LOCAL} (local) and {SIDE_VIEWS_REPORT} (aggregates)")
+    return 0
+
+
 def cmd_status(args) -> int:
     out: dict[str, Any] = {"names": None, "claim_ner": {}}
     if NAMES_PATH.is_file():
@@ -4459,6 +4842,14 @@ def build_parser() -> argparse.ArgumentParser:
     k.add_argument("--dry-run", action="store_true", help="size the work; no request, no write")
     k.add_argument("--refresh-entities", action="store_true",
                    help="fetch every stored item's summary again (network)")
+    held = k.add_mutually_exclusive_group()
+    held.add_argument("--hold", type=lambda s: [x.strip() for x in s.split(",") if x.strip()], default=None,
+                      help="comma-separated PERSON name keys whose links a person must check first; offline")
+    held.add_argument("--release", type=lambda s: [x.strip() for x in s.split(",") if x.strip()], default=None,
+                      help="comma-separated name keys whose held links a person checked; offline")
+    k.add_argument("--because", default=None, help="why the links are held (or --reasons)")
+    k.add_argument("--reasons", default=None, help="a JSON file: name key -> why it is held")
+    k.add_argument("--by", default=None, help="who holds or releases them")
     f2 = sub.add_parser("fetch", help="Commons references through the gates: the sample, or --all (network)")
     f2.add_argument("--budget-gb", type=float, default=1.0, help="transfer budget (default 1 GiB)")
     f2.add_argument("--regate", action="store_true",
@@ -4484,10 +4875,16 @@ def build_parser() -> argparse.ArgumentParser:
     r = sub.add_parser("review", help="a local HTML sheet of decisive trials, for a person to check")
     r.add_argument("--rejected", type=int, default=20, help="rejected right names to include")
     sub.add_parser("sample-report", help="data/reports/gallery_sample.json from the sample's stages")
+    s = sub.add_parser("side-views", help="does Commons hold side views of the most-mentioned people? "
+                                          "A measurement; nothing is stored (network)")
+    s.add_argument("--top", type=int, default=SIDE_VIEW_TOP, help=f"people (default {SIDE_VIEW_TOP})")
+    s.add_argument("--per-person", type=int, default=SIDE_VIEW_PER_PERSON,
+                   help=f"Commons files drawn per person (default {SIDE_VIEW_PER_PERSON})")
+    s.add_argument("--budget-gb", type=float, default=1.0, help="transfer budget (default 1 GiB)")
     for p in (k, e, a):
         p.add_argument("--ledger-dir", default=None,
                        help="image_text run directory (default: the one under the current row schema)")
-    for p in (e, a, v, r):
+    for p in (e, a, v, r, s):
         p.add_argument("--backend", choices=FACE_BACKENDS, default="sface")
     sub.add_parser("status", help="offline counts")
     return parser
@@ -4498,7 +4895,7 @@ def main(argv: list[str] | None = None) -> int:
     commands = {"fetch-models": cmd_fetch_models, "count": cmd_count, "link": cmd_link,
                 "fetch": cmd_fetch, "embed": cmd_embed, "calibrate": cmd_calibrate,
                 "verify": cmd_verify, "review": cmd_review, "sample-report": cmd_sample_report,
-                "status": cmd_status}
+                "side-views": cmd_side_views, "status": cmd_status}
     return commands[args.command](args)
 
 

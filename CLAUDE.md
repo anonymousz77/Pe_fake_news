@@ -266,12 +266,48 @@ Wikidata items with reference images from Wikimedia Commons. It is how the
   a person, an instance of a subclass of Q43229 for an organisation. A name
   whose candidates don't dominate each other is kept, linked to the most-linked
   candidate, and marked `ambiguous`.
+  - **Initials are also searched dotted and spaced** (`dotted_initials`,
+    2026-10-23). Wikidata's prefix search finds "P. Chidambaram" only in that
+    form, so a person's name with initials is searched as written and dotted,
+    and the answers are pooled. This covers "P Chidambaram", "SS Ahluwalia"
+    and "K.S. Eshwarappa". An exact match is still `same_name`: the same
+    letters, never a respelling. A name that linked nothing and was never
+    searched dotted is searched again (`link_due`).
+  - **Exact initials carry a namesake risk.** Of the 309 names searched
+    again, 136 linked (566 mentions). Some matched someone else entirely:
+    "K Sasikala" matched only a botanist, "MK Sinha" a mycologist, and "R
+    Shankar" an American physicist.
+  - **Held links (`HELD`).** 17 of those links are held by the person's
+    decision. By an agent's reading of the items' descriptions, 7 are
+    namesakes and 10 are unclear.
+    - The link row keeps the match, the reason and who held it, so a later
+      pass revisits it rather than rediscovering it.
+    - Nothing resolves the name to that person, not even their own label.
+    - The linker never searches the name again. `link --release` restores
+      the link once a person has checked it.
+  - Of the 119 links kept, 8 (17 mentions) point to someone whose
+    description reads academic, and none to an athlete or a historical
+    figure. This is a count, not a review. It was small enough to fetch, and
+    the same rule flags 10 of the 17 held.
+  - **Near-matches are reported, never linked** (decided 2026-10-23). A
+    wrong link puts the wrong face in the gallery, where nothing downstream
+    can see it, and is worse than none. Linking the alias gaps would need a
+    sheet a person reviews, as faces have, and at 139 names (499 mentions)
+    that is not worth it now.
 - **How a name resolves** (`Gallery.resolve_key`; decided 2026-10-23). Two
   rules beyond an exact key; `resolution_rules` counts what each changes,
   every `calibrate` run.
+  - **The cost, by design: 407 names that resolved to one person, 10.3% of
+    mentions, now refuse rather than guess** (`cost_by_design`). The largest
+    is "Trump" (1,181 mentions), ambiguous among ten Trumps.
+    - Defend it at review as a choice; do not hide it as a regression.
+    - A guess checks one person's face, and nothing downstream can tell a
+      wrong guess from a right one: "Modi" resolved to Amedeo Modigliani for
+      653 mentions.
   - **Spacing:** a name is looked up by its letters, as linking's `same_name`
-    matches it, so "MK Stalin" is "M. K. Stalin". 20 names now resolve (155
-    mentions). 7 that resolved to one person are ambiguous instead (19
+    matches it, so "MK Stalin" is "M. K. Stalin". 14 more names resolve (49
+    mentions; 20 and 155 before the initials re-link linked most of them
+    directly). 7 that resolved to one person are ambiguous instead (19
     mentions), because two Wikidata items differ only in spacing:
     "Chandrashekhar Singh" (an Indian politician) and "Chandra Shekhar Singh"
     (the prime minister's alias).
@@ -286,18 +322,19 @@ Wikidata items with reference images from Wikimedia Commons. It is how the
       ("Modì"), and "Bapu" between Gandhi and Asaram Bapu.
     - "Trump" is ambiguous among ten Trumps. "Mueller", which no item lists as
       an alias, resolves to no one: a surname alone is never a guess.
-  - 402 names that resolved to one person no longer do (3,353 mentions,
-    10.3%), and verify refuses them. Judged by the corpora's full names (the
-    90% rule below), 48 had resolved to someone else (835 mentions, "Modi"
-    653) and 7 to the person meant (76 mentions). 340 cannot be told either
-    way (2,423 mentions; "Trump" alone is 1,181).
+  - Of those 407 names (3,377 mentions), judged by the corpora's full names
+    (the 90% rule below):
+    - 50 had resolved to someone else (850 mentions, "Modi" 653);
+    - 7 had resolved to the person meant (76 mentions);
+    - 343 cannot be told either way (2,432 mentions; "Trump" alone is 1,181);
+    - 7 are the spacing collisions.
 - **Names collapse through Wikidata's labels and aliases, and the gaps are
   counted** (`alias_gaps`, every `calibrate` run).
-  - Of the build scope's 6,734 person names, 591 collapse into the 266 people
+  - Of the build scope's 6,734 person names, 601 collapse into the 270 people
     who have two names or more. "Priyanka Gandhi", "Priyanka Vadra" and
     "Priyanka Gandhi Vadra" are one QID.
-  - 227 names (5.5% of mentions) plausibly name a gallery person they do not
-    resolve to: 140 resolve to no one, 87 to several, and none to someone
+  - 230 names (5.4% of mentions) plausibly name a gallery person they do not
+    resolve to: 139 resolve to no one, 91 to several, and none to someone
     else. "Plausibly" is by explicit rules that count and never link:
     `name_variant` for spacing, initials, a name left out or one letter; for
     one word, the person holding 90% of the corpora's full names with that
@@ -305,18 +342,20 @@ Wikidata items with reference images from Wikimedia Commons. It is how the
   - No sample label turns on a gap: the probe's patterns name the figures the
     gaps touch most. The handles NER misses are the review sheet's part 3.
 - **Names that resolve to no one are counted by why, never merged**
-  (`no_one_names`). There are 2,826 of them, 18.5% of mentions.
-  - **A linking failure, the person in the gallery** (an alias gap): 140 (552
+  (`no_one_names`). There are 2,713 of them, 17.1% of mentions (2,826 and
+  18.5% before the initials re-link).
+  - **Held for a person's check:** 17 (25 mentions).
+  - **A linking failure, the person in the gallery** (an alias gap): 139 (499
     mentions). 38 of them are one word, which the one-word rule leaves
     unresolved by design.
-  - **One-word names the resolver refuses:** 38 (94 mentions).
+  - **One-word names the resolver refuses:** 36 (89 mentions).
   - **What Wikidata's search answered at linking:**
-    - no item by that form: 1,648 (3,002 mentions);
-    - items beginning with it, none of them it: 270 (525);
-    - exactly a surname or first-name item: 80 (164);
+    - no item by that form: 1,537 (2,652 mentions);
+    - items beginning with it, none of them it: 264 (503);
+    - exactly a surname or first-name item: 76 (148);
     - exactly something that is no person, such as a party, a place or a
-      deity: 440 (1,205);
-    - both: 210 (485).
+      deity: 435 (1,200);
+    - both: 209 (484).
   - **"No item" is not "no entry".** A seeded sample of 100 of the multi-word
     ones was checked on 2026-10-23, with Wikidata's full-text search
     restricted to humans:
@@ -331,7 +370,9 @@ Wikidata items with reference images from Wikimedia Commons. It is how the
     The agent's reading is not a person's decision. The forms the linker
     missed were initials without their dots ("P Chidambaram"), initials run
     together ("SS Ahluwalia"), misspellings ("Shahi Tharoor") and part of a
-    name ("Lal Khattar").
+    name ("Lal Khattar"). The sample predates the initials re-link, which has
+    since searched the first two forms again (see linking above). The last
+    two are not searched again: matching them is fuzzy, a different risk.
 - **References must agree.** A person's reference faces are checked against
   their medoid. The threshold is the 0.999 quantile of similarities between
   different entities' medoids, taken from gallery references only. When two
@@ -399,10 +440,13 @@ Wikidata items with reference images from Wikimedia Commons. It is how the
       against random strangers, yet 12 of the 18 scorable wrong VLM names
       scored above every stranger. A threshold set on random pairs (0.263)
       would accept 14 of 20 wrong names: precision 0.63.
-    - **Adjudicated** (all 37 decisions): 2 of the 8 scorable wrong names
-      score above every stranger (at most 0.291). A random-pair threshold
-      (0.179) would accept 6 of 9 wrong names: precision 0.85. On the first
+    - **Adjudicated** (all 37 decisions): 1 of the 8 scorable wrong names
+      scores above every stranger (at most 0.346). A random-pair threshold
+      (0.181) would accept 6 of 9 wrong names: precision 0.85. On the first
       sheet's 23 decisions it was 4 of 10, and 8 of 11 at 0.194: precision 0.80.
+      The strangers are drawn per right name from the whole gallery, so the
+      maximum moves as the gallery grows and the floor drops faces (0.291 and
+      0.179 before the 97 people of 2026-10-23 and the floor).
     - **Why they differ:** most of the first "wrong" names were right, because
       the labels scored a name against one figure per image. Of the 8
       highest-scoring wrong names, 7 were the person the VLM named. Five of
@@ -410,19 +454,29 @@ Wikidata items with reference images from Wikimedia Commons. It is how the
       A person found the other two on the review sheet.
     - The second measurement uses labels against everyone the claims name,
       with the review applied. Corrected labels without the review give 3 of
-      12 above every stranger, and precision 0.75. The strangers are drawn
+      12 above every stranger, and precision 0.74. The strangers are drawn
       per right name, so their maximum moves with the labels.
     - The point survives: random-pair calibration still fails 0.90, so the
       threshold is calibrated on the VLM's own names. `calibrate` measures
       this every run (`look_alike_finding`), raw and adjudicated.
-  - **Coverage ceiling, stated beside every calibration.** 1,123 of the
-    gallery's 3,459 people have no usable reference face; 1,009 of them have
+  - **Coverage ceiling, stated beside every calibration.** 1,166 of the
+    gallery's 3,556 people have no usable reference face; 1,049 of them have
     no Commons reference at all. Verify can only answer "no usable reference"
     for them, whatever the threshold. `calibrate` reports it (`coverage`), and
-    so does `embed`. A right name the gallery cannot score (no usable
-    reference, or a name several people hold) counts against TAR and is never
-    a true accept; `cost_in_true_accepts.tar_scorable` is TAR without it, the
-    recognizer's own rate.
+    so does `embed`. A right name the gallery cannot score counts against TAR
+    and is never a true accept. That covers no usable reference, a name
+    several people hold, and a face under the size floor.
+    `cost_in_true_accepts.tar_scorable` is TAR without them, the recognizer's
+    own rate: 0.9394 on the adjudicated sample.
+  - **A face under 20 px from eyes to mouth is never scored** (`MIN_EYE_MOUTH`,
+    decided 2026-10-23).
+    - The floor is measured: it is the smallest face the gallery recognised
+      among the names a person confirmed.
+    - When the face that best matches is under it, verify answers
+      `no_usable_face` with no score. Calibration counts such a trial as
+      coverage, and the look-alike contrast and the review sheet do not score
+      it either.
+    - A score from an 18 px face is noise presented as a measurement.
   - **Recognition failures are reported apart from label noise**
     (`review_findings`). A name a person confirmed is one of three things:
     - recognised: at or above the gallery's 0.381 floor;
@@ -430,7 +484,7 @@ Wikidata items with reference images from Wikimedia Commons. It is how the
       score;
     - coverage: it cannot be scored.
 
-    On the sample, 31, 3 and 1 of the 35 confirmed names. The failures are the
+    On the sample, 31, 2 and 2 of the 35 confirmed names. The failures are the
     recognizer's limit on our images, not label errors, and they lower TAR.
     Their two causes are counted apart (`face_geometry`), because the remedies
     differ:
@@ -439,14 +493,31 @@ Wikidata items with reference images from Wikimedia Commons. It is how the
       the gallery recognised two side-on faces, each over three times larger.
       On the sample: 2, both Modi profiles (eyes 5-6 px apart, 22 px from eyes
       to mouth).
+      - **Commons has the side views** (`side-views`, 2026-10-23; a
+        measurement that stored nothing). Of the 50 most-mentioned people, 38
+        have one the gallery would keep: 21 among their references, the rest
+        on Commons, side-on and agreeing with their medoid. That is enough to
+        fetch for by the half rule (`SIDE_VIEW_ENOUGH`), though fetching is
+        the person's decision and has not been done.
+      - **Both sample failures would reach the floor.** Modi has none of his
+        5 references side-on, while Commons has 5 agreeing side views of him.
+        Against them, both sample failures reach the floor (0.302 → 0.431,
+        0.288 → 0.448).
+      - **The consistency check is half the obstacle.** For those 50 people,
+        15 of the 24 references it refused are side-on, against 27 of the 176
+        it kept. Of the 89 side-on Commons faces, 22 disagree with a mostly
+        face-on medoid, and only a person can say whether they show the
+        person turned away.
     - **Size:** from eyes to mouth, smaller than every face the gallery
-      recognised (20 px). No reference lifts that floor. On the sample: 1, a
-      face-on face 37 px wide (18 px from eyes to mouth).
+      recognised. No reference lifts it. Under the 20 px floor a face is never
+      scored, so it counts as coverage rather than as a failure. On the
+      sample, the face-on face 37 px wide (18 px from eyes to mouth) was a size
+      failure before the floor existed. It is now coverage, beside the person
+      who has no usable reference face.
 
-    No failure has both causes, and none has neither. A decision that changed
-    a label is counted by where its name falls (`label_noise`): the gallery
-    had matched two of the four wrong-to-right relabels, and the other two are
-    the profile faces.
+    A decision that changed a label is counted by where its name falls
+    (`label_noise`): the gallery had matched two of the four wrong-to-right
+    relabels, and the other two are the profile faces.
   - **Per figure, always.** Every run reports:
     - per-figure counts;
     - the concentration: the top-two share and the effective number of
@@ -688,12 +759,15 @@ python scripts/gallery.py count                           # names in our corpora
 python scripts/gallery.py link --dry-run                  # size the sample offline
 python scripts/gallery.py link && python scripts/gallery.py fetch   # the sample: Wikidata, then Commons (network)
 python scripts/gallery.py link --all && python scripts/gallery.py fetch --all --budget-gb 8   # the build; resumable
+python scripts/gallery.py link --hold KEYS --reasons R.json --by WHO   # links a person must check first; offline
+python scripts/gallery.py link --release KEYS --by WHO    # restore held links a person has checked; offline
 python scripts/gallery.py embed --backend sface --pin-consistency   # faces; CPU, offline; pin once, after the build
 python scripts/gallery.py embed --backend sface           # faces; CPU, offline
 python scripts/gallery.py calibrate --backend sface       # Factify2 train only
 python scripts/gallery.py review --backend sface          # a local sheet for a person to check
 python scripts/gallery.py sample-report                   # data/reports/gallery_sample.json
 python scripts/gallery.py verify --image P --name "N"     # one 1:1 verification; no certified threshold, no decision
+python scripts/gallery.py side-views --backend sface      # side views on Commons, top 50: a measurement (network)
 PE_FAKE_NEWS_GALLERY_MODELS=1 pytest -q tests/test_gallery.py  # the pinned-weight tests
 ```
 

@@ -1,0 +1,43 @@
+{
+ "generated_at": "2026-10-22T20:57:48+00:00",
+ "face_config": "b6abc4a9f987",
+ "what": "the 50 most-mentioned gallery people: their references by pose, and up to 20 more Commons files each, drawn from what Commons lists as depicting them or in their category, through the reference gates; a side-on face (SIDE_ON) agrees when it scores at or above the consistency threshold (0.3811) against the person's medoid. A measurement: nothing is stored or added",
+ "people": 50,
+ "per_person": 20,
+ "gallery": {
+  "people_with_a_usable_side_on_reference": 21,
+  "usable": 176,
+  "usable_side_on": 27,
+  "refused": 24,
+  "refused_side_on": 15
+ },
+ "commons": {
+  "listed": 3083,
+  "drawn": 931,
+  "passed_gates": 740,
+  "one_face": 412,
+  "side_on": 89,
+  "side_on_agreeing": 67,
+  "face_on_agreeing": 276,
+  "people_with_a_side_on_face": 32,
+  "people_with_an_agreeing_side_on_face": 26,
+  "people_without_a_medoid": 1,
+  "listings_failed": 0
+ },
+ "people_with_a_side_view_the_gallery_would_keep": 38,
+ "enough": {
+  "rule": "at least 50% of the people",
+  "met": true
+ },
+ "statement": "Of the 50 most-mentioned people, 38 have a side view the gallery would keep: one among their references, or a side-on Commons face that agrees with their medoid (67 agreeing of 89 side-on faces in 412 single-face files drawn). Enough to fetch for.",
+ "requests": {
+  "total": 859,
+  "bytes": 124868661
+ },
+ "stopped": null,
+ "pose_failures": {
+  "what": "the sample's confirmed side-on recognition failures, scored against the side-on Commons faces the census found for their person",
+  "failures": 2,
+  "at_or_above_floor_against_an_agreeing_side_view": 2
+ }
+}
