@@ -1,6 +1,6 @@
 {
  "sface": {
-  "generated_at": "2026-10-21T23:41:51+00:00",
+  "generated_at": "2026-10-22T00:14:00+00:00",
   "backend": "sface",
   "face_config": "b6abc4a9f987",
   "coverage": {
@@ -55,44 +55,64 @@
   },
   "threshold": {
    "chosen": null,
+   "certified": false,
    "chosen_by": "unset: only a calibration over the complete Factify2 run sets the threshold, and this ledger holds 2,828 of 45,186 images. The candidate, and every figure at it, are reported and never adopted",
-   "candidate": 0.371,
-   "candidate_by": "point estimate only: no threshold reaches 0.90 at the 95% lower bound on this many trials",
+   "candidate": 0.5531,
+   "candidate_by": "closest to the bound and short of it: the highest lower bound of accepted-name precision is 0.8171, at 0.5531: 23 of 24 accepted names right (0.9583). That clears 0.90 as a point estimate, on too few trials to certify it: at that precision about 103 accepted names would",
+   "bound_shortfall": {
+    "threshold": 0.5531,
+    "at": {
+     "threshold": 0.5531,
+     "right": 31,
+     "wrong": 13,
+     "accepted_right": 23,
+     "accepted_wrong": 1,
+     "tar": 0.7419,
+     "fmr": 0.0769,
+     "fmr_upper_95": 0.3163,
+     "precision": 0.9583,
+     "precision_lower_95": 0.8171
+    },
+    "accepted_names": 24,
+    "reason": "too_few_trials",
+    "accepted_names_needed": 103,
+    "statement": "the highest lower bound of accepted-name precision is 0.8171, at 0.5531: 23 of 24 accepted names right (0.9583). That clears 0.90 as a point estimate, on too few trials to certify it: at that precision about 103 accepted names would"
+   },
    "by_bound": null,
    "by_point_estimate": 0.371
   },
   "at_threshold": {
-   "threshold": 0.371,
+   "threshold": 0.5531,
    "right": 31,
    "wrong": 13,
-   "accepted_right": 30,
-   "accepted_wrong": 3,
-   "tar": 0.9677,
-   "fmr": 0.2308,
-   "fmr_upper_95": 0.4946,
-   "precision": 0.9091,
-   "precision_lower_95": 0.7815
+   "accepted_right": 23,
+   "accepted_wrong": 1,
+   "tar": 0.7419,
+   "fmr": 0.0769,
+   "fmr_upper_95": 0.3163,
+   "precision": 0.9583,
+   "precision_lower_95": 0.8171
   },
-  "fmr_over_tar": 0.2385,
+  "fmr_over_tar": 0.1037,
   "cost_in_true_accepts": {
    "right_names": 31,
-   "rejected": 1,
+   "rejected": 8,
    "rejected_unscorable": {
     "no_usable_reference": 1
    },
-   "rejected_below_threshold": 0
+   "rejected_below_threshold": 7
   },
   "bootstrap_95": {
    "tar": [
-    0.9,
-    1.0
+    0.5938,
+    0.9032
    ],
    "fmr": [
     0.0,
-    0.4616
+    0.2727
    ],
    "precision": [
-    0.8235,
+    0.8571,
     1.0
    ]
   },
@@ -516,55 +536,55 @@
   ],
   "strata": {
    "one_face": {
-    "threshold": 0.371,
+    "threshold": 0.5531,
     "right": 18,
     "wrong": 3,
-    "accepted_right": 18,
+    "accepted_right": 15,
     "accepted_wrong": 1,
-    "tar": 1.0,
+    "tar": 0.8333,
     "fmr": 0.3333,
     "fmr_upper_95": 0.8646,
-    "precision": 0.9474,
-    "precision_lower_95": 0.7736
+    "precision": 0.9375,
+    "precision_lower_95": 0.736
    },
    "several_faces": {
-    "threshold": 0.371,
+    "threshold": 0.5531,
     "right": 13,
     "wrong": 9,
-    "accepted_right": 12,
-    "accepted_wrong": 2,
-    "tar": 0.9231,
-    "fmr": 0.2222,
-    "fmr_upper_95": 0.5496,
-    "precision": 0.8571,
-    "precision_lower_95": 0.6146
+    "accepted_right": 8,
+    "accepted_wrong": 0,
+    "tar": 0.6154,
+    "fmr": 0.0,
+    "fmr_upper_95": 0.2831,
+    "precision": 1.0,
+    "precision_lower_95": 0.6877
    },
    "figure_from_probe_list": {
-    "threshold": 0.371,
+    "threshold": 0.5531,
     "right": 29,
     "wrong": 12,
-    "accepted_right": 28,
-    "accepted_wrong": 3,
-    "tar": 0.9655,
-    "fmr": 0.25,
-    "fmr_upper_95": 0.5273,
-    "precision": 0.9032,
-    "precision_lower_95": 0.7685
+    "accepted_right": 22,
+    "accepted_wrong": 1,
+    "tar": 0.7586,
+    "fmr": 0.0833,
+    "fmr_upper_95": 0.3387,
+    "precision": 0.9565,
+    "precision_lower_95": 0.8098
    },
    "figure_from_claim_ner": {
-    "threshold": 0.371,
+    "threshold": 0.5531,
     "right": 2,
     "wrong": 1,
-    "accepted_right": 2,
+    "accepted_right": 1,
     "accepted_wrong": 0,
-    "tar": 1.0,
+    "tar": 0.5,
     "fmr": 0.0,
     "fmr_upper_95": 0.95,
     "precision": 1.0,
-    "precision_lower_95": 0.2236
+    "precision_lower_95": 0.05
    },
    "ambiguous_link": {
-    "threshold": 0.371,
+    "threshold": 0.5531,
     "right": 1,
     "wrong": 0,
     "accepted_right": 1,
@@ -576,7 +596,7 @@
     "precision_lower_95": 0.05
    },
    "figure_link_ambiguous": {
-    "threshold": 0.371,
+    "threshold": 0.5531,
     "right": 1,
     "wrong": 0,
     "accepted_right": 1,
@@ -612,7 +632,7 @@
      "wrong": 2,
      "unlinked": 0,
      "scorable": 10,
-     "accepted_right": 8,
+     "accepted_right": 7,
      "accepted_wrong": 0
     },
     {
@@ -625,8 +645,8 @@
      "wrong": 1,
      "unlinked": 0,
      "scorable": 6,
-     "accepted_right": 5,
-     "accepted_wrong": 1
+     "accepted_right": 2,
+     "accepted_wrong": 0
     },
     {
      "rank": 3,
@@ -638,8 +658,8 @@
      "wrong": 2,
      "unlinked": 0,
      "scorable": 6,
-     "accepted_right": 4,
-     "accepted_wrong": 1
+     "accepted_right": 2,
+     "accepted_wrong": 0
     },
     {
      "rank": 4,
@@ -755,7 +775,7 @@
      "wrong": 0,
      "unlinked": 0,
      "scorable": 1,
-     "accepted_right": 1,
+     "accepted_right": 0,
      "accepted_wrong": 0
     },
     {
@@ -828,43 +848,43 @@
   "figure_stratified": {
    "what": "every figure weighs the same: each trial counts 1 / its figure's trials; 95% intervals by resampling figures",
    "figures": 17,
-   "threshold": 0.371,
+   "threshold": 0.5531,
    "vlm_precision": 0.6658,
-   "tar": 0.992,
-   "fmr": 0.2347,
-   "precision": 0.8938,
-   "precision_lower_95": 0.7561,
+   "tar": 0.822,
+   "fmr": 0.176,
+   "precision": 0.9029,
+   "precision_lower_95": 0.7384,
    "bootstrap_95": {
     "vlm_precision": [
      0.4902,
      0.8335
     ],
     "tar": [
-     0.9739,
-     1.0
+     0.627,
+     0.9702
     ],
     "fmr": [
      0.0,
-     0.5676
+     0.4981
     ],
     "precision": [
-     0.7287,
+     0.7,
      1.0
     ]
    },
    "threshold_by_figure_bound": 0.661,
    "note": "the threshold at which the one-sided 95% lower bound of figure-weighted precision reaches 0.90; when it is above the pooled one, the pooled threshold leans on the most-tried figures",
    "pooled_without_top_two_figures": {
-    "threshold": 0.371,
+    "threshold": 0.5531,
     "right": 17,
     "wrong": 10,
-    "accepted_right": 17,
-    "accepted_wrong": 2,
-    "tar": 1.0,
-    "fmr": 0.2,
-    "fmr_upper_95": 0.5069,
-    "precision": 0.8947,
-    "precision_lower_95": 0.7042
+    "accepted_right": 14,
+    "accepted_wrong": 1,
+    "tar": 0.8235,
+    "fmr": 0.1,
+    "fmr_upper_95": 0.3942,
+    "precision": 0.9333,
+    "precision_lower_95": 0.7206
    }
   },
   "look_alike_finding": {
@@ -880,7 +900,7 @@
     "scorable": 12,
     "median_score": 0.2844,
     "above_every_stranger": 3,
-    "accepted_at_threshold": 3
+    "accepted_at_threshold": 1
    },
    "right_names_median_score": 0.6174,
    "if_calibrated_on_random_pairs": {
@@ -956,9 +976,11 @@
    },
    "threshold": {
     "chosen": null,
+    "certified": false,
     "chosen_by": "unset: only a calibration over the complete Factify2 run sets the threshold, and this ledger holds 2,828 of 45,186 images. The candidate, and every figure at it, are reported and never adopted",
     "candidate": 0.4383,
     "candidate_by": "one-sided 95% lower bound of accepted-name precision >= 0.90",
+    "bound_shortfall": null,
     "by_bound": 0.4383,
     "by_point_estimate": 0.3021
    },

@@ -2259,6 +2259,11 @@ class Gallery:
 
     def verify(self, faces: Sequence[dict[str, Any]], name: str, threshold: float | None,
                entity_type: str = "PERSON") -> dict[str, Any]:
+        """Whether the image shows the entity ``name`` resolves to, at a
+        CERTIFIED ``threshold`` (certified_threshold). With none, verify
+        accepts nothing and rejects nothing -- ``match`` stays None -- and
+        returns the score and the reference it matched, for a person to check;
+        it never falls back to another threshold."""
         qids = self.resolve(name, entity_type)
         out: dict[str, Any] = {"claimed_name": name, "entity_type": entity_type,
                                "entities": [{"qid": q, "label": (self.entities.get(q) or {}).get("label")}
@@ -2299,7 +2304,8 @@ class Gallery:
                                       "face_box": best["reference_face"]["box"]},
                    same_photo=best["same_photo"])
         if threshold is None:
-            out["reason"] = "uncalibrated: score and matched reference only"
+            out["reason"] = ("no_certified_threshold: the gallery neither accepts nor rejects at this "
+                             "confidence; the score and the matched reference are for a person to check")
         else:
             out["match"] = best["score"] >= threshold
             out["reason"] = "matched" if out["match"] else "below_threshold"
@@ -2469,6 +2475,74 @@ def choose_threshold(trials: Sequence[dict[str, Any]], rule: str) -> float | Non
         if value is not None and value >= TARGET_PRECISION:
             return t
     return None
+
+
+def accepted_names_needed(precision: float, cap: int = 1_000_000) -> int | None:
+    """About how many accepted names a precision, held, needs before its
+    one-sided 95% lower bound reaches TARGET_PRECISION. None at or below the
+    bar, or past ``cap``: a precision that close to 0.90 is not certifiable."""
+    if precision <= TARGET_PRECISION:
+        return None
+
+    def reaches(n: int) -> bool:
+        lower = clopper_pearson_lower(math.floor(precision * n), n)
+        return lower is not None and lower >= TARGET_PRECISION
+
+    hi = 1
+    while not reaches(hi):
+        if hi > cap:
+            return None
+        hi *= 2
+    lo = hi // 2
+    while lo + 1 < hi:
+        mid = (lo + hi) // 2
+        lo, hi = (lo, mid) if reaches(mid) else (mid, hi)
+    return hi
+
+
+def bound_shortfall(trials: Sequence[dict[str, Any]]) -> tuple[float | None, dict[str, Any]]:
+    """When no threshold reaches the one-sided 95% bound: the threshold that
+    comes closest (the highest lower bound; the lowest threshold on a tie) and
+    why it falls short. Falling back to a point estimate would hide which:
+
+    - "too_few_trials": its precision clears 0.90 as a point estimate, and the
+      same precision over more trials would certify it (accepted_names_needed);
+    - "overlap": not above 0.90 even as a point estimate. Wrong names score
+      among the right ones, and more trials cannot fix that."""
+    best_t, best = None, None
+    for t in sorted({x["score"] for x in trials if x["scorable"]}):
+        p = operating_point(trials, t)
+        if p["precision_lower_95"] is not None and (best is None
+                                                    or p["precision_lower_95"] > best["precision_lower_95"]):
+            best_t, best = t, p
+    if best is None:
+        return None, {"threshold": None, "reason": "no_scorable_trials", "statement": "no name can be scored"}
+    n = best["accepted_right"] + best["accepted_wrong"]
+    head = (f"the highest lower bound of accepted-name precision is {best['precision_lower_95']}, at "
+            f"{best['threshold']}: {best['accepted_right']} of {n} accepted names right ({best['precision']})")
+    out = {"threshold": best["threshold"], "at": best, "accepted_names": n}
+    if best["precision"] > TARGET_PRECISION:
+        needed = accepted_names_needed(best["precision"])
+        return best_t, {**out, "reason": "too_few_trials", "accepted_names_needed": needed,
+                        "statement": head + (". That clears 0.90 as a point estimate, on too few trials to "
+                                             "certify it: at that precision about "
+                                             f"{needed:,} accepted names would" if needed else
+                                             ". That clears 0.90 as a point estimate, but too narrowly for "
+                                             "any practical number of trials to certify it")}
+    return best_t, {**out, "reason": "overlap",
+                    "statement": head + (", not above 0.90 even as a point estimate: wrong names score among "
+                                         "the right ones, and more trials cannot fix that")}
+
+
+def certified_threshold(report: dict[str, Any] | None, cid: str) -> float | None:
+    """The threshold verify may decide at: one a calibration of THIS face
+    configuration certified, by the one-sided 95% bound on the complete run.
+    Anything else -- no report, another configuration, a candidate, an older
+    report without the flag -- is no threshold, and verify then refuses."""
+    if not report or report.get("face_config") != cid:
+        return None
+    t = report.get("threshold") or {}
+    return t.get("chosen") if t.get("certified") is True and t.get("chosen") is not None else None
 
 
 def cross_validated(trials: Sequence[dict[str, Any]], rule: str, seed: int = SEED) -> dict[str, Any]:
@@ -2711,10 +2785,12 @@ def figure_stratified(trials: Sequence[dict[str, Any]], t: float | None,
 def calibrate(trials: Sequence[dict[str, Any]], tally: Counter, gallery: Gallery,
               query_faces: dict[str, Any], backend: str, ledger: dict[str, Any]) -> dict[str, Any]:
     """The report: the candidate threshold, what it costs in true accepts, and
-    the rest. Only a calibration over the complete Factify2 run sets the
-    threshold (``ledger["complete"]``). Otherwise the candidate and every
-    figure at it are reported and the threshold stays unset, so verify gives
-    scores without deciding: a partial ledger gives a partial population."""
+    the rest. The threshold is set only by the one-sided 95% bound, and only
+    by a calibration over the complete Factify2 run (``ledger["complete"]``):
+    a partial ledger gives a partial population. Short of the bound it stays
+    unset even on the complete run -- a point estimate is never adopted -- and
+    the report gives the curve, the threshold closest to the bound and why it
+    falls short (bound_shortfall). Unset, verify accepts and rejects nothing."""
     headline = [x for x in trials if not x.get("same_photo") and not x["forced"]]
     named = [x for x in headline if x["label"] != "unlinked"]
     right = sum(1 for x in headline if x["label"] == "right")
@@ -2722,11 +2798,10 @@ def calibrate(trials: Sequence[dict[str, Any]], tally: Counter, gallery: Gallery
     r_max = None if p is None else image_text.max_false_accept_ratio(p)
     t_bound = choose_threshold(headline, "bound")
     t_point = choose_threshold(headline, "point")
-    candidate = t_bound if t_bound is not None else t_point
+    candidate, shortfall = (t_bound, None) if t_bound is not None else bound_shortfall(headline)
     candidate_by = ("one-sided 95% lower bound of accepted-name precision >= 0.90" if t_bound is not None else
-                    "point estimate only: no threshold reaches 0.90 at the 95% lower bound on this many "
-                    "trials" if t_point is not None else
-                    "none: no threshold reaches 0.90 even as a point estimate")
+                    f"closest to the bound and short of it: {shortfall['statement']}")
+    chosen = t_bound if ledger.get("complete") else None
     of = f"{ledger['worklist']:,}" if ledger.get("worklist") else "an unknown number of"
     at = operating_point(headline, candidate)
     rejected_right = [x for x in headline if x["label"] == "right"
@@ -2780,15 +2855,19 @@ def calibrate(trials: Sequence[dict[str, Any]], tally: Counter, gallery: Gallery
         "bar": {"accepted_name_precision": TARGET_PRECISION,
                 "max_fmr_over_tar": None if r_max is None else round(r_max, 4),
                 "rule": "p*TAR / (p*TAR + (1-p)*FMR) >= 0.90, i.e. FMR/TAR <= p / (9 (1 - p))"},
-        "threshold": {"chosen": (round(candidate, 4) if candidate is not None and ledger.get("complete")
-                                 else None),
-                      "chosen_by": (candidate_by if ledger.get("complete") else
+        "threshold": {"chosen": None if chosen is None else round(chosen, 4),
+                      "certified": chosen is not None,
+                      "chosen_by": (candidate_by if chosen is not None else
                                     "unset: only a calibration over the complete Factify2 run sets the "
                                     f"threshold, and this ledger holds {ledger.get('images', 0):,} of {of} "
                                     "images. The candidate, and every figure at it, are reported and "
-                                    "never adopted"),
+                                    "never adopted" if not ledger.get("complete") else
+                                    "unset: no threshold reaches the one-sided 95% lower bound of 0.90, "
+                                    "and a point estimate is never adopted, so the gallery does not decide "
+                                    f"at this confidence. Short of the bound: {shortfall['statement']}"),
                       "candidate": None if candidate is None else round(candidate, 4),
                       "candidate_by": candidate_by,
+                      "bound_shortfall": shortfall,
                       "by_bound": None if t_bound is None else round(t_bound, 4),
                       "by_point_estimate": None if t_point is None else round(t_point, 4)},
         "at_threshold": at,
@@ -3242,12 +3321,14 @@ def cmd_verify(args) -> int:
     gallery = Gallery(face_config_id(backend))
     body = Path(args.image).read_bytes()
     faces = backend.faces(load_bgr(body), MIN_FACE["query"])
-    threshold = args.threshold
-    if threshold is None and (CALIBRATION_DIR / f"{args.backend}.json").is_file():
-        report = json.loads((CALIBRATION_DIR / f"{args.backend}.json").read_text(encoding="utf-8"))
-        if report.get("face_config") == gallery.cid:
-            threshold = (report.get("threshold") or {}).get("chosen")
-    out = gallery.verify(faces, args.name, threshold, args.type)
+    path = CALIBRATION_DIR / f"{args.backend}.json"
+    report = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else None
+    out = gallery.verify(faces, args.name, certified_threshold(report, gallery.cid), args.type)
+    if args.threshold is not None:  # a comparison a person asked for, never the gallery's decision
+        out["given_threshold"] = {
+            "threshold": args.threshold,
+            "score_at_or_above": None if out["score"] is None else out["score"] >= args.threshold,
+            "note": "given on the command line, not certified by calibration: a comparison, not a decision"}
     log(json.dumps(out, indent=1, ensure_ascii=False))
     return 0
 
@@ -3804,7 +3885,8 @@ def build_parser() -> argparse.ArgumentParser:
     v.add_argument("--name", required=True)
     v.add_argument("--type", choices=TYPES, default="PERSON")
     v.add_argument("--threshold", type=float, default=None,
-                   help="default: the calibrated one for this face configuration, if any")
+                   help="also compare the score with this threshold: a comparison, never a decision; only "
+                        "a threshold calibration certified decides, and without one verify refuses")
     r = sub.add_parser("review", help="a local HTML sheet of decisive trials, for a person to check")
     r.add_argument("--rejected", type=int, default=20, help="rejected right names to include")
     sub.add_parser("sample-report", help="data/reports/gallery_sample.json from the sample's stages")

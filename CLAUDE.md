@@ -286,16 +286,40 @@ Wikidata items with reference images from Wikimedia Commons. It is how the
     (`single_figure_rule`).
   - The threshold is the lowest one at which the one-sided 95% lower bound of
     accepted-name precision reaches 0.90. A point-estimate threshold is
-    reported beside it and never presented as the bound.
+    reported beside it, never presented as the bound, and **never adopted**.
   - **Only a calibration over the complete Factify2 run sets the threshold**
-    (`factify2_ledger.complete`: the server's, once the run finishes).
+    (`factify2_ledger.complete`: the server's, once the run finishes), and
+    only by the bound. `threshold.certified` says whether it is set.
     - On a partial ledger, `calibrate` reports the candidate and every figure
-      at it, and leaves `threshold.chosen` null. `verify` then gives a score
-      and the matched reference, never a decision.
+      at it, and leaves `threshold.chosen` null.
+    - **Short of the bound, the threshold stays null on the complete run too.**
+      The report then gives three things: the curve; the best candidate (the
+      threshold with the highest lower bound); and why it falls short
+      (`bound_shortfall`). There are two possible reasons:
+      - **Too few trials:** its precision clears 0.90 as a point estimate.
+        `accepted_names_needed` says how many accepted names would certify
+        it.
+      - **Overlap:** it is not above 0.90 even as a point estimate. Wrong
+        names score among the right ones, and more trials cannot fix that.
+
+      A fallback to a point estimate would hide which. A gallery that says it
+      cannot decide at this confidence is a usable result; one that accepts at
+      an uncertified threshold is not.
+    - On the sample's corrected labels before review, nothing reaches the
+      bound. The closest is 0.5531, where 23 of 24 accepted names are right
+      (lower bound 0.817). The reason is too few trials: at that precision,
+      about 103 accepted names would certify it.
     - The sample's adjudicated candidate, 0.4383, was not adopted, for three
       reasons. Its bound clears 0.90 with no margin (31 of 31 accepted names
       right). The bound rule finds no threshold in any cross-validation fold.
       And it rests on 44 trials from 6.3% of the ledger.
+  - **`verify` decides only at a certified threshold** (`certified_threshold`).
+    - Without one it refuses: `match` stays null, and it returns the score and
+      the matched reference for a person to check. It never defaults to
+      another threshold.
+    - A report of another face configuration, a candidate, or an older report
+      without the `certified` flag counts as no threshold.
+    - `--threshold` adds a labelled comparison, never a decision.
   - The cost in true accepts is always reported. Random-pair FMR is a labelled
     contrast, never an input.
   - **Why: the VLM's wrong names are not random strangers.** There are two
@@ -568,7 +592,7 @@ python scripts/gallery.py embed --backend sface           # faces; CPU, offline
 python scripts/gallery.py calibrate --backend sface       # Factify2 train only
 python scripts/gallery.py review --backend sface          # a local sheet for a person to check
 python scripts/gallery.py sample-report                   # data/reports/gallery_sample.json
-python scripts/gallery.py verify --image P --name "N"     # one 1:1 verification
+python scripts/gallery.py verify --image P --name "N"     # one 1:1 verification; no certified threshold, no decision
 PE_FAKE_NEWS_GALLERY_MODELS=1 pytest -q tests/test_gallery.py  # the pinned-weight tests
 ```
 

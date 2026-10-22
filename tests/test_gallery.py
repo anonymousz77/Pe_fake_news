@@ -1040,7 +1040,10 @@ def test_verification_returns_the_reference_it_matched_so_a_person_can_check_it(
 
     stranger = g.verify([_face(_vec(6000, bases["Q2"]))], "Narendra Modi", threshold=0.5)
     assert stranger["in_gallery"] and stranger["match"] is False and stranger["reason"] == "below_threshold"
-    assert g.verify(query, "Person Q1", None)["reason"].startswith("uncalibrated"), "labels resolve too"
+    refused = g.verify(query, "Person Q1", None)
+    assert refused["reason"].startswith("no_certified_threshold") and refused["match"] is None, \
+        "without a certified threshold verify neither accepts nor rejects"
+    assert refused["score"] is not None and refused["matched_reference"], "labels resolve too; a person can check"
     assert g.verify(query, "Nobody Known", 0.5)["reason"] == "name_not_in_gallery"
     assert g.verify([], "Narendra Modi", 0.5)["reason"] == "no_face_in_image"
     org = g.verify(query, "Some Party", 0.5, entity_type="ORG")
@@ -1235,11 +1238,20 @@ def test_a_partial_ledger_reports_a_candidate_and_never_sets_the_threshold(tmp_p
     partial = gallery.calibrate(trials, Counter(), g, query, "sface",
                                 {"images": 10, "worklist": 100, "complete": False})
     t = partial["threshold"]
-    assert t["chosen"] is None and t["candidate"] == 0.9 and t["candidate_by"].startswith("one-sided")
+    assert t["chosen"] is None and not t["certified"] and t["candidate"] == 0.9
+    assert t["candidate_by"].startswith("one-sided") and t["bound_shortfall"] is None
     assert t["chosen_by"].startswith("unset") and "10 of 100 images" in t["chosen_by"]
     assert partial["at_threshold"]["threshold"] == 0.9, "every figure is still reported, at the candidate"
-    full = gallery.calibrate(trials, Counter(), g, query, "sface", {"images": 100, "worklist": 100, "complete": True})
-    assert full["threshold"]["chosen"] == full["threshold"]["candidate"] == 0.9
+    complete = {"images": 100, "worklist": 100, "complete": True}
+    full = gallery.calibrate(trials, Counter(), g, query, "sface", complete)
+    assert full["threshold"]["chosen"] == full["threshold"]["candidate"] == 0.9 and full["threshold"]["certified"]
+
+    # the complete run, short of the bound: a point estimate exists, and is never adopted
+    short = [x for x in trials if x["key"] not in {f"r{i}" for i in range(15, 40)}]   # 15 right names left
+    out = gallery.calibrate(short, Counter(), g, query, "sface", complete)["threshold"]
+    assert out["by_point_estimate"] is not None and out["by_bound"] is None
+    assert out["chosen"] is None and not out["certified"] and out["bound_shortfall"]["reason"] == "too_few_trials"
+    assert out["candidate"] == 0.9 and "does not decide at this confidence" in out["chosen_by"]
 
 
 def _figure_trial(figure, label, score, i):
@@ -1298,6 +1310,31 @@ def test_no_threshold_is_claimed_where_none_reaches_the_bar():
               + [_trial("wrong", 0.95, f"w{i}") for i in range(5)])
     assert gallery.choose_threshold(trials, "point") is None
     assert gallery.choose_threshold(trials, "bound") is None
+
+
+def test_short_of_the_bound_the_report_says_whether_trials_or_overlap_are_to_blame():
+    few = [_trial("right", 0.9, f"r{i}") for i in range(10)] + [_trial("wrong", 0.3, f"w{i}") for i in range(40)]
+    t, why = gallery.bound_shortfall(few)
+    assert t == 0.9 and why["reason"] == "too_few_trials" and why["accepted_names"] == 10
+    assert why["accepted_names_needed"] == 29, "ten of ten right: 29 of 29 would clear the bound"
+    mixed = ([_trial("right", 0.9, f"r{i}") for i in range(20)] + [_trial("wrong", 0.95, f"v{i}") for i in range(5)]
+             + [_trial("wrong", 0.3, f"w{i}") for i in range(20)])
+    t, why = gallery.bound_shortfall(mixed)
+    assert t == 0.9 and why["reason"] == "overlap" and "more trials cannot fix that" in why["statement"]
+    assert gallery.accepted_names_needed(1.0) == 29 and gallery.accepted_names_needed(0.9) is None
+    assert gallery.bound_shortfall([_trial("right", None, "u")])[1]["reason"] == "no_scorable_trials"
+
+
+def test_verify_decides_only_at_a_threshold_a_calibration_certified():
+    def report(**threshold):
+        return {"face_config": "cid", "threshold": threshold}
+
+    assert gallery.certified_threshold(report(chosen=0.44, certified=True), "cid") == 0.44
+    assert gallery.certified_threshold(report(chosen=0.44, certified=True), "other") is None, "another configuration"
+    assert gallery.certified_threshold(report(chosen=None, certified=False, candidate=0.44), "cid") is None, \
+        "a candidate is not a threshold"
+    assert gallery.certified_threshold(report(chosen=0.661), "cid") is None, "an older report certifies nothing"
+    assert gallery.certified_threshold(None, "cid") is None
 
 
 def _name(entity_type, key, vlm=0, claims=1):
