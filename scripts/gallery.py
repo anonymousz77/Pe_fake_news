@@ -2422,10 +2422,15 @@ def build_trials(population: Sequence[dict[str, Any]], links: dict[tuple[str, st
                 else:
                     found = [(q, gallery.best(faces, q)) for q in usable]
                     q, best = max(found, key=lambda qb: qb[1]["score"])
+                    face = faces[best["query_face"]]
+                    (rx, ry), (lx, ly) = face["landmarks"][:2]
+                    # the face scored: its short side, and how far apart its eyes are -- a few
+                    # pixels on a face of forty is a face seen side-on
                     trial.update(score=round(best["score"], 6), scorable=True, qid=q,
                                  same_photo=best["same_photo"],
                                  matched_reference=best["reference"].get("sha256"),
-                                 refs=len(gallery.refs[q]))
+                                 refs=len(gallery.refs[q]), face_side=round(min(face["box"][2:]), 1),
+                                 eye_span=round(math.hypot(lx - rx, ly - ry), 1))
             out.append(trial)
     return out, tally
 
@@ -2445,8 +2450,230 @@ def verification_coverage(gallery: Gallery) -> dict[str, Any]:
                       f"reference face ({no_refs:,} have no Commons reference at all): for them verify can "
                       "only answer 'no usable reference'. That is a ceiling on coverage, apart from the "
                       "threshold. In calibration, a name that resolves only to such a person is unscorable: "
-                      "it counts as a rejection against TAR (cost_in_true_accepts) and is never a false "
-                      "accept.")}
+                      "it counts as a rejection against TAR (cost_in_true_accepts; tar_scorable leaves it "
+                      "out), as coverage when a person confirms it (review_findings), and never as a true "
+                      "or a false accept.")}
+
+
+# --------------------------------------------------------------------------
+# alias gaps: names our corpora use for a gallery person that do not resolve to them
+# --------------------------------------------------------------------------
+
+#: Two or three consonants are initials ("MK", "RKS"); a vowel makes a name ("Om", "Raj").
+_INITIALS = re.compile(r"[b-df-hj-np-tv-z]{2,3}")
+#: name_variant's rules, the most certain first.
+VARIANT_RULES = ("spacing", "initials_or_middle", "spelling")
+#: A one-word name is counted as a gallery person's when that person holds this
+#: share of the mentions of our corpora's full names with that surname (or
+#: first name)...
+WORD_SHARE = 0.9
+#: ...out of at least this many mentions.
+WORD_SUPPORT = 10
+#: A one-word name counts as a spaced name run together ("mkstalin") from this
+#: many letters: a shorter one meets names that an apostrophe split ("du'a").
+GLUED_LETTERS = 6
+#: How many gaps the local report lists, the most mentioned first.
+GAP_EXAMPLES = 30
+
+
+def _initials(words: Sequence[str]) -> list[str]:
+    out: list[str] = []
+    for w in words:
+        out += list(w) if _INITIALS.fullmatch(w) else [w]
+    return out
+
+
+def _word_match(a: str, b: str) -> bool:
+    """The same word, or an initial and a word it begins."""
+    return a == b or (len(a) == 1 and b.startswith(a)) or (len(b) == 1 and a.startswith(b))
+
+
+def _one_edit(a: str, b: str) -> bool:
+    """One letter apart: substituted, inserted or dropped."""
+    if len(a) == len(b):
+        return sum(x != y for x, y in zip(a, b)) == 1
+    short, long = sorted((a, b), key=len)
+    return len(long) - len(short) == 1 and any(long[:i] + long[i + 1:] == short for i in range(len(long)))
+
+
+def name_variant(key: str, other: str) -> str | None:
+    """How two name keys could be one person's, or None. A rule for COUNTING
+    where resolution may miss someone, never for linking:
+
+    - "spacing": the same letters, spaced differently ("mk stalin", "m k stalin");
+    - "initials_or_middle", for two words or more: the same surname, and the
+      same first name with names left out ("sushil modi", "sushil kumar modi"),
+      or initials, one per name ("bs dhanoa", "birender singh dhanoa");
+    - "spelling": either of those, one letter apart in a surname of six
+      letters or more ("lav aggarwal", "lav agarwal").
+
+    An initial stands for a first name only where one side's names before the
+    surname are all initials, two or more: "kanhaiya kumar" is not "k vijay
+    kumar", and "selva kumar" is not "s kumar"."""
+    a, b = key.split(), other.split()
+    if a == b:
+        return None
+    if "".join(a) == "".join(b):
+        return "spacing"
+    a, b = _initials(a), _initials(b)
+    if len(a) < 2 or len(b) < 2:
+        return None
+    kind = "initials_or_middle"
+    if a[-1] != b[-1]:
+        if min(len(a[-1]), len(b[-1])) < 6 or not _one_edit(a[-1], b[-1]):
+            return None
+        kind = "spelling"
+    pa, pb = a[:-1], b[:-1]
+    if pa[0] == pb[0]:
+        short, long = sorted((pa, pb), key=len)
+        rest = iter(long)
+        return kind if all(any(_word_match(s, t) for t in rest) for s in short) else None
+    initials_only = len(pa) > 1 and (all(len(w) == 1 for w in pa) or all(len(w) == 1 for w in pb))
+    return kind if initials_only and len(pa) == len(pb) and all(map(_word_match, pa, pb)) else None
+
+
+def alias_gaps(names: Sequence[dict[str, Any]], gallery: Gallery, wiki: dict[str, dict[str, Any]]
+               ) -> tuple[dict[str, Any], dict[str, dict[str, Any]]]:
+    """How the build scope's PERSON names (name-table rows) resolve, how far
+    they collapse into one person's QID, and the PLAUSIBLE ALIASES that do not:
+    a name our corpora use for a gallery person that resolves to no one, to
+    several people (a claim name that does decides nothing), or to someone
+    else. Plausible by rule, never linked: for a name of two words or more that
+    resolves to no one, name_variant against every gallery person's label and
+    aliases; for one word, the same letters as one person's spaced name, or else
+    the person who holds WORD_SHARE of the mentions of our corpora's full names
+    with that surname -- or, for a word our corpora never use as a surname,
+    that first name. The one-word rule can be wrong where the person is known
+    by that one word: a mononym the corpora rarely write in full is outvoted by
+    a namesake they do.
+
+    Returns the report and the gaps by name key, each with its ``target``."""
+    people = {q for q, e in gallery.entities.items() if e["type"] == "PERSON"}
+    resolved = {r["key"]: sorted(gallery.index.get(("PERSON", r["key"]), ())) for r in names}
+    mentions = {r["key"]: scope_mentions(r) for r in names}
+    forms: dict[str, list[tuple[str, str]]] = {}  # by first letter, which every rule keeps
+    spaced: dict[str, set[str]] = {}
+    for q in sorted(people):
+        summary = wiki.get(q) or {}
+        for text in [summary.get("label") or "", *summary.get("aliases", [])]:
+            k = name_key(text, "PERSON")
+            if k and " " in k:
+                forms.setdefault(k[0], []).append((q, k))
+                spaced.setdefault(k.replace(" ", ""), set()).add(q)
+    surname: dict[str, Counter] = {}
+    first: dict[str, Counter] = {}
+    for k, qs in resolved.items():
+        words = k.split()
+        if len(words) > 1:
+            who = qs[0] if len(qs) == 1 and qs[0] in people else ""
+            surname.setdefault(words[-1], Counter())[who] += mentions[k]
+            first.setdefault(words[0], Counter())[who] += mentions[k]
+
+    def dominant(counts: Counter | None) -> str | None:
+        total = sum((counts or {}).values())
+        q, n = next(((q, n) for q, n in (counts or Counter()).most_common() if q), ("", 0))
+        return q if q and total >= WORD_SUPPORT and n >= WORD_SHARE * total else None
+
+    gaps: dict[str, dict[str, Any]] = {}
+    several_people = 0
+    for r in names:
+        key, qs = r["key"], resolved[r["key"]]
+        if " " in key:
+            if qs:
+                continue  # an exact label or alias: it resolves, to one person or to several
+            found: dict[str, str] = {}
+            for q, form in forms.get(key[0], ()):
+                kind = name_variant(key, form)
+                if kind and (q not in found or VARIANT_RULES.index(kind) < VARIANT_RULES.index(found[q])):
+                    found[q] = kind
+            several_people += len(found) > 1
+            if len(found) != 1:
+                continue
+            (target, rule), = found.items()
+        else:
+            if len(key) < 3:
+                continue
+            glued = spaced.get(key, set()) if len(key) >= GLUED_LETTERS else set()
+            if len(glued) == 1:
+                target, rule = next(iter(glued)), "spacing"
+            elif key in surname:
+                target, rule = dominant(surname[key]), "surname"
+            else:
+                target, rule = dominant(first.get(key)), "first_name"
+            if target is None or qs == [target]:
+                continue
+        gaps[key] = {"key": key, "rule": rule, "target": target, "resolves": qs,
+                     "outcome": "unresolved" if not qs else "several" if target in qs else "someone_else",
+                     "mentions": mentions[key], "vlm_mentions": r["mentions"]["vlm"]}
+    one = [qs[0] for qs in resolved.values() if len(qs) == 1]
+    families = Counter(one)
+    shared = [n for n in families.values() if n > 1]
+    listed = sorted(gaps.values(), key=lambda g: (-g["mentions"], g["key"]))
+    by_rule: dict[str, dict[str, int]] = {}
+    for g in listed:
+        b = by_rule.setdefault(g["rule"], {"names": 0, "mentions": 0, "unresolved": 0, "several": 0,
+                                           "someone_else": 0})
+        b["names"] += 1
+        b["mentions"] += g["mentions"]
+        b[g["outcome"]] += 1
+    total, gap_mentions = sum(mentions.values()), sum(g["mentions"] for g in listed)
+    outcomes = Counter(g["outcome"] for g in listed)
+    label = {q: (gallery.entities.get(q) or {}).get("label") for q in people}
+    return {
+        "what": ("the build scope's PERSON names as resolution sees them (the name table, mentions in "
+                 "scope), and plausible aliases that do not collapse: rules for counting, never links. "
+                 f"Names of two words or more that resolve to no one: {', '.join(VARIANT_RULES)} "
+                 "(name_variant) against gallery people's labels and aliases. One word: the same letters "
+                 "as one person's spaced name, or the person holding "
+                 f"{WORD_SHARE:.0%} of {WORD_SUPPORT}+ mentions of our full names with that surname (first "
+                 "name, for a word never used as a surname)"),
+        "names": len(names), "mentions": total,
+        "resolve": {"to_one_person": len(one), "to_several": sum(1 for qs in resolved.values() if len(qs) > 1),
+                    "to_no_one": sum(1 for qs in resolved.values() if not qs)},
+        "collapse": {"people": len(families), "people_with_two_names_or_more": len(shared),
+                     "names_in_them": sum(shared), "most_names_for_one_person": max(families.values(), default=0)},
+        "plausible_aliases_not_collapsing": {
+            "names": len(listed), "mentions": gap_mentions,
+            "share_of_mentions": image_text._ratio(gap_mentions, total, 4),
+            "with_vlm_mentions": sum(1 for g in listed if g["vlm_mentions"]),
+            "by_outcome": dict(sorted(outcomes.items())), "by_rule": by_rule,
+            "names_that_could_be_several_people": several_people},
+        "statement": (f"Of {len(names):,} person names, {len(one):,} resolve to one person; "
+                      f"{sum(shared):,} of them collapse into the {len(shared):,} people who have two names or "
+                      f"more. {len(listed):,} names ({gap_mentions:,} of {total:,} mentions) plausibly name a "
+                      f"gallery person they do not resolve to: {outcomes['unresolved']:,} resolve to no one, "
+                      f"{outcomes['several']:,} to several people and {outcomes['someone_else']:,} to someone "
+                      "else"),
+        "local": {"gaps": [{**g, "target_label": label.get(g["target"]),
+                            "resolves_to": [label.get(q) or q for q in g["resolves"]]}
+                           for g in listed[:GAP_EXAMPLES]]},
+    }, gaps
+
+
+def alias_gap_labels(trials: Sequence[dict[str, Any]], claim_keys: dict[str, set[str]],
+                     gaps: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    """The trials the label rule does not call right that an alias gap may
+    decide: a claim name on the image plausibly names the VLM's person but
+    resolves elsewhere (claim side), or the VLM's own name plausibly names a
+    person the claims name and resolves elsewhere (VLM side). Beside them,
+    those whose name a claim's text carries although no claim name resolves to
+    it (named_in_claim_text): a handle, or a name NER did not find."""
+    flagged: dict[str, str] = {}
+    not_right = [x for x in trials if x["label"] != "right"]
+    for x in not_right:
+        targets = {gaps[k]["target"] for k in claim_keys.get(x["sha256"], ()) if k in gaps}
+        own = gaps.get(x["key"] or "")
+        if targets.intersection(x.get("qids") or ()):
+            flagged[trial_id(x)] = "claim_side"
+        elif own and own["target"] in targets.union(x["claim_qids"]):
+            flagged[trial_id(x)] = "vlm_side"
+    named = sum(1 for x in not_right if x.get("named_in_claim_text"))
+    return {"trials_not_labelled_right": len(not_right), "an_alias_gap_may_decide": dict(Counter(flagged.values())),
+            "named_in_claim_text": named,
+            "statement": (f"Of the {len(not_right)} trials the label rule does not call right, an alias gap may "
+                          f"decide {len(flagged)}; a claim's text carries the name of {named} (a handle, or a "
+                          "name NER did not find), which the review sheet shows a person"),
+            "local": {"trials": dict(sorted(flagged.items()))}}
 
 
 def operating_point(trials: Sequence[dict[str, Any]], t: float | None) -> dict[str, Any]:
@@ -2806,6 +3033,7 @@ def calibrate(trials: Sequence[dict[str, Any]], tally: Counter, gallery: Gallery
     at = operating_point(headline, candidate)
     rejected_right = [x for x in headline if x["label"] == "right"
                       and not (candidate is not None and x["scorable"] and x["score"] >= candidate)]
+    scorable_right = sum(1 for x in headline if x["label"] == "right" and x["scorable"])
     grid = sorted({round(x["score"], 2) for x in headline if x["scorable"]})
     strata = {}
     for name, test in (("one_face", lambda x: x["faces"] == 1), ("several_faces", lambda x: x["faces"] > 1),
@@ -2875,7 +3103,11 @@ def calibrate(trials: Sequence[dict[str, Any]], tally: Counter, gallery: Gallery
         "cost_in_true_accepts": {
             "right_names": at["right"], "rejected": len(rejected_right),
             "rejected_unscorable": dict(Counter(x["unscorable"] for x in rejected_right if x["unscorable"])),
-            "rejected_below_threshold": sum(1 for x in rejected_right if x["scorable"])},
+            "rejected_below_threshold": sum(1 for x in rejected_right if x["scorable"]),
+            "right_names_scorable": scorable_right,
+            "tar_scorable": image_text._ratio(at["accepted_right"], scorable_right, 4),
+            "note": ("TAR is (right names the gallery can score / right names) x tar_scorable: a name it "
+                     "cannot score is coverage, and tar_scorable is the recognizer's own rate without it")},
         "bootstrap_95": None if candidate is None else bootstrap(headline, candidate),
         "cross_validated": {"bound": cross_validated(headline, "bound"),
                             "point": cross_validated(headline, "point")},
@@ -3215,10 +3447,19 @@ CALIBRATION_REPORT = REPORTS / "gallery_calibration.json"
 _QID = re.compile(r"Q\d+")
 
 
+def _without_local(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {k: _without_local(v) for k, v in value.items() if k != "local"}
+    if isinstance(value, list):
+        return [_without_local(v) for v in value]
+    return value
+
+
 def public_report(report: dict[str, Any]) -> dict[str, Any]:
-    """The calibration report with no name and no QID: figures by rank only.
-    Refuses if an identifier is left anywhere in it."""
-    out = json.loads(json.dumps(report))
+    """The calibration report with no name and no QID: figures by rank only,
+    and no ``local`` part (the trials and names a person reads, kept in the
+    local report). Refuses if an identifier is left anywhere in it."""
+    out = _without_local(json.loads(json.dumps(report)))
     for part in (out, out.get("adjudicated") or {}):
         figures = part.get("figures")
         if figures:
@@ -3237,6 +3478,14 @@ def public_report(report: dict[str, Any]) -> dict[str, Any]:
 
     check(out)
     return out
+
+
+def consistency_floor(cid: str) -> float:
+    """The gallery's consistency threshold (pinned): a score below it sits
+    where different people's faces score. The review sheet's floor, and where
+    a face a person recognises becomes a recognition failure."""
+    summary = json.loads((FACES_DIR / cid / "gallery_summary.json").read_text(encoding="utf-8"))
+    return summary["consistency_threshold"]
 
 
 def cmd_calibrate(args) -> int:
@@ -3258,6 +3507,15 @@ def cmd_calibrate(args) -> int:
                  "population and never sets the threshold")}
     report = calibrate(trials, tally + more, gallery, query_faces, args.backend, ledger)
     report["factify2_ledger"] = ledger
+    if NAMES_PATH.is_file():
+        names = [r for r in read_jsonl(NAMES_PATH) if r["type"] == "PERSON" and in_scope(r)]
+        report["alias_gaps"], gaps = alias_gaps(names, gallery, latest(read_jsonl(WIKIDATA_PATH),
+                                                                       lambda r: r["qid"]))
+        claim_keys = {img["sha256"]: {name_key(p, "PERSON") for p in img["claim_people"]} - {None}
+                      for img in population}
+        report["alias_gaps"]["labels"] = alias_gap_labels(trials, claim_keys, gaps)
+    else:
+        report["alias_gaps"] = {"status": f"not measured: no name table at {NAMES_PATH} (run count)"}
     report["adjudicated"] = None
     path = decisions_path(args.backend)
     decisions = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
@@ -3277,6 +3535,7 @@ def cmd_calibrate(args) -> int:
             "relabelled": dict(sorted(changes.items())),
             "note": ("a trial without a decision keeps its label; relabelled says how many decisions "
                      "changed a label, and in which direction, and how many confirmed it"),
+            "review_findings": review_findings(trials, relabelled, consistency_floor(cid)),
             **{k: v for k, v in calibrate(relabelled, tally + more, gallery, query_faces,
                                           args.backend, ledger).items()
                if k in ("trials", "vlm_precision", "bar", "threshold", "at_threshold", "fmr_over_tar",
@@ -3301,8 +3560,14 @@ def cmd_calibrate(args) -> int:
         ta, aa = adj["threshold"], adj["at_threshold"]
         log(f"  adjudicated ({adj['applied']} decisions; {adj['relabelled']}): VLM precision "
             f"{adj['vlm_precision']['qid']}; candidate {ta['candidate']} ({ta['candidate_by']}): TAR "
-            f"{aa['tar']} FMR {aa['fmr']} precision {aa['precision']} (lower 95% {aa['precision_lower_95']})")
+            f"{aa['tar']} FMR {aa['fmr']} precision {aa['precision']} (lower 95% {aa['precision_lower_95']}); "
+            f"TAR on names the gallery can score {adj['cost_in_true_accepts']['tar_scorable']}")
+        log(f"  review: {adj['review_findings']['statement']}")
     log(f"  coverage: {report['coverage']['statement']}")
+    aliases = report["alias_gaps"]
+    log(f"  aliases: {aliases.get('statement') or aliases['status']}")
+    if "labels" in aliases:
+        log(f"    {aliases['labels']['statement']}")
     log(f"  figures: {report['figures']['concentration']['statement']}")
     for r in report["figures"]["table"][:5]:
         log(f"    {r['label'] or r['figure_qid']}: {r['trials']} trials, {r['right']} right, "
@@ -3678,6 +3943,74 @@ def adjudicated(trials: Sequence[dict[str, Any]], decisions: dict[str, str | Non
     return out
 
 
+def review_findings(trials: Sequence[dict[str, Any]], relabelled: Sequence[dict[str, Any]],
+                    floor: float) -> dict[str, Any]:
+    """What a person's decisions found, kept apart because each means something
+    different (``trials`` as the label rule labelled them, ``relabelled`` as
+    adjudicated). A name a person confirmed right is one of:
+
+    - recognised: the gallery scores it at or above ``floor``, its own
+      consistency threshold;
+    - a RECOGNITION FAILURE: it scores below the floor, where different
+      people's faces score. The recognizer failing on a face a person
+      recognises, not a label error: it lowers TAR, and it is the honest limit
+      of the recognizer on these images;
+    - COVERAGE: the gallery cannot score it (no usable reference, no face). It
+      could not have checked the name: never a true accept, and not the
+      recognizer's failure either.
+
+    Label noise -- a decision that changed the rule's label -- is counted by
+    where the name falls. Wrong to right at or above the floor is a match the
+    labels had called false; below it, a recognition failure they had hidden."""
+    before = {trial_id(x): x["label"] for x in trials}
+    decided = [x for x in relabelled if x.get("adjudicated")]
+
+    def where(x: dict[str, Any]) -> str:
+        if not x["scorable"]:
+            return "unscorable"
+        return "at_or_above_floor" if x["score"] >= floor else "below_floor"
+
+    def faces(xs: Sequence[dict[str, Any]]) -> dict[str, Any] | None:
+        return None if not xs else {
+            "median_face_side": round(statistics.median(x["face_side"] for x in xs), 1),
+            "median_eye_span": round(statistics.median(x["eye_span"] for x in xs), 1)}
+
+    right = [x for x in decided if x["label"] == "right"]
+    wrong = [x for x in decided if x["label"] != "right"]
+    recognised = [x for x in right if where(x) == "at_or_above_floor"]
+    failures = sorted((x for x in right if where(x) == "below_floor"), key=lambda x: -x["score"])
+    uncovered = [x for x in right if where(x) == "unscorable"]
+    noise: dict[str, Counter] = {}
+    for x in decided:
+        was = before[trial_id(x)]
+        if was != x["label"]:
+            noise.setdefault(f"{was}_to_{x['label']}", Counter())[where(x)] += 1
+    changed = "; ".join(f"{k.replace('_', ' ')}: {sum(c.values())} ({c['at_or_above_floor']} at or above the "
+                        f"floor, {c['below_floor']} below it, {c['unscorable']} unscorable)"
+                        for k, c in sorted(noise.items()))
+    return {
+        "what": ("every name a person decided, by where the gallery puts it against its consistency "
+                 "threshold: a confirmed name below it is a recognition failure, one it cannot score is "
+                 "coverage; label noise (decisions that changed a label) is counted apart"),
+        "floor": round(floor, 4),
+        "confirmed_right": {"names": len(right), "recognised": len(recognised),
+                            "recognition_failures": len(failures),
+                            "coverage": dict(Counter(x["unscorable"] for x in uncovered))},
+        "confirmed_wrong": {"names": len(wrong), **dict(sorted(Counter(where(x) for x in wrong).items()))},
+        "label_noise": {k: dict(sorted(c.items())) for k, c in sorted(noise.items())},
+        "faces": {"recognised": faces(recognised), "recognition_failures": faces(failures)},
+        "statement": (f"A person confirmed {len(right)} names right. The gallery scores {len(recognised)} at or "
+                      f"above its floor of {floor:.3f}; {len(failures)} below it, among different people's "
+                      "faces -- recognition failures, not label errors: they lower TAR, and they are the "
+                      f"recognizer's limit on these images; {len(uncovered)} it cannot score -- coverage, "
+                      f"never a true accept. {sum(sum(c.values()) for c in noise.values())} decisions changed "
+                      f"a label (label noise){': ' + changed if changed else ''}"),
+        "local": {"recognition_failures": [{"trial": trial_id(x), "score": round(x["score"], 4),
+                                            "faces_in_image": x["faces"], "face_side": x["face_side"],
+                                            "eye_span": x["eye_span"]} for x in failures],
+                  "coverage": [{"trial": trial_id(x), "unscorable": x["unscorable"]} for x in uncovered]}}
+
+
 def review_queue(trials: Sequence[dict[str, Any]], decided: Iterable[str], floor: float,
                  rejected: int) -> list[tuple[str, dict[str, Any]]]:
     """The trials a person looks at next, none already decided, in three parts.
@@ -3723,8 +4056,7 @@ def cmd_review(args) -> int:
             by_sha.setdefault(row["sha256"], path)
     # The floor is the gallery's own consistency threshold: a score above it is
     # plausibly the person, so it is looked at whether a threshold is set or not.
-    summary = json.loads((FACES_DIR / gallery.cid / "gallery_summary.json").read_text(encoding="utf-8"))
-    floor = summary["consistency_threshold"] if t is None else min(t, summary["consistency_threshold"])
+    floor = consistency_floor(gallery.cid) if t is None else min(t, consistency_floor(gallery.cid))
     decisions_file = decisions_path(args.backend)
     decisions = json.loads(decisions_file.read_text(encoding="utf-8")) if decisions_file.is_file() else {}
     decided = [k for k, v in decisions.items() if v is not None]

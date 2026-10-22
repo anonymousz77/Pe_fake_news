@@ -1119,11 +1119,14 @@ def test_a_trial_resolves_its_name_exactly_as_verification_does(tmp_path):
 
     population = [{"sha256": "img1", "figure_source": "probe_list", "figure_key": "narendra modi",
                    "names": [said("NaMo"), said("Person Q2"), said("Nobody Here")]}]
-    query = {"img1": {"faces": [_face(_vec(7000, bases["Q1"]))]}}
+    face = {**_face(_vec(7000, bases["Q1"]), box=(10, 10, 100, 120)),
+            "landmarks": [[30, 40], [70, 40], [50, 60], [35, 80], [65, 80]]}
+    query = {"img1": {"faces": [face]}}
     trials, tally = gallery.build_trials(population, {("PERSON", "narendra modi"): links[0]}, query, g)
     by = {t["name"]: t for t in trials}
     assert by["NaMo"]["label"] == "right" and by["NaMo"]["scorable"] and by["NaMo"]["score"] > 0.5, \
         "an alias resolves, as it does in verify"
+    assert by["NaMo"]["face_side"] == 100 and by["NaMo"]["eye_span"] == 40, "how big the face scored, how frontal"
     assert by["NaMo"]["token_label"] == "wrong", "the probe's token rule misses the alias: it is loose"
     assert by["Person Q2"]["label"] == "wrong" and by["Person Q2"]["score"] < 0.5
     assert by["Nobody Here"]["label"] == "unlinked" and by["Nobody Here"]["unscorable"] == "name_unlinked"
@@ -1227,6 +1230,33 @@ def test_the_next_sheet_holds_every_plausible_name_whatever_its_label_and_nothin
     assert len(gallery.review_queue(trials, decided, floor=0.38, rejected=1)) == 4, "rejected right names: a sample"
 
 
+def test_what_a_persons_decisions_found_keeps_recognition_failures_coverage_and_label_noise_apart():
+    def scored(label, score, sha, key, side, span):
+        return {**_trial(label, score, sha * 64), "key": key, "face_side": side, "eye_span": span}
+
+    raw = [scored("right", 0.8, "a", "seen", 96.0, 44.0),
+           scored("wrong", 0.7, "b", "labels_said_wrong", 90.0, 40.0),
+           scored("wrong", 0.3, "c", "side_on", 40.0, 5.0),
+           scored("right", 0.35, "d", "small", 36.0, 14.0),
+           {**_trial("right", None, "e" * 64), "key": "no_reference", "unscorable": "no_usable_reference"},
+           scored("wrong", 0.39, "f", "lookalike", 50.0, 20.0),
+           scored("right", 0.6, "1", "undecided", 80.0, 30.0)]
+    decisions = {**{gallery.trial_id(x): "vlm" for x in raw[:5]}, gallery.trial_id(raw[5]): "neither"}
+    out = gallery.review_findings(raw, gallery.adjudicated(raw, decisions), floor=0.381)
+    assert out["confirmed_right"] == {"names": 5, "recognised": 2, "recognition_failures": 2,
+                                      "coverage": {"no_usable_reference": 1}}, \
+        "a face a person recognises below the floor is the recognizer's failure; one it cannot score is coverage"
+    assert out["confirmed_wrong"] == {"names": 1, "at_or_above_floor": 1}
+    assert out["label_noise"] == {"wrong_to_right": {"at_or_above_floor": 1, "below_floor": 1}}, \
+        "one relabel the gallery had matched, one it fails to recognise: label noise, counted apart"
+    assert [f["trial"] for f in out["local"]["recognition_failures"]] == [gallery.trial_id(raw[3]),
+                                                                          gallery.trial_id(raw[2])]
+    assert out["faces"]["recognition_failures"] == {"median_face_side": 38.0, "median_eye_span": 9.5}
+    assert "coverage, never a true accept" in out["statement"]
+    assert "local" not in gallery.public_report({"adjudicated": {"review_findings": out}})["adjudicated"][
+        "review_findings"], "the trials stay in the local report"
+
+
 def test_a_partial_ledger_reports_a_candidate_and_never_sets_the_threshold(tmp_path):
     bases, entities, faces = _people()
     g = _gallery_on_disk(tmp_path, entities, faces, [])
@@ -1252,6 +1282,23 @@ def test_a_partial_ledger_reports_a_candidate_and_never_sets_the_threshold(tmp_p
     assert out["by_point_estimate"] is not None and out["by_bound"] is None
     assert out["chosen"] is None and not out["certified"] and out["bound_shortfall"]["reason"] == "too_few_trials"
     assert out["candidate"] == 0.9 and "does not decide at this confidence" in out["chosen_by"]
+
+
+def test_a_right_name_the_gallery_cannot_score_is_coverage_never_a_true_accept(tmp_path):
+    bases, entities, faces = _people()
+    g = _gallery_on_disk(tmp_path, entities, faces, [])
+    trials = ([{**_trial("right", 0.9, f"r{i}"), "key": f"r{i}"} for i in range(30)]
+              + [{**_trial("right", 0.2, "low"), "key": "low"},
+                 {**_trial("right", None, "nf"), "key": "nf", "unscorable": "no_usable_reference"}]
+              + [{**_trial("wrong", 0.3, f"x{i}"), "key": f"x{i}"} for i in range(30)])
+    trials = [{**x, "qid": "Q1", "figure_qid": "Q1"} for x in trials]
+    query = {x["sha256"]: {"faces": [_face(_vec(7000 + i, bases["Q1"]))]} for i, x in enumerate(trials)}
+    out = gallery.calibrate(trials, Counter(), g, query, "sface", {"images": 10, "worklist": 100, "complete": False})
+    cost = out["cost_in_true_accepts"]
+    assert out["at_threshold"]["accepted_right"] == 30 and out["at_threshold"]["tar"] == round(30 / 32, 4)
+    assert cost["right_names_scorable"] == 31 and cost["tar_scorable"] == round(30 / 31, 4), \
+        "the recognizer's own rate leaves out the name it could not have checked"
+    assert cost["rejected_unscorable"] == {"no_usable_reference": 1} and cost["rejected_below_threshold"] == 1
 
 
 def _figure_trial(figure, label, score, i):
@@ -1296,11 +1343,14 @@ def test_the_published_calibration_names_no_one():
     report = {"figures": {"concentration": {"figures": 1},
                           "table": [{"figure_qid": "Q1058", "label": "Narendra Modi", "trials": 3}]},
               "adjudicated": {"figures": {"table": [{"figure_qid": "Q22686", "label": "Donald Trump",
-                                                     "trials": 2}]}}}
+                                                     "trials": 2}]}},
+              "alias_gaps": {"names": 3, "local": {"gaps": [{"key": "modi", "target_label": "Narendra Modi"}]},
+                             "labels": {"local": {"trials": {"0123456789ab:melania trump": "claim_side"}}}}}
     out = gallery.public_report(report)
     assert out["figures"]["table"] == [{"rank": 1, "trials": 3}]
+    assert out["alias_gaps"] == {"names": 3, "labels": {}}, "what a person reads stays local"
     text = json.dumps(out)
-    assert "Q1058" not in text and "Modi" not in text and "Trump" not in text
+    assert "Q1058" not in text and "Modi" not in text and "Trump" not in text and "modi" not in text
     with pytest.raises(gallery.GalleryError):
         gallery.public_report({"anywhere": ["Q42"]})
 
@@ -1364,6 +1414,58 @@ def test_names_collapse_into_entities_through_labels_and_aliases_and_strata_weig
     assert person["names_in_scope"] == 5 and person["names_linked"] == 3, "2 x 1 linked + 1 x 1 linked"
     assert person["distinct_entities"] == 2, "2 x 1/3 + 1 x 1 = 1.67 entities"
     assert out["ORG"]["names_linked"] == 0 and out["status"]["no_type_match"] == 1
+
+
+def test_a_name_variant_is_spacing_initials_a_name_left_out_or_one_letter_never_a_guess():
+    v = gallery.name_variant
+    assert v("mk stalin", "m k stalin") == v("jaganmohan reddy", "jagan mohan reddy") == "spacing"
+    assert v("bs dhanoa", "birender singh dhanoa") == "initials_or_middle", "initials, one per name"
+    assert v("sushil modi", "sushil kumar modi") == "initials_or_middle", "a middle name left out"
+    assert v("narendra s tomar", "narendra singh tomar") == "initials_or_middle"
+    assert v("lav aggarwal", "lav agarwal") == v("bs yeddyurappa", "b s yediyurappa") == "spelling"
+    assert v("kanhaiya kumar", "k vijay kumar") is None, "an initial before a first name is not that first name"
+    assert v("selva kumar", "s kumar") is None, "one initial and a common surname name no one"
+    assert v("kt rama rao", "kiran rao") is None
+    assert v("ram nath", "ram natha") is None, "a short surname one letter off is another name"
+    assert v("rahul gandhi", "sonia gandhi") is None and v("amit shah", "amit shah") is None
+
+
+def test_aliases_that_collapse_and_plausible_aliases_that_do_not_are_counted(tmp_path):
+    bases, entities, faces = _people()
+    labels = {"Q1": "Narendra Modi", "Q2": "Amedeo Modigliani", "Q3": "M. K. Stalin", "Q4": "Joe Biden",
+              "Q5": "Jill Biden", "Q6": "Robert Mueller", "Q7": "Rahul Gandhi", "Q8": "Sonia Gandhi"}
+    for e in entities:
+        e["label"] = labels.get(e["qid"], e["label"])
+    links = [{"type": "PERSON", "key": "narendramodi", "status": "linked", "qid": "Q1"}]
+    g = _gallery_on_disk(tmp_path, entities, faces, links,
+                         aliases={"Q2": ["Modì"], "Q4": ["Biden"], "Q5": ["Biden"]})
+    wiki = gallery.latest(gallery.read_jsonl(tmp_path / "wikidata.jsonl"), lambda r: r["qid"])
+    names = [_name("PERSON", k, claims=n) for k, n in (
+        ("narendra modi", 100), ("narendramodi", 20), ("modi", 50), ("mk stalin", 10), ("joe biden", 60),
+        ("jill biden", 3), ("biden", 30), ("robert mueller", 15), ("mueller", 20), ("rahul gandhi", 50),
+        ("sonia gandhi", 40), ("gandhi", 10), ("zz unknown", 5))]
+    out, gaps = gallery.alias_gaps(names, g, wiki)
+    assert out["resolve"] == {"to_one_person": 8, "to_several": 1, "to_no_one": 4}
+    assert out["collapse"]["people_with_two_names_or_more"] == 1 and out["collapse"]["names_in_them"] == 2, \
+        "the full name and the hashtag are one person"
+    assert {k: (v["rule"], v["target"], v["outcome"]) for k, v in gaps.items()} == {
+        "modi": ("surname", "Q1", "someone_else"),     # every full name with that surname is Q1's; an alias is Q2's
+        "biden": ("surname", "Q4", "several"),         # 60 of 63 mentions: a claim name that decides nothing
+        "mueller": ("surname", "Q6", "unresolved"),
+        "mk stalin": ("spacing", "Q3", "unresolved")}, "gandhi is two people's surname: no one's alias"
+    gap = out["plausible_aliases_not_collapsing"]
+    assert gap["names"] == 4 and gap["mentions"] == 110 and out["mentions"] == 413
+    assert "Modi" not in json.dumps(gallery.public_report({"alias_gaps": out})), "names stay in the local report"
+
+    trials = [{"sha256": "i1", "key": "narendra modi", "label": "wrong", "qids": ["Q1"], "claim_qids": ["Q2"]},
+              {"sha256": "i2", "key": "mk stalin", "label": "unlinked", "qids": [], "claim_qids": ["Q3"]},
+              {"sha256": "i3", "key": "person q9", "label": "wrong", "qids": ["Q9"], "claim_qids": ["Q10"],
+               "named_in_claim_text": True},
+              {"sha256": "i4", "key": "joe biden", "label": "right", "qids": ["Q4"], "claim_qids": ["Q4"]}]
+    labels_ = gallery.alias_gap_labels(trials, {"i1": {"modi"}, "i3": {"person q10"}}, gaps)
+    assert labels_["an_alias_gap_may_decide"] == {"claim_side": 1, "vlm_side": 1}, \
+        "the claim's 'Modi' meant the VLM's person; the VLM's 'MK Stalin' is the claim's person"
+    assert labels_["trials_not_labelled_right"] == 3 and labels_["named_in_claim_text"] == 1
 
 
 def test_the_alignment_maps_the_template_onto_itself():

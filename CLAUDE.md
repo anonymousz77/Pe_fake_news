@@ -264,6 +264,22 @@ Wikidata items with reference images from Wikimedia Commons. It is how the
   a person, an instance of a subclass of Q43229 for an organisation. A name
   whose candidates don't dominate each other is kept, linked to the most-linked
   candidate, and marked `ambiguous`.
+- **Names collapse through Wikidata's labels and aliases, and the gaps are
+  counted** (`alias_gaps`, every `calibrate` run).
+  - Of the build scope's 6,734 person names, 636 collapse into the 284 people
+    who have two names or more. "Priyanka Gandhi", "Priyanka Vadra" and
+    "Priyanka Gandhi Vadra" are one QID.
+  - 234 names (5.7% of mentions) plausibly name a gallery person they do not
+    resolve to. "Plausibly" is by explicit rules that count and never link:
+    `name_variant` for spacing, initials, a name left out or one letter; for
+    one word, the person holding 90% of the corpora's full names with that
+    surname.
+  - The largest is "Modi": it resolves to Amedeo Modigliani (alias "Modì"),
+    so a verify of "Modi" checks the wrong face. "Biden" resolves to two
+    people, and "MK Stalin" to no one, though linking reads it as "M. K.
+    Stalin" (`same_name`; `Gallery.resolve` looks keys up exactly).
+  - No sample label turns on a gap: the probe's patterns name the figures the
+    gaps touch most. The handles NER misses are the review sheet's part 3.
 - **References must agree.** A person's reference faces are checked against
   their medoid. The threshold is the 0.999 quantile of similarities between
   different entities' medoids, taken from gallery references only. When two
@@ -312,7 +328,10 @@ Wikidata items with reference images from Wikimedia Commons. It is how the
     - The sample's adjudicated candidate, 0.4383, was not adopted, for three
       reasons. Its bound clears 0.90 with no margin (31 of 31 accepted names
       right). The bound rule finds no threshold in any cross-validation fold.
-      And it rests on 44 trials from 6.3% of the ledger.
+      And it rests on 44 trials from 6.3% of the ledger. With every sheet row
+      decided (37, 2026-10-22) it stays at 0.4383, and TAR at it falls from
+      0.9394 to 0.8857: the second sheet's two relabels are faces the gallery
+      fails to recognise.
   - **`verify` decides only at a certified threshold** (`certified_threshold`).
     - Without one it refuses: `match` stays null, and it returns the score and
       the matched reference for a person to check. It never defaults to
@@ -328,9 +347,10 @@ Wikidata items with reference images from Wikimedia Commons. It is how the
       against random strangers, yet 12 of the 18 scorable wrong VLM names
       scored above every stranger. A threshold set on random pairs (0.263)
       would accept 14 of 20 wrong names: precision 0.63.
-    - **Adjudicated:** 4 of the 10 scorable wrong names score above every
-      stranger (at most 0.285). A random-pair threshold (0.194) would accept 8
-      of 11 wrong names: precision 0.80.
+    - **Adjudicated** (all 37 decisions): 2 of the 8 scorable wrong names
+      score above every stranger (at most 0.291). A random-pair threshold
+      (0.179) would accept 6 of 9 wrong names: precision 0.85. On the first
+      sheet's 23 decisions it was 4 of 10, and 8 of 11 at 0.194: precision 0.80.
     - **Why they differ:** most of the first "wrong" names were right, because
       the labels scored a name against one figure per image. Of the 8
       highest-scoring wrong names, 7 were the person the VLM named. Five of
@@ -347,7 +367,22 @@ Wikidata items with reference images from Wikimedia Commons. It is how the
     gallery's 3,459 people have no usable reference face; 1,009 of them have
     no Commons reference at all. Verify can only answer "no usable reference"
     for them, whatever the threshold. `calibrate` reports it (`coverage`), and
-    so does `embed`.
+    so does `embed`. A right name the gallery cannot score counts against TAR
+    and is never a true accept; `cost_in_true_accepts.tar_scorable` is TAR
+    without it, the recognizer's own rate.
+  - **Recognition failures are reported apart from label noise**
+    (`review_findings`). A name a person confirmed is one of three things:
+    - recognised: at or above the gallery's 0.381 floor;
+    - a recognition failure: below the floor, where different people's faces
+      score;
+    - coverage: it cannot be scored.
+
+    On the sample, 31, 3 and 1 of the 35 confirmed names. The failures are the
+    recognizer's limit on our images, not label errors: two near-profile faces
+    (eyes 5-6 px apart on a 38-44 px face) and one 37-px face. They lower TAR.
+    A decision that changed a label is counted by where its name falls
+    (`label_noise`): two of the four wrong-to-right relabels the gallery had
+    matched, and two are those profile faces.
   - **Per figure, always.** Every run reports:
     - per-figure counts;
     - the concentration: the top-two share and the effective number of
@@ -377,15 +412,17 @@ Wikidata items with reference images from Wikimedia Commons. It is how the
     `calibrate` reports how many decisions changed a label, and in which
     direction (`relabelled`).
   - The published `data/reports/gallery_calibration.json` gives figures by rank
-    only, never a name or QID. `public_report` refuses otherwise.
+    only, never a name or QID, and drops every `local` part (the trials and
+    names a person reads). `public_report` refuses otherwise.
 - **The pilot's 47.8% is approximate and understated.**
   - Approximate: its reference is a loose token pattern over the claim.
   - Understated: it scored a name against one figure per image, so a person
     the claim names beside that figure, correctly named, counted as wrong. The
     sample's first QID-based figure, 0.5455, carried the same defect.
   - Say so wherever either figure appears.
-  - Corrected on the sample, the QID-based precision is 0.7045 (0.75 with the
-    person's review). The full calibration replaces both.
+  - Corrected on the sample, the QID-based precision is 0.7045 (0.7955 with
+    the person's review of all 37 sheet rows). The full calibration replaces
+    both.
 - **Organisations get entries and references only.** No ORG answer claims a
   visual match: logo matching is a different model and a different problem.
 - **Models.** YuNet (MIT) finds faces, SFace (Apache-2.0) embeds them; both

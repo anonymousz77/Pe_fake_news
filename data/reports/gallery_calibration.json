@@ -1,6 +1,6 @@
 {
  "sface": {
-  "generated_at": "2026-10-22T00:14:00+00:00",
+  "generated_at": "2026-10-22T14:59:10+00:00",
   "backend": "sface",
   "face_config": "b6abc4a9f987",
   "coverage": {
@@ -10,7 +10,7 @@
    "share_without": 0.3247,
    "without_any_commons_reference": 1009,
    "references_but_no_usable_face": 114,
-   "statement": "1,123 of the 3,459 people in the gallery have no usable reference face (1,009 have no Commons reference at all): for them verify can only answer 'no usable reference'. That is a ceiling on coverage, apart from the threshold. In calibration, a name that resolves only to such a person is unscorable: it counts as a rejection against TAR (cost_in_true_accepts) and is never a false accept."
+   "statement": "1,123 of the 3,459 people in the gallery have no usable reference face (1,009 have no Commons reference at all): for them verify can only answer 'no usable reference'. That is a ceiling on coverage, apart from the threshold. In calibration, a name that resolves only to such a person is unscorable: it counts as a rejection against TAR (cost_in_true_accepts; tar_scorable leaves it out), as coverage when a person confirms it (review_findings), and never as a true or a false accept."
   },
   "population": {
    "what": "Factify2 TRAIN claim images (every record using the image is train) whose claims say an image shows someone and name one figure: exactly one of the probe's listed figures, or else exactly one person by claim NER. The figure is the stratum for per-figure reporting; a name is scored against everyone the image's claims name",
@@ -100,7 +100,10 @@
    "rejected_unscorable": {
     "no_usable_reference": 1
    },
-   "rejected_below_threshold": 7
+   "rejected_below_threshold": 7,
+   "right_names_scorable": 30,
+   "tar_scorable": 0.7667,
+   "note": "TAR is (right names the gallery can score / right names) x tar_scorable: a name it cannot score is coverage, and tar_scorable is the recognizer's own rate without it"
   },
   "bootstrap_95": {
    "tar": [
@@ -930,28 +933,134 @@
    "complete": false,
    "note": "the full calibration needs the finished run; a partial ledger gives a partial population and never sets the threshold"
   },
+  "alias_gaps": {
+   "what": "the build scope's PERSON names as resolution sees them (the name table, mentions in scope), and plausible aliases that do not collapse: rules for counting, never links. Names of two words or more that resolve to no one: spacing, initials_or_middle, spelling (name_variant) against gallery people's labels and aliases. One word: the same letters as one person's spaced name, or the person holding 90% of 10+ mentions of our full names with that surname (first name, for a word never used as a surname)",
+   "names": 6734,
+   "mentions": 32669,
+   "resolve": {
+    "to_one_person": 3786,
+    "to_several": 30,
+    "to_no_one": 2918
+   },
+   "collapse": {
+    "people": 3434,
+    "people_with_two_names_or_more": 284,
+    "names_in_them": 636,
+    "most_names_for_one_person": 6
+   },
+   "plausible_aliases_not_collapsing": {
+    "names": 234,
+    "mentions": 1860,
+    "share_of_mentions": 0.0569,
+    "with_vlm_mentions": 21,
+    "by_outcome": {
+     "several": 8,
+     "someone_else": 47,
+     "unresolved": 179
+    },
+    "by_rule": {
+     "surname": {
+      "names": 65,
+      "mentions": 1233,
+      "unresolved": 34,
+      "several": 5,
+      "someone_else": 26
+     },
+     "spacing": {
+      "names": 18,
+      "mentions": 153,
+      "unresolved": 18,
+      "several": 0,
+      "someone_else": 0
+     },
+     "spelling": {
+      "names": 44,
+      "mentions": 126,
+      "unresolved": 44,
+      "several": 0,
+      "someone_else": 0
+     },
+     "initials_or_middle": {
+      "names": 58,
+      "mentions": 175,
+      "unresolved": 58,
+      "several": 0,
+      "someone_else": 0
+     },
+     "first_name": {
+      "names": 49,
+      "mentions": 173,
+      "unresolved": 25,
+      "several": 3,
+      "someone_else": 21
+     }
+    },
+    "names_that_could_be_several_people": 3
+   },
+   "statement": "Of 6,734 person names, 3,786 resolve to one person; 636 of them collapse into the 284 people who have two names or more. 234 names (1,860 of 32,669 mentions) plausibly name a gallery person they do not resolve to: 179 resolve to no one, 8 to several people and 47 to someone else",
+   "labels": {
+    "trials_not_labelled_right": 13,
+    "an_alias_gap_may_decide": {},
+    "named_in_claim_text": 3,
+    "statement": "Of the 13 trials the label rule does not call right, an alias gap may decide 0; a claim's text carries the name of 3 (a handle, or a name NER did not find), which the review sheet shows a person"
+   }
+  },
   "adjudicated": {
    "decisions": {
-    "vlm": 22,
-    "neither": 1
+    "vlm": 35,
+    "neither": 2
    },
    "by": "a person, by eye, on the review sheet",
-   "applied": 23,
+   "applied": 37,
    "not_among_these_trials": 0,
-   "left_undecided_in_file": 14,
+   "left_undecided_in_file": 0,
    "relabelled": {
-    "unchanged": 21,
-    "wrong_to_right": 2
+    "unchanged": 33,
+    "wrong_to_right": 4
    },
    "note": "a trial without a decision keeps its label; relabelled says how many decisions changed a label, and in which direction, and how many confirmed it",
+   "review_findings": {
+    "what": "every name a person decided, by where the gallery puts it against its consistency threshold: a confirmed name below it is a recognition failure, one it cannot score is coverage; label noise (decisions that changed a label) is counted apart",
+    "floor": 0.3811,
+    "confirmed_right": {
+     "names": 35,
+     "recognised": 31,
+     "recognition_failures": 3,
+     "coverage": {
+      "no_usable_reference": 1
+     }
+    },
+    "confirmed_wrong": {
+     "names": 2,
+     "at_or_above_floor": 1,
+     "below_floor": 1
+    },
+    "label_noise": {
+     "wrong_to_right": {
+      "at_or_above_floor": 2,
+      "below_floor": 2
+     }
+    },
+    "faces": {
+     "recognised": {
+      "median_face_side": 96.3,
+      "median_eye_span": 43.9
+     },
+     "recognition_failures": {
+      "median_face_side": 38.2,
+      "median_eye_span": 5.6
+     }
+    },
+    "statement": "A person confirmed 35 names right. The gallery scores 31 at or above its floor of 0.381; 3 below it, among different people's faces -- recognition failures, not label errors: they lower TAR, and they are the recognizer's limit on these images; 1 it cannot score -- coverage, never a true accept. 4 decisions changed a label (label noise): wrong to right: 4 (2 at or above the floor, 2 below it, 0 unscorable)"
+   },
    "trials": {
     "total": 44,
     "headline": 44,
     "excluded_same_photo": 0,
     "forced_lines": 0,
     "by_label": {
-     "right": 33,
-     "wrong": 10,
+     "right": 35,
+     "wrong": 8,
      "unlinked": 1
     },
     "unscorable": {
@@ -960,10 +1069,10 @@
     }
    },
    "vlm_precision": {
-    "qid": 0.75,
+    "qid": 0.7955,
     "names": 44,
-    "right": 33,
-    "excluding_unlinked": 0.7674,
+    "right": 35,
+    "excluding_unlinked": 0.814,
     "rule": "right when the name resolves, by QID, to anyone the image's claims name: the probe's listed figures and claim NER's people. A claim name that resolves to several people decides nothing",
     "single_figure_rule": 0.5455,
     "token_rule_on_probe_list_images": 0.561,
@@ -971,7 +1080,7 @@
    },
    "bar": {
     "accepted_name_precision": 0.9,
-    "max_fmr_over_tar": 0.3333,
+    "max_fmr_over_tar": 0.4322,
     "rule": "p*TAR / (p*TAR + (1-p)*FMR) >= 0.90, i.e. FMR/TAR <= p / (9 (1 - p))"
    },
    "threshold": {
@@ -982,32 +1091,35 @@
     "candidate_by": "one-sided 95% lower bound of accepted-name precision >= 0.90",
     "bound_shortfall": null,
     "by_bound": 0.4383,
-    "by_point_estimate": 0.3021
+    "by_point_estimate": 0.2811
    },
    "at_threshold": {
     "threshold": 0.4383,
-    "right": 33,
-    "wrong": 11,
+    "right": 35,
+    "wrong": 9,
     "accepted_right": 31,
     "accepted_wrong": 0,
-    "tar": 0.9394,
+    "tar": 0.8857,
     "fmr": 0.0,
-    "fmr_upper_95": 0.2384,
+    "fmr_upper_95": 0.2831,
     "precision": 1.0,
     "precision_lower_95": 0.9079
    },
    "fmr_over_tar": 0.0,
    "cost_in_true_accepts": {
-    "right_names": 33,
-    "rejected": 2,
+    "right_names": 35,
+    "rejected": 4,
     "rejected_unscorable": {
      "no_usable_reference": 1
     },
-    "rejected_below_threshold": 1
+    "rejected_below_threshold": 3,
+    "right_names_scorable": 34,
+    "tar_scorable": 0.9118,
+    "note": "TAR is (right names the gallery can score / right names) x tar_scorable: a name it cannot score is coverage, and tar_scorable is the recognizer's own rate without it"
    },
    "bootstrap_95": {
     "tar": [
-     0.8667,
+     0.7778,
      1.0
     ],
     "fmr": [
@@ -1038,35 +1150,35 @@
     "point": {
      "rule": "point",
      "fold_thresholds": [
-      0.3115,
       0.2811,
-      0.3115,
-      0.3115,
-      0.3115
+      0.2285,
+      0.2784,
+      0.2811,
+      0.2811
      ],
-     "accepted_right": 32,
-     "accepted_wrong": 3,
-     "tar": 0.9697,
-     "fmr": 0.2727,
-     "precision": 0.9143
+     "accepted_right": 34,
+     "accepted_wrong": 4,
+     "tar": 0.9714,
+     "fmr": 0.4444,
+     "precision": 0.8947
     }
    },
    "figure_stratified": {
     "what": "every figure weighs the same: each trial counts 1 / its figure's trials; 95% intervals by resampling figures",
     "figures": 17,
     "threshold": 0.4383,
-    "vlm_precision": 0.7344,
-    "tar": 0.9794,
+    "vlm_precision": 0.7638,
+    "tar": 0.9417,
     "fmr": 0.0,
     "precision": 1.0,
     "precision_lower_95": 1.0,
     "bootstrap_95": {
      "vlm_precision": [
-      0.5588,
-      0.8913
+      0.598,
+      0.902
      ],
      "tar": [
-      0.9446,
+      0.8629,
       1.0
      ],
      "fmr": [
@@ -1082,13 +1194,13 @@
     "note": "the threshold at which the one-sided 95% lower bound of figure-weighted precision reaches 0.90; when it is above the pooled one, the pooled threshold leans on the most-tried figures",
     "pooled_without_top_two_figures": {
      "threshold": 0.4383,
-     "right": 18,
-     "wrong": 9,
+     "right": 20,
+     "wrong": 7,
      "accepted_right": 17,
      "accepted_wrong": 0,
-     "tar": 0.9444,
+     "tar": 0.85,
      "fmr": 0.0,
-     "fmr_upper_95": 0.2831,
+     "fmr_upper_95": 0.3482,
      "precision": 1.0,
      "precision_lower_95": 0.8384
     }
@@ -1096,36 +1208,36 @@
    "look_alike_finding": {
     "what": "the VLM's wrong names against random strangers: the right names' faces, each scored against a random other person in the gallery (seeded). A contrast, never an input",
     "random_strangers": {
-     "pairs": 32,
-     "max_score": 0.2846,
-     "median_score": 0.1699,
+     "pairs": 34,
+     "max_score": 0.2913,
+     "median_score": 0.162,
      "accepted_at_threshold": 0
     },
     "vlm_wrong_names": {
-     "wrong": 11,
-     "scorable": 10,
-     "median_score": 0.2797,
-     "above_every_stranger": 4,
+     "wrong": 9,
+     "scorable": 8,
+     "median_score": 0.2535,
+     "above_every_stranger": 2,
      "accepted_at_threshold": 0
     },
-    "right_names_median_score": 0.6174,
+    "right_names_median_score": 0.6094,
     "if_calibrated_on_random_pairs": {
-     "threshold": 0.194,
+     "threshold": 0.179,
      "rule": "the lowest threshold at which p*TAR / (p*TAR + (1-p)*FMR) >= 0.90 with FMR measured on random strangers (point estimate), p the VLM's QID precision",
      "on_the_vlms_own_names": {
-      "threshold": 0.194,
-      "right": 33,
-      "wrong": 11,
-      "accepted_right": 32,
-      "accepted_wrong": 8,
-      "tar": 0.9697,
-      "fmr": 0.7273,
-      "fmr_upper_95": 0.9212,
-      "precision": 0.8,
-      "precision_lower_95": 0.668
+      "threshold": 0.179,
+      "right": 35,
+      "wrong": 9,
+      "accepted_right": 34,
+      "accepted_wrong": 6,
+      "tar": 0.9714,
+      "fmr": 0.6667,
+      "fmr_upper_95": 0.9023,
+      "precision": 0.85,
+      "precision_lower_95": 0.7253
      }
     },
-    "finding": "Scored against a random other person, the right names' faces reach at most 0.285 (median 0.170); 4 of the 10 scorable wrong names the VLM gave score above every stranger. A threshold calibrated on random pairs would sit at 0.194; on the VLM's own names it accepts 8 of 11 wrong names, an accepted-name precision of 0.8 against the 0.9 required. A random-pair false-match rate measures strangers; the names a gallery must refuse are the look-alikes the VLM chose, so the threshold is calibrated on those."
+    "finding": "Scored against a random other person, the right names' faces reach at most 0.291 (median 0.162); 2 of the 8 scorable wrong names the VLM gave score above every stranger. A threshold calibrated on random pairs would sit at 0.179; on the VLM's own names it accepts 6 of 9 wrong names, an accepted-name precision of 0.85 against the 0.9 required. A random-pair false-match rate measures strangers; the names a gallery must refuse are the look-alikes the VLM chose, so the threshold is calibrated on those."
    }
   }
  }
