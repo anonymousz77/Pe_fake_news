@@ -224,7 +224,9 @@ Wikidata items with reference images from Wikimedia Commons. It is how the
 - **1:1 only.** `Gallery.verify` answers whether an image shows the entity a
   CLAIMED name resolves to, and returns the reference it matched (Commons page,
   licence, attribution, face box) so a person can check it. It never searches
-  the gallery for an unnamed face.
+  the gallery for an unnamed face, and it refuses a name several people hold
+  (`ambiguous_name`, unscored): the best of several candidates is a search
+  among them.
 - **Built from the names our corpora use**, never from Wikidata at large
   (`count` reports them first). The gallery is not a register dataset: it lives
   in `data/gallery/` (ignored), outside `sources.yaml`, as the bible does.
@@ -264,22 +266,72 @@ Wikidata items with reference images from Wikimedia Commons. It is how the
   a person, an instance of a subclass of Q43229 for an organisation. A name
   whose candidates don't dominate each other is kept, linked to the most-linked
   candidate, and marked `ambiguous`.
+- **How a name resolves** (`Gallery.resolve_key`; decided 2026-10-23). Two
+  rules beyond an exact key; `resolution_rules` counts what each changes,
+  every `calibrate` run.
+  - **Spacing:** a name is looked up by its letters, as linking's `same_name`
+    matches it, so "MK Stalin" is "M. K. Stalin". 20 names now resolve (155
+    mentions). 7 that resolved to one person are ambiguous instead (19
+    mentions), because two Wikidata items differ only in spacing:
+    "Chandrashekhar Singh" (an Indian politician) and "Chandra Shekhar Singh"
+    (the prime minister's alias).
+  - **One word:** a one-word person name resolves only to a gallery person
+    who holds it, when that word is also their label, alias or linked name,
+    and no one else is a reading of it.
+    - Holding it means: it is their one-word label, a word of one of their
+      longer names, or a longer name of theirs run together.
+    - Two readings or more make it ambiguous, never the likeliest.
+    - A nickname alias never resolves a word, but its owner is still a
+      reading: "Modi" is ambiguous among six Modis and Amedeo Modigliani
+      ("Modì"), and "Bapu" between Gandhi and Asaram Bapu.
+    - "Trump" is ambiguous among ten Trumps. "Mueller", which no item lists as
+      an alias, resolves to no one: a surname alone is never a guess.
+  - 402 names that resolved to one person no longer do (3,353 mentions,
+    10.3%), and verify refuses them. Judged by the corpora's full names (the
+    90% rule below), 48 had resolved to someone else (835 mentions, "Modi"
+    653) and 7 to the person meant (76 mentions). 340 cannot be told either
+    way (2,423 mentions; "Trump" alone is 1,181).
 - **Names collapse through Wikidata's labels and aliases, and the gaps are
   counted** (`alias_gaps`, every `calibrate` run).
-  - Of the build scope's 6,734 person names, 636 collapse into the 284 people
+  - Of the build scope's 6,734 person names, 591 collapse into the 266 people
     who have two names or more. "Priyanka Gandhi", "Priyanka Vadra" and
     "Priyanka Gandhi Vadra" are one QID.
-  - 234 names (5.7% of mentions) plausibly name a gallery person they do not
-    resolve to. "Plausibly" is by explicit rules that count and never link:
+  - 227 names (5.5% of mentions) plausibly name a gallery person they do not
+    resolve to: 140 resolve to no one, 87 to several, and none to someone
+    else. "Plausibly" is by explicit rules that count and never link:
     `name_variant` for spacing, initials, a name left out or one letter; for
     one word, the person holding 90% of the corpora's full names with that
     surname.
-  - The largest is "Modi": it resolves to Amedeo Modigliani (alias "Modì"),
-    so a verify of "Modi" checks the wrong face. "Biden" resolves to two
-    people, and "MK Stalin" to no one, though linking reads it as "M. K.
-    Stalin" (`same_name`; `Gallery.resolve` looks keys up exactly).
   - No sample label turns on a gap: the probe's patterns name the figures the
     gaps touch most. The handles NER misses are the review sheet's part 3.
+- **Names that resolve to no one are counted by why, never merged**
+  (`no_one_names`). There are 2,826 of them, 18.5% of mentions.
+  - **A linking failure, the person in the gallery** (an alias gap): 140 (552
+    mentions). 38 of them are one word, which the one-word rule leaves
+    unresolved by design.
+  - **One-word names the resolver refuses:** 38 (94 mentions).
+  - **What Wikidata's search answered at linking:**
+    - no item by that form: 1,648 (3,002 mentions);
+    - items beginning with it, none of them it: 270 (525);
+    - exactly a surname or first-name item: 80 (164);
+    - exactly something that is no person, such as a party, a place or a
+      deity: 440 (1,205);
+    - both: 210 (485).
+  - **"No item" is not "no entry".** A seeded sample of 100 of the multi-word
+    ones was checked on 2026-10-23, with Wikidata's full-text search
+    restricted to humans:
+
+    | | named twice or more | named once |
+    | --- | ---: | ---: |
+    | a person entry, by the counting rules | 8 of 50 | 2 of 50 |
+    | read by an agent: notable, in a form the linker missed | 20 of 50 | 13 of 50 |
+    | read by an agent: people with no entry | 17 of 50 | 22 of 50 |
+    | read by an agent: not people | 6 of 50 | 10 of 50 |
+
+    The agent's reading is not a person's decision. The forms the linker
+    missed were initials without their dots ("P Chidambaram"), initials run
+    together ("SS Ahluwalia"), misspellings ("Shahi Tharoor") and part of a
+    name ("Lal Khattar").
 - **References must agree.** A person's reference faces are checked against
   their medoid. The threshold is the 0.999 quantile of similarities between
   different entities' medoids, taken from gallery references only. When two
@@ -367,9 +419,10 @@ Wikidata items with reference images from Wikimedia Commons. It is how the
     gallery's 3,459 people have no usable reference face; 1,009 of them have
     no Commons reference at all. Verify can only answer "no usable reference"
     for them, whatever the threshold. `calibrate` reports it (`coverage`), and
-    so does `embed`. A right name the gallery cannot score counts against TAR
-    and is never a true accept; `cost_in_true_accepts.tar_scorable` is TAR
-    without it, the recognizer's own rate.
+    so does `embed`. A right name the gallery cannot score (no usable
+    reference, or a name several people hold) counts against TAR and is never
+    a true accept; `cost_in_true_accepts.tar_scorable` is TAR without it, the
+    recognizer's own rate.
   - **Recognition failures are reported apart from label noise**
     (`review_findings`). A name a person confirmed is one of three things:
     - recognised: at or above the gallery's 0.381 floor;
@@ -378,11 +431,22 @@ Wikidata items with reference images from Wikimedia Commons. It is how the
     - coverage: it cannot be scored.
 
     On the sample, 31, 3 and 1 of the 35 confirmed names. The failures are the
-    recognizer's limit on our images, not label errors: two near-profile faces
-    (eyes 5-6 px apart on a 38-44 px face) and one 37-px face. They lower TAR.
-    A decision that changed a label is counted by where its name falls
-    (`label_noise`): two of the four wrong-to-right relabels the gallery had
-    matched, and two are those profile faces.
+    recognizer's limit on our images, not label errors, and they lower TAR.
+    Their two causes are counted apart (`face_geometry`), because the remedies
+    differ:
+    - **Pose:** side-on, meaning the nose is at least half an eye span from
+      the eyes' midpoint, past the far eye. References in more poses can help:
+      the gallery recognised two side-on faces, each over three times larger.
+      On the sample: 2, both Modi profiles (eyes 5-6 px apart, 22 px from eyes
+      to mouth).
+    - **Size:** from eyes to mouth, smaller than every face the gallery
+      recognised (20 px). No reference lifts that floor. On the sample: 1, a
+      face-on face 37 px wide (18 px from eyes to mouth).
+
+    No failure has both causes, and none has neither. A decision that changed
+    a label is counted by where its name falls (`label_noise`): the gallery
+    had matched two of the four wrong-to-right relabels, and the other two are
+    the profile faces.
   - **Per figure, always.** Every run reports:
     - per-figure counts;
     - the concentration: the top-two share and the effective number of

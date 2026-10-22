@@ -2206,6 +2206,10 @@ def assemble(entities: Sequence[dict[str, Any]], ref_faces: dict[str, dict[str, 
 # --------------------------------------------------------------------------
 
 
+#: How a name resolves (Gallery.resolve_key), beyond an exact key.
+RESOLVE_RULES = ("spacing", "one_word")
+
+
 class Gallery:
     """The assembled gallery for one face configuration, with the name index.
 
@@ -2232,6 +2236,7 @@ class Gallery:
         for link in latest(read_jsonl(links_path), lambda r: (r["type"], r["key"])).values():
             if link.get("qid") and link["status"] in ("linked", "ambiguous"):
                 self.index.setdefault((link["type"], link["key"]), set()).add(link["qid"])
+        mononyms: dict[str, set[str]] = {}
         for summary in latest(read_jsonl(wikidata_path), lambda r: r["qid"]).values():
             entity = self.entities.get(summary["qid"])
             if entity is None:
@@ -2240,10 +2245,54 @@ class Gallery:
                 key = name_key(text, entity["type"])
                 if key:
                     self.index.setdefault((entity["type"], key), set()).add(summary["qid"])
+            label = name_key(summary.get("label") or "", entity["type"])
+            if entity["type"] == "PERSON" and label and " " not in label:
+                mononyms.setdefault(label, set()).add(summary["qid"])
+        # spacing: a name is looked up by its letters, as linking's same_name matches it
+        self.letters: dict[tuple[str, str], set[str]] = {}
+        for (entity_type, key), qids in self.index.items():
+            self.letters.setdefault((entity_type, key.replace(" ", "")), set()).update(qids)
+        # one word: who holds it -- a one-word label, a word of a longer name, a longer name run
+        # together. A one-word alias holds nothing: a nickname, a pen name, initials
+        self.holders: dict[str, set[str]] = {k: set(qids) for k, qids in mononyms.items()}
+        for (entity_type, key), qids in self.index.items():
+            if entity_type == "PERSON" and " " in key:
+                for word in {*key.split(), key.replace(" ", "")}:
+                    self.holders.setdefault(word, set()).update(qids)
 
     def resolve(self, name: str, entity_type: str = "PERSON") -> list[str]:
         key = name_key(name, entity_type)
-        return sorted(self.index.get((entity_type, key), ())) if key else []
+        return self.resolve_key(key, entity_type) if key else []
+
+    def resolve_key(self, key: str, entity_type: str = "PERSON",
+                    rules: Sequence[str] = RESOLVE_RULES) -> list[str]:
+        """The QIDs a name key resolves to: one person; several, which verify
+        refuses; or none. Both rules apply wherever a name is resolved;
+        ``rules`` narrows them only to report what each changes
+        (resolution_rules).
+
+        - spacing: the name is looked up by its letters, spaces dropped, as
+          linking's same_name matches it: "MK Stalin" is "M. K. Stalin".
+        - one_word: a one-word person name resolves only to a gallery person
+          who holds it -- as a one-word label (a mononym), as a word of one of
+          their longer names (a surname), or as a longer name run together (a
+          hashtag) -- when that word is also their label, alias or linked
+          name, and when no one else is a reading of it: no other holder, and
+          no one whose alias it is. Two readings or more make it ambiguous:
+          all of them are returned, never the likeliest. A one-word alias that
+          is no word of its person's names holds nothing, so a word never
+          resolves through a nickname, a pen name or initials ("Modi" is not
+          Amedeo Modigliani's "Modì"); it is still a reading ("Bapu", Mahatma
+          Gandhi's, is ambiguous with Asaram Bapu)."""
+        found = (self.letters.get((entity_type, key.replace(" ", "")), set()) if "spacing" in rules
+                 else self.index.get((entity_type, key), set()))
+        if "one_word" in rules and entity_type == "PERSON" and " " not in key:
+            holders = self.holders.get(key, set())
+            readings = holders | found
+            if len(readings) > 1:
+                return sorted(readings)
+            return sorted(readings) if readings and readings <= holders and readings <= found else []
+        return sorted(found)
 
     def best(self, faces: Sequence[dict[str, Any]], qid: str) -> dict[str, Any] | None:
         """The best (query face, reference) pair for one entity, or None."""
@@ -2263,7 +2312,9 @@ class Gallery:
         CERTIFIED ``threshold`` (certified_threshold). With none, verify
         accepts nothing and rejects nothing -- ``match`` stays None -- and
         returns the score and the reference it matched, for a person to check;
-        it never falls back to another threshold."""
+        it never falls back to another threshold. A name that resolves to
+        several people is refused, unscored: verification is 1:1, and the best
+        of several candidates is a search among them."""
         qids = self.resolve(name, entity_type)
         out: dict[str, Any] = {"claimed_name": name, "entity_type": entity_type,
                                "entities": [{"qid": q, "label": (self.entities.get(q) or {}).get("label")}
@@ -2280,6 +2331,10 @@ class Gallery:
         out["in_gallery"] = bool(usable)
         if not qids:
             out["reason"] = "name_not_in_gallery"
+            return out
+        if len(qids) > 1:
+            out["reason"] = ("ambiguous_name: the name is more than one person's; verification is 1:1, "
+                             "so it answers for none of them")
             return out
         if not usable:
             out["reason"] = "no_usable_reference"
@@ -2362,7 +2417,9 @@ def build_trials(population: Sequence[dict[str, Any]], links: dict[tuple[str, st
                  ) -> tuple[list[dict[str, Any]], Counter]:
     """One trial per name the VLM produced from appearance alone on a
     population image: right when it links to anyone the image's claims name,
-    wrong when it links to someone else, unlinked when it links to no one.
+    wrong when it links to someone else, unlinked when it links to no one. A
+    name that resolves to several people is never scored (ambiguous_name),
+    because verify refuses it.
 
     ``figure_label`` keeps the earlier rule beside it -- right only for the
     figure -- because the figures first reported (the pilot's 47.8%, the
@@ -2412,27 +2469,48 @@ def build_trials(population: Sequence[dict[str, Any]], links: dict[tuple[str, st
                                      else "wrong"),
                      "score": None, "scorable": False, "unscorable": None, "same_photo": None}
             if gallery is not None:
-                usable = [q for q in qids if gallery.refs.get(q)]
                 if not qids:
                     trial["unscorable"] = "name_unlinked"
-                elif not usable:
+                elif len(qids) > 1:
+                    trial["unscorable"] = "ambiguous_name"
+                elif not gallery.refs.get(qids[0]):
                     trial["unscorable"] = "no_usable_reference"
                 elif not faces:
                     trial["unscorable"] = "no_face_in_image"
                 else:
-                    found = [(q, gallery.best(faces, q)) for q in usable]
-                    q, best = max(found, key=lambda qb: qb[1]["score"])
-                    face = faces[best["query_face"]]
-                    (rx, ry), (lx, ly) = face["landmarks"][:2]
-                    # the face scored: its short side, and how far apart its eyes are -- a few
-                    # pixels on a face of forty is a face seen side-on
+                    q = qids[0]
+                    best = gallery.best(faces, q)
                     trial.update(score=round(best["score"], 6), scorable=True, qid=q,
                                  same_photo=best["same_photo"],
                                  matched_reference=best["reference"].get("sha256"),
-                                 refs=len(gallery.refs[q]), face_side=round(min(face["box"][2:]), 1),
-                                 eye_span=round(math.hypot(lx - rx, ly - ry), 1))
+                                 refs=len(gallery.refs[q]), **face_geometry(faces[best["query_face"]]))
             out.append(trial)
     return out, tally
+
+
+#: A face is side-on when its nose sits this many eye spans or more from the
+#: eyes' midpoint, along the eye line: turned so far that the nose has passed
+#: the far eye.
+SIDE_ON = 0.5
+
+
+def face_geometry(face: dict[str, Any]) -> dict[str, float | None]:
+    """The scored face's size and pose, from its box and five landmarks (eyes,
+    nose, mouth corners):
+
+    - face_side, the box's short side, and eye_span, how far apart the eyes are;
+    - eye_mouth, from the eyes' midpoint to the mouth's: a face turned left or
+      right keeps it, so it measures size apart from pose;
+    - nose_offset, the nose from the eyes' midpoint along the eye line, in eye
+      spans: about 0 face-on, SIDE_ON or more side-on. None when the eyes
+      coincide."""
+    (rx, ry), (lx, ly), (nx, ny), (rmx, rmy), (lmx, lmy) = face["landmarks"][:5]
+    ex, ey = lx - rx, ly - ry
+    span = math.hypot(ex, ey)
+    mx, my = (rx + lx) / 2, (ry + ly) / 2
+    return {"face_side": round(min(face["box"][2:]), 1), "eye_span": round(span, 1),
+            "eye_mouth": round(math.hypot((rmx + lmx) / 2 - mx, (rmy + lmy) / 2 - my), 1),
+            "nose_offset": round(((nx - mx) * ex + (ny - my) * ey) / span ** 2, 2) if span else None}
 
 
 def verification_coverage(gallery: Gallery) -> dict[str, Any]:
@@ -2449,10 +2527,11 @@ def verification_coverage(gallery: Gallery) -> dict[str, Any]:
         "statement": (f"{len(without):,} of the {len(people):,} people in the gallery have no usable "
                       f"reference face ({no_refs:,} have no Commons reference at all): for them verify can "
                       "only answer 'no usable reference'. That is a ceiling on coverage, apart from the "
-                      "threshold. In calibration, a name that resolves only to such a person is unscorable: "
-                      "it counts as a rejection against TAR (cost_in_true_accepts; tar_scorable leaves it "
-                      "out), as coverage when a person confirms it (review_findings), and never as a true "
-                      "or a false accept.")}
+                      "threshold. In calibration, a name that resolves only to such a person is unscorable, "
+                      "as is one that resolves to several people (verify refuses it): it counts as a "
+                      "rejection against TAR (cost_in_true_accepts; tar_scorable leaves it out), as "
+                      "coverage when a person confirms it (review_findings), and never as a true or a "
+                      "false accept.")}
 
 
 # --------------------------------------------------------------------------
@@ -2549,7 +2628,7 @@ def alias_gaps(names: Sequence[dict[str, Any]], gallery: Gallery, wiki: dict[str
 
     Returns the report and the gaps by name key, each with its ``target``."""
     people = {q for q, e in gallery.entities.items() if e["type"] == "PERSON"}
-    resolved = {r["key"]: sorted(gallery.index.get(("PERSON", r["key"]), ())) for r in names}
+    resolved = {r["key"]: gallery.resolve_key(r["key"]) for r in names}
     mentions = {r["key"]: scope_mentions(r) for r in names}
     forms: dict[str, list[tuple[str, str]]] = {}  # by first letter, which every rule keeps
     spaced: dict[str, set[str]] = {}
@@ -2674,6 +2753,140 @@ def alias_gap_labels(trials: Sequence[dict[str, Any]], claim_keys: dict[str, set
                           f"decide {len(flagged)}; a claim's text carries the name of {named} (a handle, or a "
                           "name NER did not find), which the review sheet shows a person"),
             "local": {"trials": dict(sorted(flagged.items()))}}
+
+
+def _resolution_kind(qids: Sequence[str]) -> str:
+    return "no_one" if not qids else "one" if len(qids) == 1 else "several"
+
+
+def resolution_rules(names: Sequence[dict[str, Any]], gallery: Gallery) -> dict[str, Any]:
+    """What each of RESOLVE_RULES changes over the build scope's person names,
+    against an exact key: how many names resolve differently, from what to
+    what, and how many that resolved to one person no longer do -- names
+    verify now refuses, wrongly resolved ("Modi", Amedeo Modigliani) or not
+    ("Trump", one of ten Trumps)."""
+    mentions = {r["key"]: scope_mentions(r) for r in names}
+    label = {q: e.get("label") for q, e in gallery.entities.items()}
+    exact = {r["key"]: gallery.resolve_key(r["key"], rules=()) for r in names}
+    out: dict[str, Any] = {}
+    local: dict[str, Any] = {}
+    for rule, rules in (*((r, (r,)) for r in RESOLVE_RULES), ("both", RESOLVE_RULES)):
+        changes = []
+        for r in names:
+            now = gallery.resolve_key(r["key"], rules=rules)
+            if now != exact[r["key"]]:
+                changes.append((r["key"], f"{_resolution_kind(exact[r['key']])}_to_{_resolution_kind(now)}",
+                                len(now)))
+        by: dict[str, dict[str, int]] = {}
+        for key, change, _n in changes:
+            b = by.setdefault(change, {"names": 0, "mentions": 0})
+            b["names"] += 1
+            b["mentions"] += mentions[key]
+        lost = [c for c in changes if c[1] in ("one_to_no_one", "one_to_several")]
+        out[rule] = {"names_changed": len(changes), "mentions": sum(mentions[k] for k, _c, _n in changes),
+                     "by_change": dict(sorted(by.items())),
+                     "resolved_to_one_person_no_longer": {"names": len(lost),
+                                                          "mentions": sum(mentions[k] for k, _c, _n in lost)}}
+        local[rule] = [{"key": k, "change": c, "was": [label.get(q) or q for q in exact[k]], "now_people": n,
+                        "mentions": mentions[k]}
+                       for k, c, n in sorted(changes, key=lambda c: (-mentions[c[0]], c[0]))[:GAP_EXAMPLES]]
+    both = out["both"]
+    return {
+        "what": ("over the build scope's person names, what each resolver rule changes against an exact key: "
+                 "spacing looks a name up by its letters, as linking does; one_word lets a one-word name "
+                 "resolve only to the one gallery person who holds it, never through a nickname alias, and "
+                 "makes a word with two readings or more ambiguous"),
+        **out,
+        "statement": (f"Against an exact key, the rules change how {both['names_changed']:,} names resolve "
+                      f"({both['mentions']:,} mentions): spacing {out['spacing']['names_changed']:,}, one_word "
+                      f"{out['one_word']['names_changed']:,}. {both['resolved_to_one_person_no_longer']['names']:,} "
+                      "names that resolved to one person no longer do: verify refuses them"),
+        "local": local}
+
+
+#: Wikidata items for a name itself, which any number of people bear: family
+#: and given names, and a page listing several items by one name.
+NAME_ITEMS = frozenset({"Q101352", "Q202444", "Q12308941", "Q11879590", "Q3409032", "Q4167410"})
+#: What the link step's search answered, by link status, for a name that resolves to no one.
+NO_ONE_LINK = {"no_result": "no_item", "no_exact_match": "no_exact_item"}
+
+
+def no_one_names(names: Sequence[dict[str, Any]], gallery: Gallery,
+                 links: dict[tuple[str, str], dict[str, Any]], wiki: dict[str, dict[str, Any]],
+                 gaps: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    """The build scope's person names that resolve to no one, by what is known
+    of why, kept apart because each has its own fix. The first that applies:
+
+    - a_gallery_person: an alias gap (alias_gaps) -- a variant of a gallery
+      person's name. A linking failure with the entry in hand;
+    - refused_one_word: a one-word name that matches only a nickname alias
+      (a pen name, initials), which the one_word rule never resolves. The
+      resolver's choice, not a gap;
+    - then what Wikidata's search answered when the name was linked:
+      - no_item: no item's label or alias begins with it. No entry under that
+        form: a person Wikidata does not have, or a form its search cannot
+        match ("P Chidambaram" for "P. Chidambaram", a handle);
+      - no_exact_item: items begin with it, none is it;
+      - name_only: what is exactly it is a name item (NAME_ITEMS) -- a
+        surname or a first name alone, which anyone may bear;
+      - not_a_person: what is exactly it is something else (a party, a place,
+        a deity, a character): what NER or the VLM took for a person;
+      - name_or_thing: both;
+      - not_linked: the search never finished.
+
+    Each by names and mentions, and how many are one word."""
+    mentions = {r["key"]: scope_mentions(r) for r in names}
+    total = sum(mentions.values())
+
+    def cause(key: str) -> str:
+        gap = gaps.get(key)
+        if gap and gap["outcome"] == "unresolved":
+            return "a_gallery_person"
+        if gallery.resolve_key(key, rules=()):
+            return "refused_one_word"
+        link = links.get(("PERSON", key)) or {}
+        if link.get("status") in NO_ONE_LINK:
+            return NO_ONE_LINK[link["status"]]
+        if link.get("status") == "no_type_match":
+            kinds = {"name" if NAME_ITEMS.intersection((wiki.get(q) or {}).get("p31") or ()) else "thing"
+                     for q in link.get("exact", ())}
+            return "name_only" if kinds == {"name"} else "name_or_thing" if "name" in kinds else "not_a_person"
+        return "not_linked"
+
+    unresolved = [r for r in names if not gallery.resolve_key(r["key"])]
+    by: dict[str, dict[str, Any]] = {}
+    examples: dict[str, list[tuple[int, str]]] = {}
+    for r in unresolved:
+        c = cause(r["key"])
+        b = by.setdefault(c, {"names": 0, "mentions": 0, "one_word_names": 0, "single_mention_names": 0})
+        b["names"] += 1
+        b["mentions"] += mentions[r["key"]]
+        b["one_word_names"] += " " not in r["key"]
+        b["single_mention_names"] += mentions[r["key"]] == 1
+        examples.setdefault(c, []).append((mentions[r["key"]], r["key"]))
+    n_mentions = sum(b["mentions"] for b in by.values())
+    order = ("a_gallery_person", "refused_one_word", "no_item", "no_exact_item", "name_only", "name_or_thing",
+             "not_a_person", "not_linked")
+    by = {c: {**by[c], "share_of_mentions": image_text._ratio(by[c]["mentions"], total, 4)}
+          for c in order if c in by}
+
+    def part(c: str) -> str:
+        b = by.get(c) or {"names": 0, "mentions": 0}
+        return f"{b['names']:,} ({b['mentions']:,} mentions)"
+
+    return {
+        "what": ("the build scope's person names that resolve to no one, by the first cause that applies: an "
+                 "alias gap; a one-word name the resolver refuses; what Wikidata's search answered at linking"),
+        "names": len(unresolved), "mentions": n_mentions,
+        "share_of_mentions": image_text._ratio(n_mentions, total, 4), "by_cause": by,
+        "statement": (f"{len(unresolved):,} person names ({n_mentions:,} of {total:,} mentions) resolve to no one. "
+                      f"Linking failures with the person in the gallery, by rule: {part('a_gallery_person')}. "
+                      f"One-word names the resolver refuses: {part('refused_one_word')}. No Wikidata item by "
+                      f"that name: {part('no_item')}, and items that begin with it but are not it: "
+                      f"{part('no_exact_item')} -- people Wikidata does not have, or forms its search cannot "
+                      f"match. Exactly a name item, a surname or first name alone: {part('name_only')}; exactly "
+                      f"something that is no person: {part('not_a_person')}; both: {part('name_or_thing')}"),
+        "local": {c: [k for _m, k in sorted(examples[c], key=lambda e: (-e[0], e[1]))[:GAP_EXAMPLES]] for c in by}}
 
 
 def operating_point(trials: Sequence[dict[str, Any]], t: float | None) -> dict[str, Any]:
@@ -3509,11 +3722,13 @@ def cmd_calibrate(args) -> int:
     report["factify2_ledger"] = ledger
     if NAMES_PATH.is_file():
         names = [r for r in read_jsonl(NAMES_PATH) if r["type"] == "PERSON" and in_scope(r)]
-        report["alias_gaps"], gaps = alias_gaps(names, gallery, latest(read_jsonl(WIKIDATA_PATH),
-                                                                       lambda r: r["qid"]))
+        wiki = latest(read_jsonl(WIKIDATA_PATH), lambda r: r["qid"])
+        report["alias_gaps"], gaps = alias_gaps(names, gallery, wiki)
         claim_keys = {img["sha256"]: {name_key(p, "PERSON") for p in img["claim_people"]} - {None}
                       for img in population}
         report["alias_gaps"]["labels"] = alias_gap_labels(trials, claim_keys, gaps)
+        report["alias_gaps"]["resolution_rules"] = resolution_rules(names, gallery)
+        report["alias_gaps"]["no_one"] = no_one_names(names, gallery, links, wiki, gaps)
     else:
         report["alias_gaps"] = {"status": f"not measured: no name table at {NAMES_PATH} (run count)"}
     report["adjudicated"] = None
@@ -3568,6 +3783,8 @@ def cmd_calibrate(args) -> int:
     log(f"  aliases: {aliases.get('statement') or aliases['status']}")
     if "labels" in aliases:
         log(f"    {aliases['labels']['statement']}")
+        log(f"    {aliases['resolution_rules']['statement']}")
+        log(f"    {aliases['no_one']['statement']}")
     log(f"  figures: {report['figures']['concentration']['statement']}")
     for r in report["figures"]["table"][:5]:
         log(f"    {r['label'] or r['figure_qid']}: {r['trials']} trials, {r['right']} right, "
@@ -3961,7 +4178,17 @@ def review_findings(trials: Sequence[dict[str, Any]], relabelled: Sequence[dict[
 
     Label noise -- a decision that changed the rule's label -- is counted by
     where the name falls. Wrong to right at or above the floor is a match the
-    labels had called false; below it, a recognition failure they had hidden."""
+    labels had called false; below it, a recognition failure they had hidden.
+
+    A recognition failure's causes are kept apart, because their remedies
+    differ (face_geometry):
+
+    - pose: the face is side-on (SIDE_ON). References in more poses can help:
+      the gallery recognises some side-on faces;
+    - size: eyes to mouth, the face is smaller than every face the gallery
+      recognised. A floor no reference lifts.
+
+    A face can have both, or neither."""
     before = {trial_id(x): x["label"] for x in trials}
     decided = [x for x in relabelled if x.get("adjudicated")]
 
@@ -3970,16 +4197,35 @@ def review_findings(trials: Sequence[dict[str, Any]], relabelled: Sequence[dict[
             return "unscorable"
         return "at_or_above_floor" if x["score"] >= floor else "below_floor"
 
+    def side_on(x: dict[str, Any]) -> bool:
+        return x.get("eye_span") == 0 or abs(x.get("nose_offset") or 0.0) >= SIDE_ON
+
     def faces(xs: Sequence[dict[str, Any]]) -> dict[str, Any] | None:
+        def median(field_: str) -> float | None:
+            values = [abs(x[field_]) for x in xs if x.get(field_) is not None]
+            return round(statistics.median(values), 2 if field_ == "nose_offset" else 1) if values else None
+
         return None if not xs else {
-            "median_face_side": round(statistics.median(x["face_side"] for x in xs), 1),
-            "median_eye_span": round(statistics.median(x["eye_span"] for x in xs), 1)}
+            "median_face_side": median("face_side"), "median_eye_span": median("eye_span"),
+            "median_eye_mouth": median("eye_mouth"), "median_nose_offset": median("nose_offset"),
+            "side_on": sum(1 for x in xs if side_on(x))}
 
     right = [x for x in decided if x["label"] == "right"]
     wrong = [x for x in decided if x["label"] != "right"]
     recognised = [x for x in right if where(x) == "at_or_above_floor"]
     failures = sorted((x for x in right if where(x) == "below_floor"), key=lambda x: -x["score"])
     uncovered = [x for x in right if where(x) == "unscorable"]
+    smallest = min((x["eye_mouth"] for x in recognised if x.get("eye_mouth") is not None), default=None)
+
+    def causes(x: dict[str, Any]) -> list[str]:
+        small = smallest is not None and x.get("eye_mouth") is not None and x["eye_mouth"] < smallest
+        return [c for c, on in (("pose", side_on(x)), ("size", small)) if on]
+
+    cause_of = {trial_id(x): causes(x) for x in failures}
+    by_cause = {"pose": sum("pose" in c for c in cause_of.values()),
+                "size": sum("size" in c for c in cause_of.values()),
+                "both": sum(len(c) == 2 for c in cause_of.values()),
+                "neither": sum(not c for c in cause_of.values())}
     noise: dict[str, Counter] = {}
     for x in decided:
         was = before[trial_id(x)]
@@ -3999,15 +4245,27 @@ def review_findings(trials: Sequence[dict[str, Any]], relabelled: Sequence[dict[
         "confirmed_wrong": {"names": len(wrong), **dict(sorted(Counter(where(x) for x in wrong).items()))},
         "label_noise": {k: dict(sorted(c.items())) for k, c in sorted(noise.items())},
         "faces": {"recognised": faces(recognised), "recognition_failures": faces(failures)},
+        "recognition_failures_by_cause": {
+            **by_cause,
+            "rules": {"pose": (f"side-on: the nose {SIDE_ON} eye spans or more from the eyes' midpoint, along "
+                               "the eye line -- past the far eye"),
+                      "size": ("eyes to mouth, smaller than every face the gallery recognised among the confirmed "
+                               f"names (the smallest: {smallest} px)")},
+            "remedies": {"pose": "references in more poses, a side view for a side view",
+                         "size": ("none in the gallery: a floor below which a face is too small to verify, "
+                                  "and a larger image")}},
         "statement": (f"A person confirmed {len(right)} names right. The gallery scores {len(recognised)} at or "
                       f"above its floor of {floor:.3f}; {len(failures)} below it, among different people's "
                       "faces -- recognition failures, not label errors: they lower TAR, and they are the "
-                      f"recognizer's limit on these images; {len(uncovered)} it cannot score -- coverage, "
-                      f"never a true accept. {sum(sum(c.values()) for c in noise.values())} decisions changed "
-                      f"a label (label noise){': ' + changed if changed else ''}"),
+                      f"recognizer's limit on these images (pose: {by_cause['pose']}, size: {by_cause['size']}, "
+                      f"both: {by_cause['both']}, neither: {by_cause['neither']}); {len(uncovered)} it cannot "
+                      f"score -- coverage, never a true accept. {sum(sum(c.values()) for c in noise.values())} "
+                      f"decisions changed a label (label noise){': ' + changed if changed else ''}"),
         "local": {"recognition_failures": [{"trial": trial_id(x), "score": round(x["score"], 4),
-                                            "faces_in_image": x["faces"], "face_side": x["face_side"],
-                                            "eye_span": x["eye_span"]} for x in failures],
+                                            "causes": cause_of[trial_id(x)], "faces_in_image": x["faces"],
+                                            **{k: x.get(k) for k in ("face_side", "eye_span", "eye_mouth",
+                                                                     "nose_offset")}}
+                                           for x in failures],
                   "coverage": [{"trial": trial_id(x), "unscorable": x["unscorable"]} for x in uncovered]}}
 
 
@@ -4093,8 +4351,12 @@ def cmd_review(args) -> int:
                 "rejected_right": (f"BELOW {floor:.3f}" if x["scorable"] else "UNSCORABLE") + ", labelled right",
                 "named_in_claim_text": "LABELLED WRONG, though a claim's text on the image carries the name",
                 }[part]
+        # a name several people hold has no one reference: the sheet names them all, shows none
+        named = (f"<td>ambiguous, {len(x['qids'])} people:<br>"
+                 f"{html.escape('; '.join((gallery.entities.get(q) or {}).get('label') or q for q in x['qids']))}"
+                 "</td>" if x.get("unscorable") == "ambiguous_name" else reference_cell(x["qid"], faces))
         cells.append(
-            f"<tr><td><b>{n}</b></td><td>{face}</td>{reference_cell(x['qid'], faces)}"
+            f"<tr><td><b>{n}</b></td><td>{face}</td>{named}"
             f"{reference_cell(x['figure_qid'], faces)}<td><b>{kind}</b><br>VLM said: "
             f"{html.escape(x['name'])}<br>{'score ' + format(x['score'], '.3f') if x['scorable'] else ''}</td></tr>")
     written = merge_decision_slots(decisions_file, [trial_id(x) for _part, x in queue])

@@ -1,6 +1,6 @@
 {
  "sface": {
-  "generated_at": "2026-10-22T14:59:10+00:00",
+  "generated_at": "2026-10-22T19:19:46+00:00",
   "backend": "sface",
   "face_config": "b6abc4a9f987",
   "coverage": {
@@ -10,7 +10,7 @@
    "share_without": 0.3247,
    "without_any_commons_reference": 1009,
    "references_but_no_usable_face": 114,
-   "statement": "1,123 of the 3,459 people in the gallery have no usable reference face (1,009 have no Commons reference at all): for them verify can only answer 'no usable reference'. That is a ceiling on coverage, apart from the threshold. In calibration, a name that resolves only to such a person is unscorable: it counts as a rejection against TAR (cost_in_true_accepts; tar_scorable leaves it out), as coverage when a person confirms it (review_findings), and never as a true or a false accept."
+   "statement": "1,123 of the 3,459 people in the gallery have no usable reference face (1,009 have no Commons reference at all): for them verify can only answer 'no usable reference'. That is a ceiling on coverage, apart from the threshold. In calibration, a name that resolves only to such a person is unscorable, as is one that resolves to several people (verify refuses it): it counts as a rejection against TAR (cost_in_true_accepts; tar_scorable leaves it out), as coverage when a person confirms it (review_findings), and never as a true or a false accept."
   },
   "population": {
    "what": "Factify2 TRAIN claim images (every record using the image is train) whose claims say an image shows someone and name one figure: exactly one of the probe's listed figures, or else exactly one person by claim NER. The figure is the stratum for per-figure reporting; a name is scored against everyone the image's claims name",
@@ -938,39 +938,31 @@
    "names": 6734,
    "mentions": 32669,
    "resolve": {
-    "to_one_person": 3786,
-    "to_several": 30,
-    "to_no_one": 2918
+    "to_one_person": 3403,
+    "to_several": 505,
+    "to_no_one": 2826
    },
    "collapse": {
-    "people": 3434,
-    "people_with_two_names_or_more": 284,
-    "names_in_them": 636,
+    "people": 3078,
+    "people_with_two_names_or_more": 266,
+    "names_in_them": 591,
     "most_names_for_one_person": 6
    },
    "plausible_aliases_not_collapsing": {
-    "names": 234,
-    "mentions": 1860,
-    "share_of_mentions": 0.0569,
+    "names": 227,
+    "mentions": 1791,
+    "share_of_mentions": 0.0548,
     "with_vlm_mentions": 21,
     "by_outcome": {
-     "several": 8,
-     "someone_else": 47,
-     "unresolved": 179
+     "several": 87,
+     "unresolved": 140
     },
     "by_rule": {
      "surname": {
-      "names": 65,
-      "mentions": 1233,
-      "unresolved": 34,
-      "several": 5,
-      "someone_else": 26
-     },
-     "spacing": {
-      "names": 18,
-      "mentions": 153,
-      "unresolved": 18,
-      "several": 0,
+      "names": 73,
+      "mentions": 1310,
+      "unresolved": 23,
+      "several": 50,
       "someone_else": 0
      },
      "spelling": {
@@ -990,19 +982,162 @@
      "first_name": {
       "names": 49,
       "mentions": 173,
-      "unresolved": 25,
+      "unresolved": 15,
+      "several": 34,
+      "someone_else": 0
+     },
+     "spacing": {
+      "names": 3,
+      "mentions": 7,
+      "unresolved": 0,
       "several": 3,
-      "someone_else": 21
+      "someone_else": 0
      }
     },
     "names_that_could_be_several_people": 3
    },
-   "statement": "Of 6,734 person names, 3,786 resolve to one person; 636 of them collapse into the 284 people who have two names or more. 234 names (1,860 of 32,669 mentions) plausibly name a gallery person they do not resolve to: 179 resolve to no one, 8 to several people and 47 to someone else",
+   "statement": "Of 6,734 person names, 3,403 resolve to one person; 591 of them collapse into the 266 people who have two names or more. 227 names (1,791 of 32,669 mentions) plausibly name a gallery person they do not resolve to: 140 resolve to no one, 87 to several people and 0 to someone else",
    "labels": {
     "trials_not_labelled_right": 13,
     "an_alias_gap_may_decide": {},
     "named_in_claim_text": 3,
     "statement": "Of the 13 trials the label rule does not call right, an alias gap may decide 0; a claim's text carries the name of 3 (a handle, or a name NER did not find), which the review sheet shows a person"
+   },
+   "resolution_rules": {
+    "what": "over the build scope's person names, what each resolver rule changes against an exact key: spacing looks a name up by its letters, as linking does; one_word lets a one-word name resolve only to the one gallery person who holds it, never through a nickname alias, and makes a word with two readings or more ambiguous",
+    "spacing": {
+     "names_changed": 27,
+     "mentions": 174,
+     "by_change": {
+      "no_one_to_one": {
+       "names": 20,
+       "mentions": 155
+      },
+      "one_to_several": {
+       "names": 7,
+       "mentions": 19
+      }
+     },
+     "resolved_to_one_person_no_longer": {
+      "names": 7,
+      "mentions": 19
+     }
+    },
+    "one_word": {
+     "names_changed": 521,
+     "mentions": 3973,
+     "by_change": {
+      "no_one_to_several": {
+       "names": 111,
+       "mentions": 427
+      },
+      "one_to_no_one": {
+       "names": 38,
+       "mentions": 94
+      },
+      "one_to_several": {
+       "names": 357,
+       "mentions": 3240
+      },
+      "several_to_several": {
+       "names": 15,
+       "mentions": 212
+      }
+     },
+     "resolved_to_one_person_no_longer": {
+      "names": 395,
+      "mentions": 3334
+     }
+    },
+    "both": {
+     "names_changed": 547,
+     "mentions": 4146,
+     "by_change": {
+      "no_one_to_one": {
+       "names": 19,
+       "mentions": 154
+      },
+      "no_one_to_several": {
+       "names": 111,
+       "mentions": 427
+      },
+      "one_to_no_one": {
+       "names": 38,
+       "mentions": 94
+      },
+      "one_to_several": {
+       "names": 364,
+       "mentions": 3259
+      },
+      "several_to_several": {
+       "names": 15,
+       "mentions": 212
+      }
+     },
+     "resolved_to_one_person_no_longer": {
+      "names": 402,
+      "mentions": 3353
+     }
+    },
+    "statement": "Against an exact key, the rules change how 547 names resolve (4,146 mentions): spacing 27, one_word 521. 402 names that resolved to one person no longer do: verify refuses them"
+   },
+   "no_one": {
+    "what": "the build scope's person names that resolve to no one, by the first cause that applies: an alias gap; a one-word name the resolver refuses; what Wikidata's search answered at linking",
+    "names": 2826,
+    "mentions": 6027,
+    "share_of_mentions": 0.1845,
+    "by_cause": {
+     "a_gallery_person": {
+      "names": 140,
+      "mentions": 552,
+      "one_word_names": 38,
+      "single_mention_names": 84,
+      "share_of_mentions": 0.0169
+     },
+     "refused_one_word": {
+      "names": 38,
+      "mentions": 94,
+      "one_word_names": 38,
+      "single_mention_names": 22,
+      "share_of_mentions": 0.0029
+     },
+     "no_item": {
+      "names": 1648,
+      "mentions": 3002,
+      "one_word_names": 208,
+      "single_mention_names": 1228,
+      "share_of_mentions": 0.0919
+     },
+     "no_exact_item": {
+      "names": 270,
+      "mentions": 525,
+      "one_word_names": 101,
+      "single_mention_names": 188,
+      "share_of_mentions": 0.0161
+     },
+     "name_only": {
+      "names": 80,
+      "mentions": 164,
+      "one_word_names": 74,
+      "single_mention_names": 48,
+      "share_of_mentions": 0.005
+     },
+     "name_or_thing": {
+      "names": 210,
+      "mentions": 485,
+      "one_word_names": 202,
+      "single_mention_names": 136,
+      "share_of_mentions": 0.0148
+     },
+     "not_a_person": {
+      "names": 440,
+      "mentions": 1205,
+      "one_word_names": 302,
+      "single_mention_names": 288,
+      "share_of_mentions": 0.0369
+     }
+    },
+    "statement": "2,826 person names (6,027 of 32,669 mentions) resolve to no one. Linking failures with the person in the gallery, by rule: 140 (552 mentions). One-word names the resolver refuses: 38 (94 mentions). No Wikidata item by that name: 1,648 (3,002 mentions), and items that begin with it but are not it: 270 (525 mentions) -- people Wikidata does not have, or forms its search cannot match. Exactly a name item, a surname or first name alone: 80 (164 mentions); exactly something that is no person: 440 (1,205 mentions); both: 210 (485 mentions)"
    }
   },
   "adjudicated": {
@@ -1044,14 +1179,34 @@
     "faces": {
      "recognised": {
       "median_face_side": 96.3,
-      "median_eye_span": 43.9
+      "median_eye_span": 43.9,
+      "median_eye_mouth": 48.0,
+      "median_nose_offset": 0.12,
+      "side_on": 2
      },
      "recognition_failures": {
       "median_face_side": 38.2,
-      "median_eye_span": 5.6
+      "median_eye_span": 5.6,
+      "median_eye_mouth": 21.8,
+      "median_nose_offset": 1.07,
+      "side_on": 2
      }
     },
-    "statement": "A person confirmed 35 names right. The gallery scores 31 at or above its floor of 0.381; 3 below it, among different people's faces -- recognition failures, not label errors: they lower TAR, and they are the recognizer's limit on these images; 1 it cannot score -- coverage, never a true accept. 4 decisions changed a label (label noise): wrong to right: 4 (2 at or above the floor, 2 below it, 0 unscorable)"
+    "recognition_failures_by_cause": {
+     "pose": 2,
+     "size": 1,
+     "both": 0,
+     "neither": 0,
+     "rules": {
+      "pose": "side-on: the nose 0.5 eye spans or more from the eyes' midpoint, along the eye line -- past the far eye",
+      "size": "eyes to mouth, smaller than every face the gallery recognised among the confirmed names (the smallest: 20.0 px)"
+     },
+     "remedies": {
+      "pose": "references in more poses, a side view for a side view",
+      "size": "none in the gallery: a floor below which a face is too small to verify, and a larger image"
+     }
+    },
+    "statement": "A person confirmed 35 names right. The gallery scores 31 at or above its floor of 0.381; 3 below it, among different people's faces -- recognition failures, not label errors: they lower TAR, and they are the recognizer's limit on these images (pose: 2, size: 1, both: 0, neither: 0); 1 it cannot score -- coverage, never a true accept. 4 decisions changed a label (label noise): wrong to right: 4 (2 at or above the floor, 2 below it, 0 unscorable)"
    },
    "trials": {
     "total": 44,
