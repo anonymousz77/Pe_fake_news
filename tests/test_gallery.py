@@ -1916,7 +1916,12 @@ def test_a_person_refuses_a_kept_reference_and_the_check_runs_again_without_it()
         "a reference the check refused stays as the check decided"
     assert after[1:] == before[1:] and summary["consistency_threshold"] == pin
     assert gallery.check_state(by["Q1r1"]) == "kept" and gallery.check_state(by["Q1odd"]) == "refused"
-    assert gallery.p18_review(after, decisions, pairs)["people_undecided"] == 0
+    review = gallery.p18_review(after, decisions, pairs)
+    assert review["people_undecided"] == 0 and review["same_person_pairs"] == []
+    both = gallery.p18_review(before, {rid("Q1r1"): "same_person", rid("Q1r0"): "same_person"}, pairs)
+    assert both["same_person_pairs"] == [pairs[0]["similarity"]], \
+        "two images a person confirmed are the same person: a genuine pair under the threshold"
+    assert f"score {pairs[0]['similarity']:.4f} against each other" in both["statement"]
 
     # a side view the check keeps is refused after it: it never enters the medoid
     kept_side, _ = gallery.assemble([q1, *entities[1:]], faces, pin, {**decisions, rid("Q1side"): "someone_else"})

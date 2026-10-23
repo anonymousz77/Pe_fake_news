@@ -5115,14 +5115,20 @@ def disagreeing_p18_pairs(entities: Sequence[dict[str, Any]], ref_faces: dict[st
 
 def p18_review(rows: Sequence[dict[str, Any]], decisions: dict[str, str | None],
                pairs: Sequence[dict[str, Any]]) -> dict[str, Any]:
-    """What a person decided about people's two disagreeing P18 images."""
+    """What a person decided about people's two disagreeing P18 images. Two a
+    person confirmed are both the person measure how far apart the recognizer
+    can put one face across pose, lighting and headwear: a genuine pair under
+    the threshold, which bears on the TAR calibration can expect."""
     tally = decision_tally(rows, decisions)
     undecided = sum(1 for p in pairs if not any(decisions.get(i) for i in p["ids"]))
-    return {**tally, "people": len(pairs), "people_undecided": undecided,
-            "statement": (f"{len(pairs)} people have two P18 images that disagree, both kept by the P18 rule; "
-                          f"{undecided} of them undecided (review-p18-pairs)"
+    same = sorted(p["similarity"] for p in pairs if all(decisions.get(i) == "same_person" for i in p["ids"]))
+    return {**tally, "people": len(pairs), "people_undecided": undecided, "same_person_pairs": same,
+            "statement": (f"{len(pairs)} people have two P18 images that disagree, which the P18 rule keeps "
+                          f"until a person picks; {undecided} of them undecided (review-p18-pairs)"
                           + (f"; a person refused {tally['someone_else']} of their images and confirmed "
-                             f"{tally['same_person']}" if tally["judged"] else ""))}
+                             f"{tally['same_person']}" if tally["judged"] else "")
+                          + (f"; {len(same)} pair(s) a person confirmed as the same person score "
+                             f"{', '.join(f'{s:.4f}' for s in same)} against each other" if same else ""))}
 
 
 def check_state(ref: dict[str, Any]) -> str:
@@ -5322,6 +5328,10 @@ def cmd_review_p18_pairs(args) -> int:
     cells = []
     for n, p in enumerate(pairs, 1):
         e = gallery.entities[p["qid"]]
+        row = gallery.rows.get(p["qid"]) or {"refs": []}
+        # the medoid now: once a person refuses one image, the other (if a person kept either)
+        refused = {i for i in p["refs"] if i < len(row["refs"]) and row["refs"][i]["decision"] == "person_refused"}
+        medoid = p["medoid"] if not refused else next((i for i in p["refs"] if i not in refused), None)
         sides = []
         for i, rid in zip(p["refs"], p["ids"]):
             ref = e["refs"][i]
@@ -5332,12 +5342,11 @@ def cmd_review_p18_pairs(args) -> int:
             sides.append(
                 f"<td><img src='{_crop(body, face, REVIEW_CROP)}'><br><img class='whole' "
                 f"src='{_whole(body, face['box'])}'><br><code>{html.escape(rid)}</code>"
-                f"{' <b>(the medoid now)</b>' if i == p['medoid'] else ''}<br><a href='"
+                f"{' <b>(the medoid now)</b>' if i == medoid else ''}<br><a href='"
                 f"{html.escape(ref.get('page_url') or '')}'>{html.escape(ref.get('title') or '')}</a><br>"
                 f"{html.escape(lic.get('short_name') or '')}; {html.escape(att.get('artist') or '')}<br>"
                 f"decided: <b>{html.escape(str(decisions.get(rid)))}</b></td>")
         # what the medoid decides: the group photos' faces checked against it, and the side views
-        row = gallery.rows.get(p["qid"]) or {"refs": []}
         hangs = [(e["refs"][j], ref_faces[r["sha256"]]["faces"][r["face"]]) for j, r in enumerate(row["refs"])
                  if r["decision"] == "usable" and (r.get("selected_by") == "resolved_by_medoid"
                                                    or r["source"] == SIDE_VIEW)]

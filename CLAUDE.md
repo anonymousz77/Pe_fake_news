@@ -534,10 +534,41 @@ Wikidata items with reference images from Wikimedia Commons. It is how the
       people have two that disagree: Lori Loughlin (0.362 between the two),
       Jaishankar Prasad (0.230), Aurélien Agbénonci (0.167), M.
       Visvesvaraya (0.318) and Desi Arnaz (0.312).
-    - **A person picks** (`review-p18-pairs`, the person's decision): a
-      local sheet shows each person's two images side by side, with the
-      faces their medoid decides. Decisions go in `p18_decisions.json`, 10
-      slots, open.
+    - **A person picks** (`review-p18-pairs`): a local sheet shows each
+      person's two images side by side, with the faces their medoid
+      decides. Decisions go in `p18_decisions.json`.
+    - **Picked** (the person, 2026-10-24): 7 confirmed, 3 refused.
+      - **Three of the ten P18 images were not usable reference faces.**
+        Jaishankar Prasad's 1991 stamp is an engraved drawing, not a
+        photograph. M. Visvesvaraya's is a garlanded statue bust. In Desi
+        Arnaz's 1953 image his hand covers his mouth, and the drawn
+        landmarks put the mouth points on his fingers. Wikidata's P18 does
+        not guarantee a photograph of the person's face.
+      - Before the review, the stamp and the bust were their people's
+        medoids, deciding every match for them. The 1953 Arnaz image was
+        not his medoid, but verify could match a face against it.
+      - A second image of the same stamp, a se-tenant pair filed as
+        depicting Prasad, had been matched against the stamp at 0.751. It
+        does not reach the threshold against his portrait, and it went
+        with the stamp.
+      - Lori Loughlin's and Aurélien Agbénonci's two images are each
+        genuine photographs of the person, and both are kept. They score low
+        against each other because of angle, lighting and headwear, not
+        because either is wrong.
+      - The picks moved 3 entries and no other. Prasad has 1 usable
+        reference (3 before), Visvesvaraya 1 (2) and Arnaz 3 (4); each
+        kept one, so 3,184 people still have a usable face.
+    - **Beyond the two-P18 people** (a count by title, 2026-10-24; nothing
+      changed).
+      - 685 people's only single-face reference is a P18 image, which no
+        check can test: a lone reference is its own medoid.
+      - By title, at least 3 of those are not photographs: Dhirubhai
+        Ambani's is a 2002 stamp of India, Bal Krishna Sharma Naveen's a
+        1989 stamp, and Dr Randhawa's a bust.
+      - Title keywords (stamp, statue, bust, painting, drawing and the like)
+        mark 30 usable P18 references in all, some of them wrongly (a poster
+        launch, a memorial parade).
+      - This is an agent's reading of titles, not a person's check.
   - **A person's "someone_else" refuses a kept reference** (`person_refused`;
     the person's decision, 2026-10-23). Before this, a decision could admit
     a refused reference but never refuse a kept one, so a wrong kept
@@ -702,8 +733,20 @@ Wikidata items with reference images from Wikimedia Commons. It is how the
 
     On the sample, 31, 2 and 2 of the 35 confirmed names. The failures are the
     recognizer's limit on our images, not label errors, and they lower TAR.
-    Their two causes are counted apart (`face_geometry`), because the remedies
-    differ:
+    - **How far apart SFace can put one face** (measured 2026-10-24).
+      Aurélien Agbénonci's two official photographs score 0.167 against
+      each other, far under the 0.3811 threshold, and a person confirmed
+      both as him.
+      - It is one pair, a measured floor, not a bound. It bears directly on
+        the TAR calibration can expect: a right name can score this low
+        across pose, lighting and headwear.
+      - Lori Loughlin's two score 0.362. With the 8 side-on references a
+        person admitted (0.18 to 0.36 against their medoid), 10 pairs a
+        person confirmed as one face score under the threshold.
+      - `embed` reports the P18 pairs (`p18_review.same_person_pairs`).
+
+    The failures' two causes are counted apart (`face_geometry`), because the
+    remedies differ:
     - **Pose:** side-on, meaning the nose is at least half an eye span from
       the eyes' midpoint, past the far eye. References in more poses can help:
       the gallery recognised two side-on faces, each over three times larger.
