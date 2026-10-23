@@ -367,6 +367,38 @@ Fractions are over records, counting files **on disk**, not fields in a CSV.
 | verite | 28.0% | 0% | **72.0%** | images hydrated 2026-09-03; see below |
 | mocheg, liar, welfake, fakenewsnet, averitec | 100% | 0% | 0% | text-only as held |
 
+## Image-to-text: the entity skeleton at full scale
+
+The image-to-text pass (`scripts/image_text.py`) writes five entity lines per
+image: PERSON, ORG, GPE, EVENT, DATE. Where the model would break that form,
+a skeleton inserts the newline or the header, and every line from there on is
+marked `forced` (CLAUDE.md, image-to-text rules). The figures below come from
+the complete ledgers of run `93cd9d679720` (2026-10-23), via `python
+scripts/image_text.py status`:
+
+| Dataset | Images | ok / partial | Any line forced | Forced past PERSON | PERSON itself forced | Entity answer truncated |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| factify2 | 45,186 | 44,364 / 822 | 6,396 (14.2%) | 6,271 (13.9%) | 455 (1.0%) | 357 (0.8%) |
+| averimatec | 1,345 | 1,274 / 71 | 465 (34.6%) | 464 (34.5%) | 64 (4.8%) | 7 (0.5%) |
+| verite | 607 | 547 / 59, 1 failed | 229 (37.7%) | 229 (37.7%) | 57 (9.4%) | 2 (0.3%) |
+
+The columns:
+- "Forced past PERSON" counts images whose ORG line was forced: the model
+  stopped after PERSON, and the skeleton carried the answer on.
+- "PERSON itself forced" counts answers that began outside the form. Every
+  line of those is forced, and the row is `partial` (`no_free_line`).
+
+**The skeleton is load-bearing at scale, not a corner case.** Without it,
+about one answer in seven on Factify2 would have ended at the PERSON line,
+and more than one in three on AVerImaTeC and VERITE. Those answers would have
+lost their organisations, places, events and dates. The first pilot's
+unconstrained rate, 63 of 199 answers (32%), was one sample; the table above
+is the run.
+
+Every forced line is marked as forced. Forced-line entities never become
+supervision without that distinction visible (`image_text.entities_of(row,
+forced=...)`).
+
 ## Per-dataset detail
 
 ### mocheg — 1.900 GB, 166 files

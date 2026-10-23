@@ -535,6 +535,20 @@ def test_initials_are_searched_dotted_and_spaced_too_never_respelled(net):
     assert not due({"status": "no_result", "query": "Shahi Tharoor"}, "Shahi Tharoor", "PERSON", {})
 
 
+def test_the_namesake_check_reads_a_description_by_keyword_and_a_name_by_its_search():
+    read = gallery.description_domain
+    assert read("British botanist") == "academic" and read("Indian cricket player") == "athlete"
+    assert read("French Protestant reformer (1509–1564)") == "historical"
+    assert read("British zoologist (1797–1836)") == "academic+historical"
+    assert read("Indian scientist, president and statesman (1931–2015)") == "academic", \
+        "a life that ended after 1950 is not historical"
+    assert read("Indian politician (born 1953)") == "none of these"
+    assert read(None) == "no description" and read("") == "no description"
+    shape = gallery.name_shape
+    assert shape("Baby") == "one word" and shape("MK Stalin") == "initials" and shape("R.K. Pachauri") == "initials"
+    assert shape("Madhu Kishwar") == "full name", "judged by the search; its hashtag key has no space"
+
+
 def test_requests_to_one_host_start_a_second_apart_and_every_one_is_logged(net):
     make, holder, ledger = net
     rows, _ = gallery.link_names(make(_wikidata(), gallery.BUILD_PASS_ID),
@@ -1708,6 +1722,45 @@ def test_the_side_view_census_counts_what_commons_holds_by_pose_and_stores_nothi
     assert after == before, "a measurement stores nothing"
     published = json.dumps(gallery.public_report(report))
     assert "Modi" not in published and "File:" not in published, "titles and names stay local"
+
+
+def test_a_side_view_is_checked_against_the_others_and_never_moves_them():
+    bases, entities, faces = _people()
+    before, summary = gallery.assemble(entities, faces)
+    pin = summary["consistency_threshold"]
+    faces["Q1side"] = {"faces": [_face(_vec(9001, bases["Q1"]), landmarks=SIDE_ON)]}
+    faces["Q1odd"] = {"faces": [_face(_vec(9002, bases["Q5"]), landmarks=SIDE_ON)]}
+    entities[0]["refs"] = entities[0]["refs"] + [{**_ref("Q1side"), "source": "side_view"},
+                                                 {**_ref("Q1odd"), "source": "side_view"}]
+    after, again = gallery.assemble(entities, faces, pin)
+    old = {r["sha256"]: r for r in before[0]["refs"]}
+    new = {r["sha256"]: r for r in after[0]["refs"]}
+    assert all(new[s] == old[s] for s in old) and after[1:] == before[1:], \
+        "a side view never enters the medoid: every other reference stays as it was"
+    assert again["derived_now"] == summary["derived_now"], "nor does it move the threshold"
+    assert new["Q1side"]["decision"] == "usable" and new["Q1odd"]["decision"] == "inconsistent_reference"
+    out = gallery.side_view_outcomes(after)
+    assert (out["fetched"], out["kept"], out["refused_by_the_check"], out["refusal_rate"]) == (2, 1, 1, 0.5)
+    odd = gallery.reference_id("Q1", {"sha256": "Q1odd"})
+    admitted, _s = gallery.assemble(entities, faces, pin, {odd: "same_person"})
+    ref = {r["sha256"]: r for r in admitted[0]["refs"]}["Q1odd"]
+    assert (ref["decision"], ref["selected_by"]) == ("usable", "person_confirmed"), \
+        "a person admits a reference the check refused; the threshold is never relaxed"
+    assert gallery.side_view_outcomes(admitted)["admitted_by_a_person"] == 1
+    refused, _s = gallery.assemble(entities, faces, pin, {odd: "someone_else"})
+    assert {r["sha256"]: r for r in refused[0]["refs"]}["Q1odd"]["decision"] == "inconsistent_reference"
+
+
+def test_side_views_are_fetched_from_the_census_list_through_the_gates(net, media_root, monkeypatch):
+    make, _holder, ledger = net
+    monkeypatch.setattr(placeholders, "registry", lambda: {})
+    rows = gallery.fetch_references(make(_commons({"u2": GOOD})), [MODI], corpus=frozenset(),
+                                    media=media_root / "media", rejected=media_root / "rejected",
+                                    candidates={"Q1": [("File:Modi 2.png", gallery.SIDE_VIEW)]})
+    assert [(r["title"], r["source"], r["outcome"]) for r in rows[0]["refs"]] == [
+        ("File:Modi 2.png", "side_view", "usable")]
+    stages = {r["stage"] for r in gallery.read_jsonl(ledger.path)}
+    assert stages == {"imageinfo", "download"}, "the census's list replaces the Commons search"
 
 
 def test_the_alignment_maps_the_template_onto_itself():

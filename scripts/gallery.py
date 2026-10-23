@@ -1764,13 +1764,19 @@ TRANSIENT_OUTCOMES = frozenset({"timeout", "connection_error", "dns_failure", "s
 
 def fetch_references(net: Net, entities: Sequence[dict[str, Any]], *,
                      corpus: frozenset[str] | None = None, media: Path = MEDIA_DIR,
-                     rejected: Path = REJECTED_DIR) -> list[dict[str, Any]]:
+                     rejected: Path = REJECTED_DIR,
+                     candidates: dict[str, list[tuple[str, str]]] | None = None) -> list[dict[str, Any]]:
     """Entity rows for ``entities`` (Wikidata summaries with a ``type``): each
-    candidate file tried once, gated, stored or quarantined, with its licence."""
+    candidate file tried once, gated, stored or quarantined, with its licence.
+    ``candidates`` (qid -> [(File: title, source)]) replaces the Commons
+    search: the side views a census found."""
     from scripts import recover
 
     corpus = corpus_hashes() if corpus is None else corpus
-    candidates, lookup_failed = commons_candidates(net, entities)
+    if candidates is None:
+        candidates, lookup_failed = commons_candidates(net, entities)
+    else:
+        lookup_failed = set()
     infos = image_info(net, [t for found in candidates.values() for t, _s in found])
     results: dict[str, dict[str, Any]] = {}
 
@@ -2152,18 +2158,38 @@ def consistency_threshold(medoids: dict[str, Any], seed: int = SEED) -> float | 
     return float(np.quantile(values, CONSISTENCY_QUANTILE))
 
 
+#: A reference fetched because it shows the person side-on (fetch-side-views).
+SIDE_VIEW = "side_view"
+#: What the consistency check answers when it refuses a reference's face.
+REFUSED_BY_CHECK = ("inconsistent_reference", "unresolved_pair", "side_view_unchecked")
+
+
+def reference_id(qid: str, ref: dict[str, Any]) -> str:
+    """A reference's key in the reference decisions file: person and file."""
+    return f"{qid}:{(ref.get('sha256') or '')[:12]}"
+
+
 def assemble(entities: Sequence[dict[str, Any]], ref_faces: dict[str, dict[str, Any]],
-             pinned: float | None = None) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+             pinned: float | None = None, decisions: dict[str, str | None] | None = None
+             ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """One row per entity: every reference with what the gallery decided about
     it. A person's usable references are faces that agree with each other.
 
     ``pinned`` replaces the derived consistency threshold: an entity's
     decisions then depend on its own references alone, so entities added later
-    (another corpus, the rest of a run) leave every existing row unchanged."""
+    (another corpus, the rest of a run) leave every existing row unchanged.
+
+    A side view (source SIDE_VIEW) is checked against the medoid of the
+    person's other references and never enters it: added side views leave
+    every other reference's decision, the medoid and the threshold as they
+    were. ``decisions`` (reference_id -> a person's decision) admit a
+    reference the check refused when a person says it is the same person;
+    the threshold itself is never relaxed."""
     import numpy as np
 
     picks: dict[str, list[tuple[int, int | None, str]]] = {}
     vectors: dict[str, dict[int, Any]] = {}
+    side: dict[str, dict[int, Any]] = {}
     for e in entities:
         if e["type"] != "PERSON":
             continue
@@ -2176,7 +2202,8 @@ def assemble(entities: Sequence[dict[str, Any]], ref_faces: dict[str, dict[str, 
             idx, decision = choose_reference_face(faces)
             rows.append((i, idx, decision))
             if idx is not None:
-                vectors.setdefault(e["qid"], {})[i] = decode_embedding(faces[idx]["embedding"])
+                kept_apart = side if ref.get("source") == SIDE_VIEW else vectors
+                kept_apart.setdefault(e["qid"], {})[i] = decode_embedding(faces[idx]["embedding"])
         picks[e["qid"]] = rows
     medoids = {qid: vec[medoid_of(vec)] for qid, vec in vectors.items()}
     derived = consistency_threshold(medoids)
@@ -2221,6 +2248,22 @@ def assemble(entities: Sequence[dict[str, Any]], ref_faces: dict[str, dict[str, 
                         decided[i] = (None, "inconsistent_reference", round(sim, 4))
                     elif decided[i][2] is None:
                         decided[i] = (decided[i][0], decided[i][1], round(sim, 4))
+        # side views: against the medoid of the others (their one reference, if one), never in it
+        anchor = vec[medoid] if medoid is not None else next(iter(vec.values())) if len(vec) == 1 else None
+        for i, v in side.get(e["qid"], {}).items():
+            if anchor is None or threshold is None:
+                decided[i] = (None, "side_view_unchecked", None)
+                continue
+            sim = round(float(v @ anchor), 4)
+            agrees = sim >= threshold
+            decided[i] = (decided[i][0], decided[i][1], sim) if agrees else (None, "inconsistent_reference", sim)
+        # a person's decision admits a reference the check refused; it never relaxes the threshold
+        chosen = {i: idx for i, idx, _d in rows}
+        for i, ref in enumerate(e["refs"]):
+            idx, decision, sim = decided.get(i, (None, None, None))
+            if (idx is None and chosen.get(i) is not None and decision in REFUSED_BY_CHECK
+                    and (decisions or {}).get(reference_id(e["qid"], ref)) == "same_person"):
+                decided[i] = (chosen[i], "person_confirmed", sim)
         usable = 0
         for i, ref in enumerate(e["refs"]):
             idx, decision, sim = decided.get(i, (None, ref.get("outcome"), None))
@@ -3488,6 +3531,47 @@ def released_row(row: dict[str, Any], by: str) -> dict[str, Any]:
             "candidates": match.get("candidates"), "released": {"from_hold": match["because"], "by": by}}
 
 
+#: The namesake check's keywords (2026-10-23): a description that reads as one
+#: of these domains, other than the news, marks a link a person should check
+#: before its references are fetched. A life that ended before 1950 reads
+#: historical. Keywords, not a judgment: they flag right people too.
+NAMESAKE_DOMAINS = {
+    "academic": re.compile(
+        r"\b(research(er)?|scientists?|physicist|chemist|biologist|botanist|mycologist|entomologist|zoologist|"
+        r"geologist|mathematician|astronomer|historian|archaeologist|academic|professor|scholar|indologist|"
+        r"linguist|economist|orcid|ichthyologist|herpetologist|arachnologist|pathologist)\b", re.I),
+    "athlete": re.compile(
+        r"\b(cricket(er| player)|footballer|football player|athlete|wrestler|boxer|hockey|tennis|sprinter|"
+        r"olympian|basketball|baseball|racing driver|umpire|cyclist|swimmer|badminton|chess|golfer|"
+        r"sportsperson|jockey|shooter)\b", re.I),
+}
+_LIFESPAN = re.compile(r"\b(1[0-9]{3}|20[0-2][0-9])\s*[-–—]\s*(1[0-9]{3}|20[0-2][0-9])\b")
+HISTORICAL_BEFORE = 1950
+
+
+def description_domain(description: str | None) -> str:
+    """The namesake check's reading of a linked item's description: the
+    domains it reads as ("academic+historical"), "no description", or "none
+    of these"."""
+    if not description:
+        return "no description"
+    out = [domain for domain, rx in NAMESAKE_DOMAINS.items() if rx.search(description)]
+    lived = _LIFESPAN.search(description)
+    if lived and int(lived.group(2)) < HISTORICAL_BEFORE:
+        out.append("historical")
+    return "+".join(out) or "none of these"
+
+
+def name_shape(query: str, entity_type: str = "PERSON") -> str:
+    """How a name was searched, for the namesake check: "one word",
+    "initials" (initials linking dots, dotted_initials), or "full name". By
+    the query, never the key: a hashtag's key ("madhukishwar") has no space,
+    but its search ("Madhu Kishwar") was a full name's."""
+    if len(query.split()) == 1:
+        return "one word"
+    return "initials" if dotted_initials(query, entity_type) else "full name"
+
+
 def link_due(row: dict[str, Any] | None, query: str, entity_type: str, known: dict[str, Any]) -> bool:
     """Whether a name is linked (again) this run, given its last link row:
     never linked; an error; a "no type match" whose candidates' data never
@@ -3777,7 +3861,10 @@ def cmd_embed(args) -> int:
     pin = json.loads(pin_path.read_text(encoding="utf-8")) if pin_path.is_file() else None
     if pin is not None and args.pin_consistency:
         raise GalleryError(f"{pin_path} already pins {pin['threshold']}; delete it to derive again")
-    rows, summary = assemble(entities, ref_faces, None if pin is None else pin["threshold"])
+    decisions = (json.loads(REFERENCE_DECISIONS.read_text(encoding="utf-8"))
+                 if REFERENCE_DECISIONS.is_file() else {})
+    rows, summary = assemble(entities, ref_faces, None if pin is None else pin["threshold"], decisions)
+    summary["side_views"] = side_view_outcomes(rows)
     if args.pin_consistency:
         pin = {"threshold": summary["consistency_threshold"], "pinned_at": utcnow(),
                "entities_with_faces": summary["entities_with_faces"],
@@ -3803,6 +3890,11 @@ def cmd_embed(args) -> int:
         f"({'pinned' if summary['pinned'] else 'derived'}; derived now {summary['derived_now']}); "
         f"{summary['people_with_usable_faces']:,} of {summary['people']:,} people have a usable "
         "reference face, and verify can only answer 'no usable reference' for the rest")
+    if summary["side_views"]["fetched"]:
+        log(f"  side views: {summary['side_views']['statement']}")
+        if SIDE_VIEWS_REPORT.is_file():  # the census's published aggregate gains what the check decided
+            published = json.loads(SIDE_VIEWS_REPORT.read_text(encoding="utf-8"))
+            write_json(SIDE_VIEWS_REPORT, {**published, "fetched": summary["side_views"]})
     return 0
 
 
@@ -4785,6 +4877,138 @@ def cmd_side_views(args) -> int:
     return 0
 
 
+SIDE_VIEWS_FETCH_PASS = "gallery-side-views-fetch-2026-10"
+#: A person's decisions on references the consistency check refused, by
+#: reference_id: "same_person" admits one, "someone_else" and "unsure" leave it
+#: refused, null is undecided. assemble reads them at every embed.
+REFERENCE_DECISIONS = REVIEW_DIR / "reference_decisions.json"
+REFERENCE_DECISION_VALUES = ("same_person", "someone_else", "unsure")
+
+
+def side_view_outcomes(rows: Sequence[dict[str, Any]]) -> dict[str, Any]:
+    """What the gallery decided about its side views (assembled rows): kept by
+    the consistency check, refused by it, admitted by a person, or out before
+    the check (no single face, or the gates)."""
+    got = Counter()
+    for row in rows:
+        for ref in row["refs"]:
+            if ref["source"] != SIDE_VIEW:
+                continue
+            got["fetched"] += 1
+            if ref["decision"] == "usable":
+                got["admitted_by_a_person" if ref.get("selected_by") == "person_confirmed" else "kept"] += 1
+            elif ref["decision"] in REFUSED_BY_CHECK:
+                got["refused_by_the_check"] += 1
+            else:
+                got["no_single_face_or_gated"] += 1
+    checked = got["kept"] + got["refused_by_the_check"] + got["admitted_by_a_person"]
+    rate = image_text._ratio(got["refused_by_the_check"] + got["admitted_by_a_person"], checked, 4)
+    return {"fetched": got["fetched"], "kept": got["kept"], "refused_by_the_check": got["refused_by_the_check"],
+            "admitted_by_a_person": got["admitted_by_a_person"],
+            "no_single_face_or_gated": got["no_single_face_or_gated"], "refusal_rate": rate,
+            "statement": (f"{got['fetched']} side views fetched: the consistency check kept {got['kept']} and "
+                          f"refused {got['refused_by_the_check'] + got['admitted_by_a_person']} of the "
+                          f"{checked} it checked ({(rate or 0):.0%}), {got['admitted_by_a_person']} of them "
+                          f"since admitted by a person; {got['no_single_face_or_gated']} never reached the check")}
+
+
+def cmd_fetch_side_views(args) -> int:
+    """The side-on files a side-views census found for its people, fetched as
+    references (SIDE_VIEW) through the reference gates. The next embed's
+    consistency check decides which the gallery keeps, at the pinned
+    threshold, never relaxed."""
+    if not SIDE_VIEWS_LOCAL.is_file():
+        raise GalleryError(f"no census at {SIDE_VIEWS_LOCAL}: run side-views first; it finds the side views")
+    census = json.loads(SIDE_VIEWS_LOCAL.read_text(encoding="utf-8"))
+    stored = latest(read_jsonl(ENTITIES_PATH), lambda r: r["qid"])
+    candidates: dict[str, list[tuple[str, str]]] = {}
+    for p in census["local"]["people"][:args.top]:
+        e = stored.get(p["qid"])
+        if e is None:
+            continue
+        taken = {r["title"].replace("_", " ") for r in e["refs"]}
+        files = [f["title"] for f in p["side_on_files"] if f["title"].replace("_", " ") not in taken]
+        if files:
+            candidates[p["qid"]] = [(t, SIDE_VIEW) for t in dict.fromkeys(files)]
+    n = sum(len(v) for v in candidates.values())
+    log(f"fetch side views: {n} files for {len(candidates)} of the census's {min(args.top, census['people'])} "
+        f"people; User-Agent: {user_agent()}")
+    if not candidates:
+        return 0
+    out, prov = JsonlLedger(ENTITIES_PATH), JsonlLedger(PROVENANCE_PATH)
+    out.open()
+    prov.open()
+    try:
+        net = live_net(ProvenanceLog(prov, SIDE_VIEWS_FETCH_PASS), int(args.budget_gb * 1024 ** 3))
+        rows = fetch_references(net, [stored[q] for q in candidates], candidates=candidates)
+        out.append_many([{**stored[row["qid"]], "pass": SIDE_VIEWS_FETCH_PASS, "side_views_fetched_at": utcnow(),
+                          "refs": stored[row["qid"]]["refs"] + row["refs"]} for row in rows])
+    finally:
+        out.close()
+        prov.close()
+    outcomes = Counter(r.get("outcome") for row in rows for r in row["refs"])
+    log(f"  {len(rows)} people written ({len(candidates) - len(rows)} left for the next run); side-view "
+        f"outcomes {dict(outcomes)}; run embed next, and the consistency check decides")
+    return 0
+
+
+def cmd_review_references(args) -> int:
+    """A sheet a PERSON reads: every side-on reference the consistency check
+    refused for the census's people, beside the references the gallery kept
+    for that person, with its Commons page and licence. Local only. The
+    decisions are a person's, in REFERENCE_DECISIONS; "same_person" admits a
+    reference at the next embed."""
+    backend = make_backend(args.backend)
+    gallery = Gallery(face_config_id(backend))
+    census = json.loads(SIDE_VIEWS_LOCAL.read_text(encoding="utf-8"))
+    stored = latest(read_jsonl(ENTITIES_PATH), lambda r: r["qid"])
+    people = [p["qid"] for p in census["local"]["people"][:args.top]]
+    wanted = {r["sha256"] for q in people for r in (stored.get(q) or {}).get("refs", []) if r.get("sha256")}
+    ref_faces = {r["sha256"]: r for r in read_jsonl(FACES_DIR / gallery.cid / "refs.jsonl") if r["sha256"] in wanted}
+    queue = []
+    for q in people:
+        decided = {r["sha256"]: r for r in (gallery.rows.get(q) or {}).get("refs", []) if r.get("sha256")}
+        for ref in (stored.get(q) or {}).get("refs", []):
+            d = decided.get(ref.get("sha256"))
+            if not d or d["decision"] not in REFUSED_BY_CHECK:
+                continue
+            faces = (ref_faces.get(ref["sha256"]) or {}).get("faces") or []
+            idx, _how = choose_reference_face(faces)
+            if idx is not None and side_on(face_geometry(faces[idx])):
+                queue.append((q, ref, faces[idx], d.get("similarity_to_medoid")))
+    written = merge_decision_slots(REFERENCE_DECISIONS, [reference_id(q, ref) for q, ref, _f, _s in queue])
+    cells = []
+    for n, (q, ref, face, sim) in enumerate(queue, 1):
+        body = (image_text.PROJECT_ROOT / ref["path"]).read_bytes()
+        kept = "".join(f"<img src='{_crop((image_text.PROJECT_ROOT / r['path']).read_bytes(), f['box'])}'>"
+                       for r, f, _v in gallery.refs.get(q, [])[:3])
+        lic = (ref.get("licence") or {}).get("short_name") or ""
+        cells.append(
+            f"<tr><td><b>{n}</b></td><td><img src='{_crop(body, face['box'], REVIEW_CROP)}'><br>"
+            f"<code>{html.escape(reference_id(q, ref))}</code><br>{html.escape(ref['source'])}; similarity to "
+            f"the medoid {sim}<br><a href='{html.escape(ref.get('page_url') or '')}'>"
+            f"{html.escape(ref.get('title') or '')}</a><br>{html.escape(lic)}</td><td>{kept or '(none kept)'}"
+            f"<br>{html.escape((gallery.entities.get(q) or {}).get('label') or q)}</td></tr>")
+    page = ("<!doctype html><meta charset='utf-8'><title>Side-view review</title>"
+            "<style>body{font:14px sans-serif;margin:16px}td{vertical-align:top;padding:6px;"
+            f"border-bottom:1px solid #ccc}}img{{max-width:{REVIEW_CROP}px;margin-right:4px}}</style>"
+            f"<h1>Side-view references the consistency check refused: {len(queue)}</h1>"
+            "<p>Each row: a side-on face from a Commons file (left), and the references the gallery kept for "
+            "that person (right). The check refused it at the pinned threshold, which is never relaxed: a face "
+            "turned away scores low against a face-on medoid, so only a person can say whether it is the same "
+            "person. Write a decision against the row's id in "
+            f"<code>{html.escape(str(REFERENCE_DECISIONS))}</code> (every row is already there, as "
+            "<code>null</code>): <code>\"same_person\"</code> admits it at the next embed; "
+            "<code>\"someone_else\"</code> or <code>\"unsure\"</code> leave it refused.</p>"
+            f"<table>{''.join(cells)}</table>")
+    path = REVIEW_DIR / f"{args.backend}_side_views.html"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(page, encoding="utf-8")
+    log(f"{len(queue)} refused side-on references for {len({q for q, *_r in queue})} people; {written} new "
+        f"decision slot(s) in {REFERENCE_DECISIONS}; sheet {path} (local: it shows people's faces)")
+    return 0
+
+
 def cmd_status(args) -> int:
     out: dict[str, Any] = {"names": None, "claim_ner": {}}
     if NAMES_PATH.is_file():
@@ -4881,10 +5105,15 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--per-person", type=int, default=SIDE_VIEW_PER_PERSON,
                    help=f"Commons files drawn per person (default {SIDE_VIEW_PER_PERSON})")
     s.add_argument("--budget-gb", type=float, default=1.0, help="transfer budget (default 1 GiB)")
+    fs = sub.add_parser("fetch-side-views", help="the census's side-on files, fetched as references (network)")
+    fs.add_argument("--top", type=int, default=SIDE_VIEW_TOP, help=f"people (default {SIDE_VIEW_TOP})")
+    fs.add_argument("--budget-gb", type=float, default=1.0, help="transfer budget (default 1 GiB)")
+    rr = sub.add_parser("review-side-views", help="a local sheet of side views the consistency check refused")
+    rr.add_argument("--top", type=int, default=SIDE_VIEW_TOP, help=f"people (default {SIDE_VIEW_TOP})")
     for p in (k, e, a):
         p.add_argument("--ledger-dir", default=None,
                        help="image_text run directory (default: the one under the current row schema)")
-    for p in (e, a, v, r, s):
+    for p in (e, a, v, r, s, rr):
         p.add_argument("--backend", choices=FACE_BACKENDS, default="sface")
     sub.add_parser("status", help="offline counts")
     return parser
@@ -4895,7 +5124,8 @@ def main(argv: list[str] | None = None) -> int:
     commands = {"fetch-models": cmd_fetch_models, "count": cmd_count, "link": cmd_link,
                 "fetch": cmd_fetch, "embed": cmd_embed, "calibrate": cmd_calibrate,
                 "verify": cmd_verify, "review": cmd_review, "sample-report": cmd_sample_report,
-                "side-views": cmd_side_views, "status": cmd_status}
+                "side-views": cmd_side_views, "fetch-side-views": cmd_fetch_side_views,
+                "review-side-views": cmd_review_references, "status": cmd_status}
     return commands[args.command](args)
 
 

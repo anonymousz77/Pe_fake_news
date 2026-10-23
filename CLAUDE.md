@@ -191,6 +191,11 @@ EVENT / DATE).
   the newline or the header, records the replacement, and marks every line
   from there on `forced`, on the category and on each of its items. An answer
   that loses lines anyway stops the run; it is never written.
+  - **At full scale the skeleton is load-bearing, not a corner case.** On
+    the complete run it carried the answer past PERSON for 6,271 of 45,186
+    Factify2 images (13.9%), 34.5% of AVerImaTeC's and 37.7% of VERITE's.
+  - Some line was forced in 14.2% of Factify2's answers. The rate per
+    dataset is in `docs/data_card.md`.
 - **A runaway or an empty answer is an error, never `ok`.** An entity answer
   cut at `max_new_tokens` (`truncated`; the first pilot had 2) or with every
   line forced (`no_free_line`: the model began outside the form, like the
@@ -228,7 +233,12 @@ Wikidata items with reference images from Wikimedia Commons. It is how the
   (`ambiguous_name`, unscored): the best of several candidates is a search
   among them.
 - **Built from the names our corpora use**, never from Wikidata at large
-  (`count` reports them first). The gallery is not a register dataset: it lives
+  (`count` reports them first).
+  - On the complete run (2026-10-23) the build scope holds 12,627 person
+    names and 11,148 organisation names. The 6% sample held 6,734 and 6,131.
+  - The 5,893 and 5,017 new names are all VLM names from the rest of
+    Factify2, nearly nine in ten seen once. They carry 11.9% and 9.9% of
+    in-scope mentions. The gallery is not a register dataset: it lives
   in `data/gallery/` (ignored), outside `sources.yaml`, as the bible does.
 - **Scope: VERITE, AVerImaTeC and Factify2** (`BUILD_SCOPE`, the November
   path). DGM4 is left out: it is a synthetic corpus not chosen for training,
@@ -289,6 +299,46 @@ Wikidata items with reference images from Wikimedia Commons. It is how the
     description reads academic, and none to an athlete or a historical
     figure. This is a count, not a review. It was small enough to fetch, and
     the same rule flags 10 of the 17 held.
+  - **Old one-word links** (audit, 2026-10-23: counts only, nothing
+    removed). 568 of the 3,556 gallery people were linked only through
+    one-word names, by the exact rule, before the one-word rule existed.
+    - For 378 of them, no corpus name resolves to them today: their words
+      now resolve to several people (354 names) or to no one (28).
+    - By the same description keywords: 70 read academic, 25 athletic and 22
+      only historical (117 in all); 261 read none of these.
+    - 135 of the 378 have a usable reference face.
+    - They stay until a person decides. Their labels still make words
+      ambiguous: the botanist came in through "sasikala".
+  - **The full-ledger link** (2026-10-23) searched the 10,912 new names and
+    linked 3,754: 2,062 people and 1,692 organisations. One name is left in
+    error for the next run.
+  - **The namesake check runs before fetching**: the same description
+    keywords (`description_domain`, by the name as searched: `name_shape`),
+    over every new person link. It flagged 548 of the 2,062 (27%):
+    446 of 1,714 full names, 26 of 78 with initials, and 76 of 270 one-word
+    names. Against the 8 of 119 judged small, that is large, and by the
+    person's rule a large count tightens the holds before fetching.
+    - **All 548 are held.** On full names the keywords cannot tell a
+      namesake from the person meant. They flag A. P. J. Abdul Kalam and the
+      cricketer Danish Kaneria, most likely the people meant, beside names
+      seen once that link to an Australian rules footballer or a
+      para-badminton player. Holding the right ones is the refusal's cost,
+      and a release restores any of them.
+    - **On one-word names the keywords miss many namesakes.** "Baby" links
+      to a rapper, "Soldier" to a voice actor and "wife" to a genealogy
+      record, and none of them is flagged. So a one-word name alone brings
+      no one new into the gallery. 170 more links are held: their people are
+      linked by no name longer than one word.
+    - 718 links are held in all (827 mentions, 713 people), 735 with the 17
+      above. 19 of those people were already in the gallery. The check is an
+      agent reading descriptions by keyword, not a person's check.
+  - **Fetched after the holds** (2026-10-23): 2,697 entities, 1,209 people
+    and 1,488 organisations, in 6,933 requests (0.92 GiB), every answer a
+    200. 827 of the new people have a usable Commons reference (4,019 in
+    all), and 380 have none listed. Their faces wait for the next `embed`:
+    the laptop's run was stopped for low memory at 3,500 of 3,916 images. It
+    resumes from there, and until it runs, the assembled gallery is the 3,556
+    people the coverage ceiling below counts.
   - **Near-matches are reported, never linked** (decided 2026-10-23). A
     wrong link puts the wrong face in the gallery, where nothing downstream
     can see it, and is worse than none. Linking the alias gaps would need a
@@ -497,8 +547,24 @@ Wikidata items with reference images from Wikimedia Commons. It is how the
         measurement that stored nothing). Of the 50 most-mentioned people, 38
         have one the gallery would keep: 21 among their references, the rest
         on Commons, side-on and agreeing with their medoid. That is enough to
-        fetch for by the half rule (`SIDE_VIEW_ENOUGH`), though fetching is
-        the person's decision and has not been done.
+        fetch for by the half rule (`SIDE_VIEW_ENOUGH`).
+      - **Fetched** (`fetch-side-views`, the person's decision, 2026-10-23):
+        the census's 89 side-on files for 32 people, all through the
+        reference gates, stored as references with source `side_view`.
+        - A side view is checked against the medoid of the person's other
+          references and never enters it, so no other reference, medoid or
+          threshold moves.
+        - The check kept 49: 44 faces the medoid picked out of group photos,
+          and 5 single-face files. It refused 25 of the 74 it checked (34%).
+          In 15 group photos the medoid could pick no face at all.
+        - Of the 30 single-face side views, the check refused 25. Those may be
+          real profiles or other people, and no threshold can tell them apart.
+      - **A refusal goes to a person, never to the threshold**
+        (`review-side-views`). A local sheet shows the 40 side-on references
+        the check refused for these people: the 25 above and 15 it had
+        refused before. Each sits beside the references the gallery kept.
+        Decisions go in `reference_decisions.json`, and "same_person" admits
+        a reference at the next embed (`person_confirmed`).
       - **Both sample failures would reach the floor.** Modi has none of his
         5 references side-on, while Commons has 5 agreeing side views of him.
         Against them, both sample failures reach the floor (0.302 → 0.431,
@@ -768,6 +834,8 @@ python scripts/gallery.py review --backend sface          # a local sheet for a 
 python scripts/gallery.py sample-report                   # data/reports/gallery_sample.json
 python scripts/gallery.py verify --image P --name "N"     # one 1:1 verification; no certified threshold, no decision
 python scripts/gallery.py side-views --backend sface      # side views on Commons, top 50: a measurement (network)
+python scripts/gallery.py fetch-side-views                # the census's side views as references (network)
+python scripts/gallery.py review-side-views --backend sface   # local sheet: side views the check refused
 PE_FAKE_NEWS_GALLERY_MODELS=1 pytest -q tests/test_gallery.py  # the pinned-weight tests
 ```
 

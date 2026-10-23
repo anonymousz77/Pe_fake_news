@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-10-20T19:40:20+00:00",
+ "generated_at": "2026-10-23T03:17:40+00:00",
  "what": "distinct NORMALISED NAMES of people and organisations in our corpora, before anything is fetched. Names, not entities: a surname and the full name count as two until linking resolves both to one Wikidata item. Aggregates only; the name table stays in data/interim/gallery/.",
  "image_text": {
   "run": "93cd9d679720",
@@ -52,53 +52,27 @@
     "torn_tail_bytes": 0
    },
    "factify2": {
-    "rows": 2828,
-    "images": 2828,
+    "rows": 45186,
+    "images": 45186,
     "images_in_worklist": 45186,
-    "share_done": 0.0626,
+    "share_done": 1.0,
     "status": {
-     "ok": 2786,
-     "partial": 42
+     "ok": 44364,
+     "partial": 822
     },
     "entity_errors": {
-     "no_free_line": 22,
-     "truncated": 20
+     "no_free_line": 455,
+     "truncated": 357
     },
     "images_naming": {
-     "PERSON": 1184,
-     "ORG": 1728
+     "PERSON": 18067,
+     "ORG": 27703
     },
     "rows_without_forced_marks": 0,
     "torn_tail_bytes": 0
    }
   },
-  "projection": {
-   "factify2": {
-    "method": "V(n) = K n^beta fitted by least squares in log-log over prefixes [1000, 1500, 2000, 2500] and all 2,828 images done (sha256 order: a random sample), evaluated at the work list's size; an extrapolation, not a measurement",
-    "images_done": 2828,
-    "images_in_worklist": 45186,
-    "PERSON_all": {
-     "now": 901,
-     "beta": 0.819,
-     "projected": 8639
-    },
-    "PERSON_not_written": {
-     "now": 418,
-     "beta": 0.791,
-     "projected": 3764
-    },
-    "ORG_all": {
-     "now": 785,
-     "beta": 0.777,
-     "projected": 6716
-    },
-    "ORG_not_written": {
-     "now": 323,
-     "beta": 0.842,
-     "projected": 3325
-    }
-   }
-  },
+  "projection": {},
   "names_are": "the VLM's PERSON and ORG names, every line read through entities_of(forced='mark'); evidence is the independent OCR's (written / partly_written / not_written / no_ocr)"
  },
  "claims": {
@@ -171,11 +145,11 @@
  },
  "names": {
   "PERSON": {
-   "distinct_names": 45692,
+   "distinct_names": 51053,
    "overlap": {
-    "vlm_only": 631,
-    "claims_only": 44470,
-    "both": 591
+    "vlm_only": 5992,
+    "claims_only": 42652,
+    "both": 2409
    },
    "build_scope": {
     "datasets": [
@@ -183,33 +157,35 @@
      "averimatec",
      "factify2"
     ],
-    "distinct_names": 6734,
-    "named_once": 4045
+    "distinct_names": 12627,
+    "named_once": 8545
    },
    "vlm": {
-    "distinct_names": 1222,
+    "distinct_names": 8401,
     "by_dataset": {
      "verite": 106,
      "averimatec": 304,
-     "factify2": 901
+     "factify2": 8169
     },
-    "mentions": 2388,
+    "mentions": 27751,
     "mentions_by_evidence": {
-     "not_written": 1529,
-     "partly_written": 198,
-     "written": 661
+     "not_written": 17634,
+     "partly_written": 1637,
+     "written": 8480
     },
     "mentions_by_line": {
-     "free": 2388,
+     "free": 27751,
      "forced": 0
     },
-    "distinct_names_not_written": 637,
+    "distinct_names_not_written": 3354,
     "distinct_names_only_on_forced_lines": 0,
     "coverage": {
-     "top_100": 0.4858,
-     "top_500": 0.6977,
-     "top_1000": 0.907,
-     "top_2000": 1.0
+     "top_100": 0.4989,
+     "top_500": 0.6438,
+     "top_1000": 0.7026,
+     "top_2000": 0.7693,
+     "top_5000": 0.8774,
+     "top_10000": 1.0
     }
    },
    "claims": {
@@ -236,11 +212,11 @@
    }
   },
   "ORG": {
-   "distinct_names": 16680,
+   "distinct_names": 21380,
    "overlap": {
-    "vlm_only": 709,
-    "claims_only": 15559,
-    "both": 412
+    "vlm_only": 5409,
+    "claims_only": 14396,
+    "both": 1575
    },
    "build_scope": {
     "datasets": [
@@ -248,33 +224,35 @@
      "averimatec",
      "factify2"
     ],
-    "distinct_names": 6131,
-    "named_once": 3605
+    "distinct_names": 11148,
+    "named_once": 7331
    },
    "vlm": {
-    "distinct_names": 1121,
+    "distinct_names": 6984,
     "by_dataset": {
      "verite": 96,
      "averimatec": 302,
-     "factify2": 785
+     "factify2": 6720
     },
-    "mentions": 2532,
+    "mentions": 32939,
     "mentions_by_evidence": {
-     "not_written": 778,
-     "partly_written": 261,
-     "written": 1493
+     "not_written": 8548,
+     "partly_written": 3252,
+     "written": 21139
     },
     "mentions_by_line": {
-     "free": 2485,
-     "forced": 47
+     "free": 32331,
+     "forced": 608
     },
-    "distinct_names_not_written": 502,
-    "distinct_names_only_on_forced_lines": 23,
+    "distinct_names_not_written": 2877,
+    "distinct_names_only_on_forced_lines": 91,
     "coverage": {
-     "top_100": 0.5498,
-     "top_500": 0.7547,
-     "top_1000": 0.9522,
-     "top_2000": 1.0
+     "top_100": 0.6068,
+     "top_500": 0.7417,
+     "top_1000": 0.7949,
+     "top_2000": 0.8487,
+     "top_5000": 0.9398,
+     "top_10000": 1.0
     }
    },
    "claims": {

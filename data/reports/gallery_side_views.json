@@ -39,5 +39,14 @@
   "what": "the sample's confirmed side-on recognition failures, scored against the side-on Commons faces the census found for their person",
   "failures": 2,
   "at_or_above_floor_against_an_agreeing_side_view": 2
+ },
+ "fetched": {
+  "fetched": 89,
+  "kept": 49,
+  "refused_by_the_check": 25,
+  "admitted_by_a_person": 0,
+  "no_single_face_or_gated": 15,
+  "refusal_rate": 0.3378,
+  "statement": "89 side views fetched: the consistency check kept 49 and refused 25 of the 74 it checked (34%), 0 of them since admitted by a person; 15 never reached the check"
  }
 }
