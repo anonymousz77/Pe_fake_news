@@ -1670,6 +1670,13 @@ def test_a_held_link_keeps_its_match_and_reason_and_resolves_no_one_until_releas
     assert row["held"]["because"].startswith("an exact match by initials") and row["held"]["by"] == "the person", \
         "the reason is recorded, so a later pass revisits the hold rather than rediscovering it"
     assert not gallery.link_due(row, "K Sasikala", "PERSON", {}), "a held link is never searched again"
+    assert gallery.main(["link", "--hold", "k sasikala", "--because", "reviewed: the botanist, not the news figure",
+                         "--by", "a reviewer"]) == 0
+    again = gallery.latest(gallery.read_jsonl(gallery.LINKS_PATH), lambda r: r["key"])["k sasikala"]
+    assert (again["status"], again["held"]["qid"], again["held"]["by"]) == ("held", "Q2", "a reviewer")
+    assert again["held"]["candidates"] == row["held"]["candidates"], "the same match, held by whoever reviewed it"
+    assert again["held"]["replaces"]["by"] == "the person" and \
+        again["held"]["replaces"]["because"].startswith("an exact match"), "and the hold it replaces"
 
     bases, entities, faces = _people()
     entities[1]["label"] = "K. Sasikala"
@@ -1873,6 +1880,86 @@ def test_a_flag_rides_on_its_reference_to_verify_and_into_calibration(tmp_path):
         path.write_text(json.dumps(wrong), encoding="utf-8")
         with pytest.raises(gallery.GalleryError, match=why):
             gallery.reference_flags(path, known)
+
+
+def test_a_person_refuses_a_kept_reference_and_the_check_runs_again_without_it():
+    """"someone_else" refuses a reference the check keeps: two P18 images
+    that disagree are both kept, and the first decides every match until a
+    person refuses it. The other then becomes the medoid; no face is checked
+    against the refused one. On a reference the check refused it changes
+    nothing, and the threshold never moves."""
+    bases, entities, faces = _people()
+    pin = gallery.assemble(entities, faces)[1]["consistency_threshold"]
+    faces["Q1r1"] = {"faces": [_face(_vec(31, bases["Q5"]))]}                   # a stranger's face, filed as P18
+    faces["Q1g"] = {"faces": [_face(_vec(32, bases["Q1"])), _face(_vec(33, bases["Q9"]))]}
+    faces["Q1side"] = {"faces": [_face(_vec(34, bases["Q1"]), landmarks=SIDE_ON)]}
+    faces["Q1odd"] = {"faces": [_face(_vec(35, bases["Q6"]), landmarks=SIDE_ON)]}
+    stamp, photo = {**_ref("Q1r1"), "source": "P18"}, entities[0]["refs"][0]     # the first P18 is the wrong one
+    q1 = {**entities[0], "refs": [stamp, photo, _ref("Q1g"), {**_ref("Q1side"), "source": "side_view"},
+                                  {**_ref("Q1odd"), "source": "side_view"}]}
+    rid = lambda s: gallery.reference_id("Q1", {"sha256": s})  # noqa: E731
+    before, _ = gallery.assemble([q1, *entities[1:]], faces, pin)
+    by = {r["sha256"]: r for r in before[0]["refs"]}
+    assert by["Q1r1"]["decision"] == by["Q1r0"]["decision"] == "usable", "the P18 rule keeps both"
+    assert by["Q1g"]["decision"] == "ambiguous_faces" and by["Q1side"]["decision"] == "inconsistent_reference", \
+        "the stranger, the first P18, is the medoid and decides every match"
+    pairs = gallery.disagreeing_p18_pairs([q1, *entities[1:]], faces, pin)
+    assert [(p["qid"], p["ids"], p["medoid"]) for p in pairs] == [("Q1", [rid("Q1r1"), rid("Q1r0")], 0)]
+
+    decisions = {rid("Q1r1"): "someone_else", rid("Q1odd"): "someone_else"}
+    after, summary = gallery.assemble([q1, *entities[1:]], faces, pin, decisions)
+    by = {r["sha256"]: r for r in after[0]["refs"]}
+    assert by["Q1r1"]["decision"] == "person_refused" and by["Q1r0"]["decision"] == "usable"
+    assert (by["Q1g"]["selected_by"], by["Q1g"]["face"]) == ("resolved_by_medoid", 0), \
+        "checked against the P18 a person kept: two references still count for a group photo"
+    assert by["Q1side"]["decision"] == "usable" and by["Q1odd"]["decision"] == "inconsistent_reference", \
+        "a reference the check refused stays as the check decided"
+    assert after[1:] == before[1:] and summary["consistency_threshold"] == pin
+    assert gallery.check_state(by["Q1r1"]) == "kept" and gallery.check_state(by["Q1odd"]) == "refused"
+    assert gallery.p18_review(after, decisions, pairs)["people_undecided"] == 0
+
+    # a side view the check keeps is refused after it: it never enters the medoid
+    kept_side, _ = gallery.assemble([q1, *entities[1:]], faces, pin, {**decisions, rid("Q1side"): "someone_else"})
+    assert {r["sha256"]: r for r in kept_side[0]["refs"]}["Q1side"]["decision"] == "person_refused"
+    out = gallery.side_view_outcomes(kept_side)
+    assert (out["kept"], out["refused_by_a_person"], out["refused_by_the_check"]) == (0, 1, 1)
+    assert "a person refused 1 it kept" in out["statement"]
+
+
+def test_each_sheets_decisions_are_its_own_file_and_assemble_takes_them_all(tmp_path):
+    side, p18 = tmp_path / "side.json", tmp_path / "p18.json"
+    side.write_text(json.dumps({"Q1:aaa": "someone_else", "Q2:bbb": None}), encoding="utf-8")
+    p18.write_text(json.dumps({"Q3:ccc": "same_person", "Q2:bbb": "unsure"}), encoding="utf-8")
+    assert gallery.all_reference_decisions((side, p18)) == {"Q1:aaa": "someone_else", "Q2:bbb": "unsure",
+                                                             "Q3:ccc": "same_person"}
+    p18.write_text(json.dumps({"Q1:aaa": "same_person"}), encoding="utf-8")
+    with pytest.raises(gallery.GalleryError, match="Q1:aaa is 'same_person' here and 'someone_else'"):
+        gallery.all_reference_decisions((side, p18))
+
+
+def test_a_sheet_crop_draws_the_face_it_scored():
+    """A crop shows neighbours, and one detection can span two people: the box
+    and the five landmarks are drawn so a reviewer sees what was scored."""
+    body = _png((255, 255, 255), (400, 300))
+    face = {"box": [100, 80, 120, 140], "landmarks": [[140, 130], [180, 130], [160, 160], [145, 190], [175, 190]]}
+    img = gallery._crop_image(body, face, side=160)
+    # a quarter of the box's long side (140) around it: the crop spans 65..256 across and 45..256 down
+    sx, sy = img.width / 191, img.height / 211
+    edge = [img.getpixel((round((100 - 65) * sx) + d, round((150 - 45) * sy))) for d in (-1, 0, 1)]
+    eye = img.getpixel((round((140 - 65) * sx), round((130 - 45) * sy)))
+    assert any(p[0] > 200 and p[1] < 80 and p[2] < 80 for p in edge), "the box's left edge, red"
+    assert eye[1] > 150 and eye[0] < 100, "an eye, green"
+    assert img.getpixel((2, 2)) == (255, 255, 255), "the margin itself is untouched"
+
+
+def test_embeddings_are_compared_in_float64():
+    """A product of two float32 values is exact in float64, so a near-tie at
+    1e-6 breaks the same way on any machine."""
+    import numpy as np
+
+    v = _vec(1)
+    back = gallery.decode_embedding(_face(v)["embedding"])
+    assert back.dtype == np.float64 and np.array_equal(back, v.astype(np.float64))
 
 
 def test_the_refusals_a_person_judged_measure_the_check():

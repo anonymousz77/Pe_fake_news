@@ -45,6 +45,7 @@
   "kept": 55,
   "refused_by_the_check": 17,
   "admitted_by_a_person": 7,
+  "refused_by_a_person": 0,
   "no_single_face_or_gated": 10,
   "refusal_rate": 0.3038,
   "statement": "89 side views fetched: the consistency check kept 55 and refused 24 of the 79 it checked (30%), 7 of them since admitted by a person; 10 never reached the check"

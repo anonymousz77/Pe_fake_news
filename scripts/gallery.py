@@ -2066,11 +2066,16 @@ def face_config_id(backend: FaceBackend) -> str:
 
 
 def decode_embedding(text: str):
+    """An embedding as stored (float32), in float64. A product of two float32
+    values is exact in float64, so a similarity, a medoid and a threshold
+    comparison come out the same on any machine; in float32 a near-tie at
+    1e-6 could break one way here and the other way there (decided
+    2026-10-23)."""
     import base64
 
     import numpy as np
 
-    return np.frombuffer(base64.b64decode(text), dtype=np.float32)
+    return np.frombuffer(base64.b64decode(text), dtype=np.float32).astype(np.float64)
 
 
 def embed_images(backend: FaceBackend, items: Sequence[tuple[str, Callable[[], bytes]]],
@@ -2250,9 +2255,12 @@ def assemble(entities: Sequence[dict[str, Any]], ref_faces: dict[str, dict[str, 
     one it refused, and a side view never enters it: added side views leave
     every other reference's decision, the medoid and the threshold as they
     were. ``decisions`` (reference_id -> a person's decision) admit a
-    reference the check refused when a person says it is the same person;
-    the threshold itself is never relaxed. ``flags`` (reference_id -> a
-    person's flags, REFERENCE_FLAG_VALUES) ride on the reference's row."""
+    reference the check refused when a person says it is the same person,
+    and refuse one it kept when a person says it is someone else
+    (person_refused): a single-face reference then takes no part in the
+    check, which runs again without it, so it is never the medoid. The
+    threshold itself is never moved. ``flags`` (reference_id -> a person's
+    flags, REFERENCE_FLAG_VALUES) ride on the reference's row."""
     import numpy as np
 
     picks: dict[str, list[tuple[int, int | None, str]]] = {}
@@ -2280,10 +2288,23 @@ def assemble(entities: Sequence[dict[str, Any]], ref_faces: dict[str, dict[str, 
             continue
         rows = picks[e["qid"]]
         vec = vectors.get(e["qid"], {})
+        verdicts = {i: (decisions or {}).get(reference_id(e["qid"], ref)) for i, ref in enumerate(e["refs"])}
         decided: dict[int, tuple[int | None, str, float | None]] = {i: (idx, d, None) for i, idx, d in rows}
-        checked, medoid = consistency_check(e["refs"], vec, threshold)
+        # a person's "someone_else" refuses a reference the check keeps, and the check runs again without
+        # it: no face is checked against a reference a person refused. One the check refuses stays as it was
+        overruled: dict[int, float | None] = {}
+        while True:
+            checked, medoid = consistency_check(e["refs"], {i: v for i, v in vec.items() if i not in overruled},
+                                                threshold)
+            more = {i: sim for i, (refusal, sim) in checked.items()
+                    if not refusal and verdicts.get(i) == "someone_else"}
+            if not more:
+                break
+            overruled.update(more)
         for i, (refusal, sim) in checked.items():
             decided[i] = (None, refusal, sim) if refusal else (decided[i][0], decided[i][1], sim)
+        for i, sim in overruled.items():
+            decided[i] = (None, "person_refused", sim)
         # group photos: the face that agrees with the medoid the check kept -- of two references or more
         if medoid is not None and len(vec) >= 2:
             for i, idx, decision in rows:
@@ -2301,13 +2322,16 @@ def assemble(entities: Sequence[dict[str, Any]], ref_faces: dict[str, dict[str, 
             sim = round(float(v @ vec[medoid]), 4)
             agrees = sim >= threshold
             decided[i] = (decided[i][0], decided[i][1], sim) if agrees else (None, "inconsistent_reference", sim)
-        # a person's decision admits a reference the check refused; it never relaxes the threshold
+        # a person's decision admits a reference the check refused, or refuses a group photo's face or a
+        # side view it kept; it never relaxes the threshold
         chosen = {i: idx for i, idx, _d in rows}
-        for i, ref in enumerate(e["refs"]):
+        for i in range(len(e["refs"])):
             idx, decision, sim = decided.get(i, (None, None, None))
             if (idx is None and chosen.get(i) is not None and decision in REFUSED_BY_CHECK
-                    and (decisions or {}).get(reference_id(e["qid"], ref)) == "same_person"):
+                    and verdicts.get(i) == "same_person"):
                 decided[i] = (chosen[i], "person_confirmed", sim)
+            elif idx is not None and verdicts.get(i) == "someone_else":
+                decided[i] = (None, "person_refused", sim)
         usable = 0
         for i, ref in enumerate(e["refs"]):
             idx, decision, sim = decided.get(i, (None, ref.get("outcome"), None))
@@ -3588,6 +3612,17 @@ def held_row(row: dict[str, Any], because: str, by: str) -> dict[str, Any]:
             "pass": HELD_PASS_ID, "at": utcnow(), "status": HELD, "held": {**match, "because": because, "by": by}}
 
 
+def reheld_row(row: dict[str, Any], because: str, by: str) -> dict[str, Any]:
+    """A held row held again by whoever reviewed it: the same match, their
+    reason and name, and the hold it replaces, so the ledger says who decided
+    (an agent's hold a person kept is the person's hold now)."""
+    held = row["held"]
+    return {**{k: row[k] for k in ("schema", "type", "key", "query", "queries") if k in row},
+            "pass": HELD_PASS_ID, "at": utcnow(), "status": HELD,
+            "held": {**{k: held.get(k) for k in ("status", "qid", "candidates")}, "because": because, "by": by,
+                     "replaces": {"because": held.get("because"), "by": held.get("by"), "at": row.get("at")}}}
+
+
 def released_row(row: dict[str, Any], by: str) -> dict[str, Any]:
     """The link a held row kept, restored, with who released it."""
     match = row["held"]
@@ -3655,7 +3690,8 @@ def link_due(row: dict[str, Any] | None, query: str, entity_type: str, known: di
 
 def cmd_hold(args) -> int:
     """Hold or release links, offline: a hold keeps the match in the row with
-    its reason; a release restores the match a hold kept."""
+    its reason; a release restores the match a hold kept. Holding a held link
+    again records who holds it now and why, beside the hold it replaces."""
     if not args.by:
         raise GalleryError("say who holds or releases them (--by)")
     done = latest(read_jsonl(LINKS_PATH), lambda r: (r["type"], r["key"]))
@@ -3668,6 +3704,8 @@ def cmd_hold(args) -> int:
             refused.append(f"{key}: no reason given (--because or --reasons)")
         elif args.hold and row and row["status"] in ("linked", "ambiguous"):
             rows.append(held_row(row, because, args.by))
+        elif args.hold and row and row["status"] == HELD:
+            rows.append(reheld_row(row, because, args.by))
         elif args.release and row and row["status"] == HELD:
             rows.append(released_row(row, args.by))
         else:
@@ -3926,11 +3964,13 @@ def cmd_embed(args) -> int:
     pin = json.loads(pin_path.read_text(encoding="utf-8")) if pin_path.is_file() else None
     if pin is not None and args.pin_consistency:
         raise GalleryError(f"{pin_path} already pins {pin['threshold']}; delete it to derive again")
-    decisions = reference_decisions()
+    decisions = all_reference_decisions()
     flags = reference_flags(known={reference_id(e["qid"], r) for e in entities for r in e["refs"] if r.get("sha256")})
     rows, summary = assemble(entities, ref_faces, None if pin is None else pin["threshold"], decisions, flags)
     summary["side_views"] = side_view_outcomes(rows)
-    summary["reference_review"] = reference_review(rows, decisions)
+    summary["reference_review"] = reference_review(rows, reference_decisions())
+    summary["p18_review"] = p18_review(rows, reference_decisions(P18_DECISIONS),
+                                       disagreeing_p18_pairs(entities, ref_faces, summary["consistency_threshold"]))
     summary["reference_flags"] = dict(Counter(f for r in rows for ref in r["refs"] for f in ref.get("flags", [])))
     if args.pin_consistency:
         pin = {"threshold": summary["consistency_threshold"], "pinned_at": utcnow(),
@@ -3959,6 +3999,7 @@ def cmd_embed(args) -> int:
         "reference face, and verify can only answer 'no usable reference' for the rest")
     if summary["reference_review"]["judged"]:
         log(f"  reviewed: {summary['reference_review']['statement']}")
+    log(f"  two P18 images: {summary['p18_review']['statement']}")
     if summary["reference_flags"]:
         log(f"  flagged references: {summary['reference_flags']}")
     if summary["side_views"]["fetched"]:
@@ -4391,20 +4432,45 @@ def cmd_sample_report(args) -> int:
     return 0
 
 
-def _crop(body: bytes, box: Sequence[float], side: int = 160) -> str:
-    """A face crop, a little wider than its box, as an inline JPEG."""
-    import base64
+#: The colours a sheet draws a face's five landmarks in: eyes, nose, mouth corners.
+#: What every sheet says about them.
+SCORED_FACE_NOTE = ("Every face crop has the face the gallery scored boxed in red, with its eyes (green), nose "
+                    "(yellow) and mouth corners (blue): a box or points that span two people, or sit on a "
+                    "hand, mean the detection is wrong, whoever the face is.")
+LANDMARK_COLOURS = ((0, 200, 0), (0, 200, 0), (255, 215, 0), (0, 120, 255), (0, 120, 255))
 
-    from PIL import Image, ImageOps
+
+def _crop_image(body: bytes, face: dict[str, Any], side: int = 160):
+    """A face crop, a little wider than its box, with the box (red) and the
+    five landmarks drawn. The margin shows neighbours, and one detection can
+    span two people with its landmarks on a hand (2026-10-23): only the drawn
+    box and points show a reviewer which face was scored."""
+    from PIL import Image, ImageDraw, ImageOps
 
     with Image.open(io.BytesIO(body)) as img:
         img = ImageOps.exif_transpose(img).convert("RGB")
-        x, y, w, h = box
-        m = 0.25 * max(w, h)
-        crop = img.crop((max(0, x - m), max(0, y - m), min(img.width, x + w + m), min(img.height, y + h + m)))
-        crop.thumbnail((side, side))
-        buf = io.BytesIO()
-        crop.save(buf, format="JPEG", quality=85)
+    x, y, w, h = face["box"]
+    m = 0.25 * max(w, h)
+    left, top = max(0, int(x - m)), max(0, int(y - m))
+    right, bottom = min(img.width, int(x + w + m) + 1), min(img.height, int(y + h + m) + 1)
+    crop = img.crop((left, top, right, bottom))
+    crop.thumbnail((side, side))
+    sx, sy = crop.width / (right - left), crop.height / (bottom - top)
+    draw = ImageDraw.Draw(crop)
+    draw.rectangle(((x - left) * sx, (y - top) * sy, (x + w - left) * sx, (y + h - top) * sy),
+                   outline=(255, 0, 0), width=2)
+    for (px, py), colour in zip(face.get("landmarks") or [], LANDMARK_COLOURS):
+        cx, cy = (px - left) * sx, (py - top) * sy
+        draw.ellipse((cx - 3, cy - 3, cx + 3, cy + 3), fill=colour)
+    return crop
+
+
+def _crop(body: bytes, face: dict[str, Any], side: int = 160) -> str:
+    """_crop_image as an inline JPEG."""
+    import base64
+
+    buf = io.BytesIO()
+    _crop_image(body, face, side).save(buf, format="JPEG", quality=85)
     return "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode("ascii")
 
 
@@ -4641,7 +4707,7 @@ def cmd_review(args) -> int:
             return "<td>(no usable reference)</td>"
         ref = best["reference"]
         lic, att = ref.get("licence") or {}, ref.get("attribution") or {}
-        crop = _crop((image_text.PROJECT_ROOT / ref["path"]).read_bytes(), best["reference_face"]["box"])
+        crop = _crop((image_text.PROJECT_ROOT / ref["path"]).read_bytes(), best["reference_face"])
         score = (f"face under the {MIN_EYE_MOUTH:g} px floor: no score" if too_small(faces[best["query_face"]])
                  else f"score {best['score']:.3f}")
         return (f"<td><img src='{crop}'><br>{html.escape((gallery.entities.get(qid) or {}).get('label') or qid)}"
@@ -4656,9 +4722,9 @@ def cmd_review(args) -> int:
         body = image_text.read_bytes(by_sha[x["sha256"]])
         trial = f"trial <code>{html.escape(trial_id(x))}</code><br>{x['faces']} face(s) in the image"
         if best is not None:
-            box = faces[best["query_face"]]["box"]
-            face = (f"<img src='{_crop(body, box, REVIEW_CROP)}'><br>{trial}<br><details><summary>whole "
-                    f"image</summary><img class='whole' src='{_whole(body, box)}'></details>")
+            scored = faces[best["query_face"]]
+            face = (f"<img src='{_crop(body, scored, REVIEW_CROP)}'><br>{trial}<br><details><summary>whole "
+                    f"image</summary><img class='whole' src='{_whole(body, scored['box'])}'></details>")
         else:
             face = (f"<img class='whole' src='{_whole(body, None)}'><br>{trial}<br>no face is scored for "
                     f"this name ({html.escape(str(x['unscorable']))}): decide whether the image shows the "
@@ -4685,8 +4751,9 @@ def cmd_review(args) -> int:
             f"border-bottom:1px solid #ccc}}img{{max-width:{REVIEW_CROP}px}}img.whole{{max-width:480px}}"
             "</style>"
             f"<h1>Gallery review: {args.backend}, {shown}, {len(queue)} faces</h1>"
-            "<p>Columns: the face in the Factify2 TRAIN image (open <i>whole image</i> for context: the "
-            "face scored is boxed); the reference of the person the VLM named; the reference of the "
+            "<p>" + SCORED_FACE_NOTE + " Columns: the face in the Factify2 TRAIN image (open <i>whole "
+            "image</i> for context: the face scored is boxed); the reference of the person the VLM named; "
+            "the reference of the "
             "image's figure, one of the people its claims name. A name is labelled right when the image's "
             "claims name that person, which does not prove the image shows them, and wrong otherwise. "
             "For each row decide, by looking, whom the face is, and write it against the row's trial in "
@@ -5002,43 +5069,112 @@ def reference_flags(path: Path = REFERENCE_FLAGS, known: Iterable[str] | None = 
     return flags
 
 
-def reference_review(rows: Sequence[dict[str, Any]], decisions: dict[str, str | None]) -> dict[str, Any]:
-    """The consistency check's measured accuracy where a person has looked: a
-    reference gets a decision slot only when the check refused it
-    (review-side-views), so every decided reference is a refusal a person
-    judged -- right when it shows someone else. And what the check decides
-    about them now, which can differ after a change to the check."""
+#: The decisions on a person's two disagreeing P18 images (review-p18-pairs).
+#: Each sheet keeps its own file, so each sheet's figures come from its own
+#: decisions; assemble applies them all.
+P18_DECISIONS = REVIEW_DIR / "p18_decisions.json"
+DECISION_FILES = (REFERENCE_DECISIONS, P18_DECISIONS)
+
+
+def all_reference_decisions(paths: Sequence[Path] = DECISION_FILES) -> dict[str, str | None]:
+    """Every sheet's reference decisions, each file checked as
+    reference_decisions checks one; refused when two files decide one
+    reference differently."""
+    merged: dict[str, str | None] = {}
+    for path in paths:
+        for key, value in reference_decisions(path).items():
+            if value is not None and merged.get(key) not in (None, value):
+                raise GalleryError(f"{path}: {key} is {value!r} here and {merged[key]!r} in another decisions file")
+            if value is not None or key not in merged:
+                merged[key] = value
+    return merged
+
+
+def disagreeing_p18_pairs(entities: Sequence[dict[str, Any]], ref_faces: dict[str, dict[str, Any]],
+                          threshold: float | None) -> list[dict[str, Any]]:
+    """People whose single-face references are exactly two images from
+    Wikidata (P18) that disagree. The P18 rule keeps both, so their medoid,
+    the first, decides every match for that person, though one of the two is
+    likely wrong: P18 is not guaranteed to be a usable reference photo -- a
+    statue bust and a 1991 postage stamp serve as P18 here (2026-10-23). A
+    person picks (review-p18-pairs)."""
+    out: list[dict[str, Any]] = []
+    for e in entities:
+        if e["type"] != "PERSON" or threshold is None:
+            continue
+        _rows, vec, _side = reference_picks(e, ref_faces)
+        if len(vec) != 2 or any(e["refs"][i]["source"] != "P18" for i in vec):
+            continue
+        a, b = list(vec)
+        sim = float(vec[a] @ vec[b])
+        if sim < threshold:
+            out.append({"qid": e["qid"], "refs": [a, b], "ids": [reference_id(e["qid"], e["refs"][i]) for i in (a, b)],
+                        "similarity": round(sim, 4), "medoid": person_medoid(e["refs"], vec)})
+    return out
+
+
+def p18_review(rows: Sequence[dict[str, Any]], decisions: dict[str, str | None],
+               pairs: Sequence[dict[str, Any]]) -> dict[str, Any]:
+    """What a person decided about people's two disagreeing P18 images."""
+    tally = decision_tally(rows, decisions)
+    undecided = sum(1 for p in pairs if not any(decisions.get(i) for i in p["ids"]))
+    return {**tally, "people": len(pairs), "people_undecided": undecided,
+            "statement": (f"{len(pairs)} people have two P18 images that disagree, both kept by the P18 rule; "
+                          f"{undecided} of them undecided (review-p18-pairs)"
+                          + (f"; a person refused {tally['someone_else']} of their images and confirmed "
+                             f"{tally['same_person']}" if tally["judged"] else ""))}
+
+
+def check_state(ref: dict[str, Any]) -> str:
+    """What the consistency check itself decided about an assembled reference,
+    whatever a person decided after it: refused, kept, or never checked."""
+    if ref["decision"] in REFUSED_BY_CHECK or ref.get("selected_by") == "person_confirmed":
+        return "refused"
+    return "kept" if ref["decision"] in ("usable", "person_refused") else "unchecked"
+
+
+def decision_tally(rows: Sequence[dict[str, Any]], decisions: dict[str, str | None]) -> dict[str, Any]:
+    """A person's decisions, counted, and beside each what the check decides
+    about that reference now."""
     decided = {k: v for k, v in decisions.items() if v is not None}
     judged = Counter(decided.values())
     now: Counter = Counter()
     for row in rows:
         for ref in row["refs"]:
             verdict = decided.get(reference_id(row["qid"], ref))
-            if verdict is None:
-                continue
-            refused = ref["decision"] in REFUSED_BY_CHECK or ref.get("selected_by") == "person_confirmed"
-            now[("refused" if refused else "kept" if ref["decision"] == "usable" else "unchecked", verdict)] += 1
-    right = judged["someone_else"]
-    share = image_text._ratio(right, len(decided), 4)
-    kept = sum(n for (state, _v), n in now.items() if state == "kept")
+            if verdict is not None:
+                now[(check_state(ref), verdict)] += 1
+    return {"judged": len(decided), **{v: judged[v] for v in REFERENCE_DECISION_VALUES},
+            "now": {state: {v: now[(state, v)] for v in REFERENCE_DECISION_VALUES if now[(state, v)]}
+                    for state in ("refused", "kept", "unchecked")
+                    if any(now[(state, v)] for v in REFERENCE_DECISION_VALUES)}}
+
+
+def reference_review(rows: Sequence[dict[str, Any]], decisions: dict[str, str | None]) -> dict[str, Any]:
+    """The consistency check's measured accuracy where a person has looked:
+    the side-view sheet gives a reference a decision slot only when the check
+    refused it (review-side-views), so every decision from that sheet is a
+    refusal a person judged -- right when it shows someone else. And what the
+    check decides about them now, which can differ after a change to it."""
+    tally = decision_tally(rows, decisions)
+    right = tally["someone_else"]
+    share = image_text._ratio(right, tally["judged"], 4)
+    kept = sum((tally["now"].get("kept") or {}).values())
     return {"what": ("references the consistency check refused that a person has judged (review-side-views: "
                      "side-on references of the most-mentioned people): a refusal is right when the reference "
                      "shows someone else"),
-            "judged": len(decided), **{v: judged[v] for v in REFERENCE_DECISION_VALUES},
-            "refusals_right": share,
-            "now": {state: {v: now[(state, v)] for v in REFERENCE_DECISION_VALUES if now[(state, v)]}
-                    for state in ("refused", "kept", "unchecked") if any(now[(state, v)]
-                                                                         for v in REFERENCE_DECISION_VALUES)},
-            "statement": (f"A person judged {len(decided)} refusals of the consistency check: {right} right (someone "
-                          f"else), {judged['same_person']} wrong (the same person), {judged['unsure']} unsure; "
-                          f"the check's refusals were right {(share or 0):.0%} of the time"
+            **{k: tally[k] for k in ("judged", *REFERENCE_DECISION_VALUES)}, "refusals_right": share,
+            "now": tally["now"],
+            "statement": (f"A person judged {tally['judged']} refusals of the consistency check: {right} right "
+                          f"(someone else), {tally['same_person']} wrong (the same person), {tally['unsure']} "
+                          f"unsure; the check's refusals were right {(share or 0):.0%} of the time"
                           + (f". The check keeps {kept} of them now" if kept else ""))}
 
 
 def side_view_outcomes(rows: Sequence[dict[str, Any]]) -> dict[str, Any]:
     """What the gallery decided about its side views (assembled rows): kept by
-    the consistency check, refused by it, admitted by a person, or out before
-    the check (no single face, or the gates)."""
+    the consistency check, refused by it, admitted or refused by a person
+    against it, or out before the check (no single face, or the gates)."""
     got = Counter()
     for row in rows:
         for ref in row["refs"]:
@@ -5047,19 +5183,25 @@ def side_view_outcomes(rows: Sequence[dict[str, Any]]) -> dict[str, Any]:
             got["fetched"] += 1
             if ref["decision"] == "usable":
                 got["admitted_by_a_person" if ref.get("selected_by") == "person_confirmed" else "kept"] += 1
+            elif ref["decision"] == "person_refused":
+                got["refused_by_a_person"] += 1
             elif ref["decision"] in REFUSED_BY_CHECK:
                 got["refused_by_the_check"] += 1
             else:
                 got["no_single_face_or_gated"] += 1
-    checked = got["kept"] + got["refused_by_the_check"] + got["admitted_by_a_person"]
+    kept = got["kept"] + got["refused_by_a_person"]
+    checked = kept + got["refused_by_the_check"] + got["admitted_by_a_person"]
     rate = image_text._ratio(got["refused_by_the_check"] + got["admitted_by_a_person"], checked, 4)
     return {"fetched": got["fetched"], "kept": got["kept"], "refused_by_the_check": got["refused_by_the_check"],
-            "admitted_by_a_person": got["admitted_by_a_person"],
+            "admitted_by_a_person": got["admitted_by_a_person"], "refused_by_a_person": got["refused_by_a_person"],
             "no_single_face_or_gated": got["no_single_face_or_gated"], "refusal_rate": rate,
-            "statement": (f"{got['fetched']} side views fetched: the consistency check kept {got['kept']} and "
+            "statement": (f"{got['fetched']} side views fetched: the consistency check kept {kept} and "
                           f"refused {got['refused_by_the_check'] + got['admitted_by_a_person']} of the "
                           f"{checked} it checked ({(rate or 0):.0%}), {got['admitted_by_a_person']} of them "
-                          f"since admitted by a person; {got['no_single_face_or_gated']} never reached the check")}
+                          "since admitted by a person"
+                          + (f", and a person refused {got['refused_by_a_person']} it kept"
+                             if got["refused_by_a_person"] else "")
+                          + f"; {got['no_single_face_or_gated']} never reached the check")}
 
 
 def cmd_fetch_side_views(args) -> int:
@@ -5130,11 +5272,11 @@ def cmd_review_references(args) -> int:
     cells = []
     for n, (q, ref, face, sim) in enumerate(queue, 1):
         body = (image_text.PROJECT_ROOT / ref["path"]).read_bytes()
-        kept = "".join(f"<img src='{_crop((image_text.PROJECT_ROOT / r['path']).read_bytes(), f['box'])}'>"
+        kept = "".join(f"<img src='{_crop((image_text.PROJECT_ROOT / r['path']).read_bytes(), f)}'>"
                        for r, f, _v in gallery.refs.get(q, [])[:3])
         lic = (ref.get("licence") or {}).get("short_name") or ""
         cells.append(
-            f"<tr><td><b>{n}</b></td><td><img src='{_crop(body, face['box'], REVIEW_CROP)}'><br>"
+            f"<tr><td><b>{n}</b></td><td><img src='{_crop(body, face, REVIEW_CROP)}'><br>"
             f"<code>{html.escape(reference_id(q, ref))}</code><br>{html.escape(ref['source'])}; similarity to "
             f"the medoid {sim}<br><a href='{html.escape(ref.get('page_url') or '')}'>"
             f"{html.escape(ref.get('title') or '')}</a><br>{html.escape(lic)}</td><td>{kept or '(none kept)'}"
@@ -5144,9 +5286,9 @@ def cmd_review_references(args) -> int:
             f"border-bottom:1px solid #ccc}}img{{max-width:{REVIEW_CROP}px;margin-right:4px}}</style>"
             f"<h1>Side-view references the consistency check refused: {len(queue)}</h1>"
             "<p>Each row: a side-on face from a Commons file (left), and the references the gallery kept for "
-            "that person (right). The check refused it at the pinned threshold, which is never relaxed: a face "
-            "turned away scores low against a face-on medoid, so only a person can say whether it is the same "
-            "person. Write a decision against the row's id in "
+            "that person (right). " + SCORED_FACE_NOTE + " The check refused it at the pinned threshold, which "
+            "is never relaxed: a face turned away scores low against a face-on medoid, so only a person can say "
+            "whether it is the same person. Write a decision against the row's id in "
             f"<code>{html.escape(str(REFERENCE_DECISIONS))}</code> (every row is already there, as "
             "<code>null</code>): <code>\"same_person\"</code> admits it at the next embed; "
             "<code>\"someone_else\"</code> or <code>\"unsure\"</code> leave it refused.</p>"
@@ -5156,6 +5298,77 @@ def cmd_review_references(args) -> int:
     path.write_text(page, encoding="utf-8")
     log(f"{len(queue)} refused side-on references for {len({q for q, *_r in queue})} people; {written} new "
         f"decision slot(s) in {REFERENCE_DECISIONS}; sheet {path} (local: it shows people's faces)")
+    return 0
+
+
+def cmd_review_p18_pairs(args) -> int:
+    """A sheet a PERSON reads: each person whose two single-face references
+    are both Wikidata's own image (P18) and disagree, the two side by side,
+    with the faces their medoid decides. Local only. The decisions are a
+    person's, in P18_DECISIONS: "someone_else" against an image refuses it as
+    the person's reference, and the other becomes the one their faces are
+    checked against; "same_person" confirms one; "unsure" leaves both."""
+    backend = make_backend(args.backend)
+    gallery = Gallery(face_config_id(backend))
+    floor = consistency_floor(gallery.cid)
+    ref_faces = latest(read_jsonl(FACES_DIR / gallery.cid / "refs.jsonl"), lambda r: r["sha256"])
+    pairs = disagreeing_p18_pairs(list(gallery.entities.values()), ref_faces, floor)
+    written = merge_decision_slots(P18_DECISIONS, [i for p in pairs for i in p["ids"]])
+    decisions = reference_decisions(P18_DECISIONS)
+
+    def crop_of(ref: dict[str, Any], face: dict[str, Any], side: int = REVIEW_CROP) -> str:
+        return _crop((image_text.PROJECT_ROOT / ref["path"]).read_bytes(), face, side)
+
+    cells = []
+    for n, p in enumerate(pairs, 1):
+        e = gallery.entities[p["qid"]]
+        sides = []
+        for i, rid in zip(p["refs"], p["ids"]):
+            ref = e["refs"][i]
+            faces = ref_faces[ref["sha256"]]["faces"]
+            face = faces[choose_reference_face(faces)[0]]
+            body = (image_text.PROJECT_ROOT / ref["path"]).read_bytes()
+            lic, att = ref.get("licence") or {}, ref.get("attribution") or {}
+            sides.append(
+                f"<td><img src='{_crop(body, face, REVIEW_CROP)}'><br><img class='whole' "
+                f"src='{_whole(body, face['box'])}'><br><code>{html.escape(rid)}</code>"
+                f"{' <b>(the medoid now)</b>' if i == p['medoid'] else ''}<br><a href='"
+                f"{html.escape(ref.get('page_url') or '')}'>{html.escape(ref.get('title') or '')}</a><br>"
+                f"{html.escape(lic.get('short_name') or '')}; {html.escape(att.get('artist') or '')}<br>"
+                f"decided: <b>{html.escape(str(decisions.get(rid)))}</b></td>")
+        # what the medoid decides: the group photos' faces checked against it, and the side views
+        row = gallery.rows.get(p["qid"]) or {"refs": []}
+        hangs = [(e["refs"][j], ref_faces[r["sha256"]]["faces"][r["face"]]) for j, r in enumerate(row["refs"])
+                 if r["decision"] == "usable" and (r.get("selected_by") == "resolved_by_medoid"
+                                                   or r["source"] == SIDE_VIEW)]
+        small = "".join(f"<img class='small' src='{crop_of(r, f, 96)}'>" for r, f in hangs)
+        cells.append(
+            f"<tr><td><b>{n}</b></td>{''.join(sides)}<td><b>{html.escape(e.get('label') or p['qid'])}</b>"
+            f"<br><small>{html.escape(e.get('description') or '')}</small><br>the two score "
+            f"{p['similarity']} against each other, under the threshold {floor}<br>{len(hangs)} other "
+            f"face(s) checked against the medoid now:<br>{small}</td></tr>")
+    page = ("<!doctype html><meta charset='utf-8'><title>Two P18 images</title>"
+            "<style>body{font:14px sans-serif;margin:16px}td{vertical-align:top;padding:6px;"
+            f"border-bottom:1px solid #ccc}}img{{max-width:{REVIEW_CROP}px}}img.whole{{max-width:320px}}"
+            "img.small{max-width:96px;margin-right:4px}</style>"
+            f"<h1>People with two P18 images that disagree: {len(pairs)}</h1>"
+            "<p>Each row: the two images Wikidata gives as the person's own (P18), side by side, each with the "
+            "face the gallery took boxed in red and its landmarks drawn (eyes green, nose yellow, mouth corners "
+            "blue), and the whole image below. The two disagree, so one is likely wrong, and the P18 rule keeps "
+            "both: the medoid, the first, decides every match for the person, including the faces at the "
+            "right. P18 is no guarantee of a usable photo: a statue bust and a postage stamp serve as P18 here. "
+            "Write a decision against an image's id in "
+            f"<code>{html.escape(str(P18_DECISIONS))}</code> (every image is already there, as "
+            "<code>null</code>): <code>\"someone_else\"</code> refuses it as the person's reference, and the "
+            "other becomes the one their faces are checked against; <code>\"same_person\"</code> confirms it; "
+            "<code>\"unsure\"</code> leaves it. Refusing both leaves the person no usable face from these two. "
+            "Run <code>embed</code> after.</p>"
+            f"<table>{''.join(cells)}</table>")
+    path = REVIEW_DIR / f"{args.backend}_p18_pairs.html"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(page, encoding="utf-8")
+    log(f"{len(pairs)} people with two P18 images that disagree; {written} new decision slot(s) in "
+        f"{P18_DECISIONS}; sheet {path} (local: it shows people's faces)")
     return 0
 
 
@@ -5260,10 +5473,11 @@ def build_parser() -> argparse.ArgumentParser:
     fs.add_argument("--budget-gb", type=float, default=1.0, help="transfer budget (default 1 GiB)")
     rr = sub.add_parser("review-side-views", help="a local sheet of side views the consistency check refused")
     rr.add_argument("--top", type=int, default=SIDE_VIEW_TOP, help=f"people (default {SIDE_VIEW_TOP})")
+    rp = sub.add_parser("review-p18-pairs", help="a local sheet of people whose two P18 images disagree")
     for p in (k, e, a):
         p.add_argument("--ledger-dir", default=None,
                        help="image_text run directory (default: the one under the current row schema)")
-    for p in (e, a, v, r, s, rr):
+    for p in (e, a, v, r, s, rr, rp):
         p.add_argument("--backend", choices=FACE_BACKENDS, default="sface")
     sub.add_parser("status", help="offline counts")
     return parser
@@ -5275,7 +5489,8 @@ def main(argv: list[str] | None = None) -> int:
                 "fetch": cmd_fetch, "embed": cmd_embed, "calibrate": cmd_calibrate,
                 "verify": cmd_verify, "review": cmd_review, "sample-report": cmd_sample_report,
                 "side-views": cmd_side_views, "fetch-side-views": cmd_fetch_side_views,
-                "review-side-views": cmd_review_references, "status": cmd_status}
+                "review-side-views": cmd_review_references,
+                "review-p18-pairs": cmd_review_p18_pairs, "status": cmd_status}
     return commands[args.command](args)
 
 

@@ -370,8 +370,10 @@ Wikidata items with reference images from Wikimedia Commons. It is how the
           Cheese" to a basketball player, "Gates" to an entomologist,
           "Orlando" to a 17th-century Dutch painter, "students" to a
           researcher.
-        - The 54 holds still say "by an agent" in the links ledger: the
-          person's review of them is recorded here.
+        - The 54 are the person's holds now (re-stamped 2026-10-23, the
+          person's decision): the ledger said "by an agent", which misstated
+          who decided. Holding a held link again (`link --hold`) records who
+          holds it now and why, beside the hold it replaces.
   - **Fetched after the holds** (2026-10-23): 2,697 entities, 1,209 people
     and 1,488 organisations, in 6,933 requests (0.92 GiB), every answer a
     200. 827 of the new people have a usable Commons reference (4,019 in
@@ -506,19 +508,51 @@ Wikidata items with reference images from Wikimedia Commons. It is how the
       - 89 changed only a recorded similarity.
       - The derived threshold went from 0.3803 to 0.3802, and the pinned
         0.3811 held.
-    - **Two P18 images that disagree** (5 people; open, the person's
-      decision). The P18 rule keeps both, so their medoid, the first,
-      decides every match for that person, though one of the two is likely
-      wrong.
-      - Lori Loughlin: the two score 0.362 against each other, and 1
-        group-photo face depends on the medoid.
-      - Jaishankar Prasad: 0.230. The medoid is a 1991 stamp, and 1 face
-        depends on it.
-      - Aurélien Agbénonci: 0.167.
-      - M. Visvesvaraya: 0.318. The medoid is a statue bust.
-      - Desi Arnaz: 0.312, and 2 faces depend on it.
-      - A person's decision can admit a refused reference but never refuse
-        a kept one, so there is no lever on these yet.
+    - **Similarities are computed in float64** (`decode_embedding`; the
+      person's decision, 2026-10-23). The embeddings stay float32, and a
+      product of two float32 values is exact in float64. Reproducibility is
+      the point of pinning the threshold at all, and a near-tie that breaks
+      differently per machine undermines it.
+      - It moved 4 entries, each in the fourth decimal of a recorded
+        similarity, none in a decision.
+      - The four near-ties are resolved. Each was recomputed in 200
+        summation orders, which stand in for another machine's arithmetic.
+        Margin against spread, in float32:
+        - two medoids: 6.0e-7 against 4.2e-7 (Q5127074) and 8.3e-7 against
+          4.8e-7 (Q60842615), at risk on another machine;
+        - a third medoid: 6.0e-6 against 3.6e-7 (Q484302);
+        - a group-photo face under the threshold: 6.4e-6 against 6e-8
+          (Q58140).
+      - In float64 the spread is at most 1e-15, so every margin is about
+        10^9 times it, and none moved in any order.
+  - **Wikidata's P18 is not guaranteed to be a usable reference photo**
+    (finding, 2026-10-23).
+    - A statue bust (M. Visvesvaraya) and a 1991 postage stamp (Jaishankar
+      Prasad) both serve as P18 here.
+    - The P18 rule keeps two P18 images even when they disagree, so the
+      medoid, the first, silently decides every match for that person. 5
+      people have two that disagree: Lori Loughlin (0.362 between the two),
+      Jaishankar Prasad (0.230), Aurélien Agbénonci (0.167), M.
+      Visvesvaraya (0.318) and Desi Arnaz (0.312).
+    - **A person picks** (`review-p18-pairs`, the person's decision): a
+      local sheet shows each person's two images side by side, with the
+      faces their medoid decides. Decisions go in `p18_decisions.json`, 10
+      slots, open.
+  - **A person's "someone_else" refuses a kept reference** (`person_refused`;
+    the person's decision, 2026-10-23). Before this, a decision could admit
+    a refused reference but never refuse a kept one, so a wrong kept
+    reference was unfixable.
+    - A single-face reference a person refuses takes no part in the check,
+      which runs again without it, so it is never the medoid. It still
+      counts toward the two references a group photo needs.
+    - A group photo's face or a side view a person refuses is refused after
+      the check.
+    - On a reference the check refused, it changes nothing: the check's
+      verdict stands. Nothing moved, since all 30 of the side-view sheet's
+      "someone_else" are on refusals.
+    - Each sheet keeps its own decisions file, and `embed` applies them
+      all. That way the side-view figure (30 of 40 refusals right) stays a
+      measure of refusals alone.
   - **One detection can hold two people** (found 2026-10-23, on the
     side-view sheet).
     - YuNet returned a single face for a group photo filed under Arun
@@ -538,6 +572,10 @@ Wikidata items with reference images from Wikimedia Commons. It is how the
         (0.7%);
       - a box at the frame's edge: 34 refused and 38 kept.
     - The check refuses most weak detections. The kept ones are unverified.
+    - **Every sheet draws the scored face** (`_crop_image`; the person's
+      decision, 2026-10-23): its box in red, eyes green, nose yellow, mouth
+      corners blue. A detection that spans two people, or has its points on
+      a hand, is invisible in a plain crop.
   - **Group photos.** A reference with several faces, none dominant, is used
     only when one face scores at or above the threshold against the person's
     medoid (`resolved_by_medoid`). Now 1,449 frontal group photos are left
@@ -712,9 +750,10 @@ Wikidata items with reference images from Wikimedia Commons. It is how the
         (`review-side-views`). A local sheet showed the 40 side-on
         references the check refused for these people: 25 side views and 15
         references it had refused before. Each sat beside the references the
-        gallery kept. Decisions go in `reference_decisions.json`, and
+        gallery kept. Decisions go in `reference_decisions.json`.
         "same_person" admits a reference at the next embed
-        (`person_confirmed`).
+        (`person_confirmed`), and "someone_else" refuses one the check kept
+        (`person_refused`).
         - **The check's measured accuracy** (the person's review, 2026-10-23).
           Of its 40 refusals, 30 were right (someone else), 9 wrong (the same
           person) and 1 unsure: on side-on references the check is right
@@ -1012,6 +1051,7 @@ python scripts/gallery.py verify --image P --name "N"     # one 1:1 verification
 python scripts/gallery.py side-views --backend sface      # side views on Commons, top 50: a measurement (network)
 python scripts/gallery.py fetch-side-views                # the census's side views as references (network)
 python scripts/gallery.py review-side-views --backend sface   # local sheet: side views the check refused
+python scripts/gallery.py review-p18-pairs --backend sface    # local sheet: a person's two P18 images that disagree
 PE_FAKE_NEWS_GALLERY_MODELS=1 pytest -q tests/test_gallery.py  # the pinned-weight tests
 ```
 
