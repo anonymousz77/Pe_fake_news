@@ -2169,6 +2169,61 @@ def reference_id(qid: str, ref: dict[str, Any]) -> str:
     return f"{qid}:{(ref.get('sha256') or '')[:12]}"
 
 
+def reference_picks(entity: dict[str, Any], ref_faces: dict[str, dict[str, Any]]
+                    ) -> tuple[list[tuple[int, int | None, str]], dict[int, Any], dict[int, Any]]:
+    """A person's references: (index, chosen face, decision) for each, and the
+    embeddings of the faces chosen, frontal and side views (SIDE_VIEW) apart."""
+    rows: list[tuple[int, int | None, str]] = []
+    frontal: dict[int, Any] = {}
+    side: dict[int, Any] = {}
+    for i, ref in enumerate(entity.get("refs") or []):
+        if ref.get("outcome") != "usable":
+            rows.append((i, None, ref.get("outcome") or "not_fetched"))
+            continue
+        faces = (ref_faces.get(ref["sha256"]) or {}).get("faces") or []
+        idx, decision = choose_reference_face(faces)
+        rows.append((i, idx, decision))
+        if idx is not None:
+            (side if ref.get("source") == SIDE_VIEW else frontal)[i] = decode_embedding(faces[idx]["embedding"])
+    return rows, frontal, side
+
+
+def consistency_check(refs: Sequence[dict[str, Any]], vectors: dict[int, Any], threshold: float | None
+                      ) -> tuple[dict[int, tuple[str | None, float | None]], int | None]:
+    """The consistency check over a person's single-face frontal references
+    (reference index -> embedding): for each, its refusal (None when kept) and
+    its similarity, and the reference the person's other faces are checked
+    against -- group photos' and side views'. That is their medoid when the
+    check keeps it, and never a reference the check refused.
+
+    Two references are checked against each other. When they disagree,
+    Wikidata's own image (P18) is kept and the other refused, and the P18 is
+    the one checked against, whichever of the two float rounding made the
+    medoid (their medoid is a tie); with no P18 both are refused
+    (unresolved_pair), and there is none. Three or more are checked against
+    their medoid, which is never refused. One is its own medoid."""
+    checked: dict[int, tuple[str | None, float | None]] = {i: (None, None) for i in vectors}
+    medoid = medoid_of(vectors)
+    if medoid is None or threshold is None:
+        return checked, None
+    if len(vectors) == 2:
+        a, b = list(vectors)
+        sim = float(vectors[a] @ vectors[b])
+        if sim < threshold:
+            anchors = [i for i in (a, b) if refs[i]["source"] == "P18"]
+            for i in (a, b):
+                if anchors and i not in anchors:
+                    checked[i] = ("inconsistent_reference", round(sim, 4))
+                elif not anchors:
+                    checked[i] = ("unresolved_pair", round(sim, 4))
+    elif len(vectors) > 2:
+        for i, v in vectors.items():
+            sim = float(v @ vectors[medoid])
+            checked[i] = ("inconsistent_reference" if i != medoid and sim < threshold else None, round(sim, 4))
+    kept = [i for i in vectors if checked[i][0] is None]
+    return checked, medoid if medoid in kept else next(iter(kept), None)
+
+
 def assemble(entities: Sequence[dict[str, Any]], ref_faces: dict[str, dict[str, Any]],
              pinned: float | None = None, decisions: dict[str, str | None] | None = None
              ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
@@ -2179,8 +2234,9 @@ def assemble(entities: Sequence[dict[str, Any]], ref_faces: dict[str, dict[str, 
     decisions then depend on its own references alone, so entities added later
     (another corpus, the rest of a run) leave every existing row unchanged.
 
-    A side view (source SIDE_VIEW) is checked against the medoid of the
-    person's other references and never enters it: added side views leave
+    A group photo's face and a side view (source SIDE_VIEW) are checked
+    against the medoid the consistency check keeps (consistency_check), never
+    one it refused, and a side view never enters it: added side views leave
     every other reference's decision, the medoid and the threshold as they
     were. ``decisions`` (reference_id -> a person's decision) admit a
     reference the check refused when a person says it is the same person;
@@ -2190,22 +2246,14 @@ def assemble(entities: Sequence[dict[str, Any]], ref_faces: dict[str, dict[str, 
     picks: dict[str, list[tuple[int, int | None, str]]] = {}
     vectors: dict[str, dict[int, Any]] = {}
     side: dict[str, dict[int, Any]] = {}
+    medoids: dict[str, Any] = {}
     for e in entities:
         if e["type"] != "PERSON":
             continue
-        rows = []
-        for i, ref in enumerate(e["refs"]):
-            if ref.get("outcome") != "usable":
-                rows.append((i, None, ref.get("outcome") or "not_fetched"))
-                continue
-            faces = (ref_faces.get(ref["sha256"]) or {}).get("faces") or []
-            idx, decision = choose_reference_face(faces)
-            rows.append((i, idx, decision))
-            if idx is not None:
-                kept_apart = side if ref.get("source") == SIDE_VIEW else vectors
-                kept_apart.setdefault(e["qid"], {})[i] = decode_embedding(faces[idx]["embedding"])
-        picks[e["qid"]] = rows
-    medoids = {qid: vec[medoid_of(vec)] for qid, vec in vectors.items()}
+        picks[e["qid"]], vec, side[e["qid"]] = reference_picks(e, ref_faces)
+        if vec:
+            vectors[e["qid"]] = vec
+            medoids[e["qid"]] = vec[medoid_of(vec)]
     derived = consistency_threshold(medoids)
     threshold = derived if pinned is None else pinned
     out = []
@@ -2220,41 +2268,25 @@ def assemble(entities: Sequence[dict[str, Any]], ref_faces: dict[str, dict[str, 
             continue
         rows = picks[e["qid"]]
         vec = vectors.get(e["qid"], {})
-        medoid = medoid_of(vec) if len(vec) >= 2 else None
-        decided: dict[int, tuple[int | None, str, float | None]] = {}
-        for i, idx, decision in rows:
-            if idx is None and decision == "ambiguous_faces" and medoid is not None and threshold is not None:
-                faces = ref_faces[e["refs"][i]["sha256"]]["faces"]
-                sims = [float(decode_embedding(f["embedding"]) @ vec[medoid]) for f in faces]
-                best = int(np.argmax(sims))
-                if sims[best] >= threshold:
-                    decided[i] = (best, "resolved_by_medoid", round(sims[best], 4))
-                    continue
-            decided[i] = (idx, decision, None)
-        if threshold is not None and len(vec) >= 2:
-            if len(vec) == 2:
-                a, b = list(vec)
-                if float(vec[a] @ vec[b]) < threshold:
-                    anchors = [i for i in (a, b) if e["refs"][i]["source"] == "P18"]
-                    for i in (a, b):
-                        if anchors and i not in anchors:
-                            decided[i] = (None, "inconsistent_reference", round(float(vec[a] @ vec[b]), 4))
-                        elif not anchors:
-                            decided[i] = (None, "unresolved_pair", round(float(vec[a] @ vec[b]), 4))
-            else:
-                for i, v in vec.items():
-                    sim = float(v @ vec[medoid])
-                    if i != medoid and sim < threshold:
-                        decided[i] = (None, "inconsistent_reference", round(sim, 4))
-                    elif decided[i][2] is None:
-                        decided[i] = (decided[i][0], decided[i][1], round(sim, 4))
-        # side views: against the medoid of the others (their one reference, if one), never in it
-        anchor = vec[medoid] if medoid is not None else next(iter(vec.values())) if len(vec) == 1 else None
-        for i, v in side.get(e["qid"], {}).items():
-            if anchor is None or threshold is None:
+        decided: dict[int, tuple[int | None, str, float | None]] = {i: (idx, d, None) for i, idx, d in rows}
+        checked, medoid = consistency_check(e["refs"], vec, threshold)
+        for i, (refusal, sim) in checked.items():
+            decided[i] = (None, refusal, sim) if refusal else (decided[i][0], decided[i][1], sim)
+        # group photos: the face that agrees with the medoid the check kept -- of two references or more
+        if medoid is not None and len(vec) >= 2:
+            for i, idx, decision in rows:
+                if idx is None and decision == "ambiguous_faces":
+                    faces = ref_faces[e["refs"][i]["sha256"]]["faces"]
+                    sims = [float(decode_embedding(f["embedding"]) @ vec[medoid]) for f in faces]
+                    best = int(np.argmax(sims))
+                    if sims[best] >= threshold:
+                        decided[i] = (best, "resolved_by_medoid", round(sims[best], 4))
+        # side views: against that medoid (their one reference, if one), never in it
+        for i, v in side[e["qid"]].items():
+            if medoid is None:
                 decided[i] = (None, "side_view_unchecked", None)
                 continue
-            sim = round(float(v @ anchor), 4)
+            sim = round(float(v @ vec[medoid]), 4)
             agrees = sim >= threshold
             decided[i] = (decided[i][0], decided[i][1], sim) if agrees else (None, "inconsistent_reference", sim)
         # a person's decision admits a reference the check refused; it never relaxes the threshold
@@ -3861,8 +3893,7 @@ def cmd_embed(args) -> int:
     pin = json.loads(pin_path.read_text(encoding="utf-8")) if pin_path.is_file() else None
     if pin is not None and args.pin_consistency:
         raise GalleryError(f"{pin_path} already pins {pin['threshold']}; delete it to derive again")
-    decisions = (json.loads(REFERENCE_DECISIONS.read_text(encoding="utf-8"))
-                 if REFERENCE_DECISIONS.is_file() else {})
+    decisions = reference_decisions()
     rows, summary = assemble(entities, ref_faces, None if pin is None else pin["threshold"], decisions)
     summary["side_views"] = side_view_outcomes(rows)
     if args.pin_consistency:
@@ -4695,6 +4726,12 @@ def side_view_census(net: Net, backend: FaceBackend, gallery: Gallery, people: S
       against the person's medoid: the check would keep it. One that does not
       may be the person turned away, or someone else; only a person can say.
 
+    The medoid is the one the consistency check measures against
+    (consistency_check), as assemble would check the file -- not the medoid of
+    the references the check kept. For some people those are different faces,
+    and the first census, measured against the second, predicted 67 kept side
+    views where the check kept 49 (2026-10-23).
+
     Returns the report (people's rows under ``local``) and, per qid, the
     side-on faces found: (title, agrees, embedding)."""
     import numpy as np
@@ -4703,11 +4740,13 @@ def side_view_census(net: Net, backend: FaceBackend, gallery: Gallery, people: S
 
     corpus = corpus_hashes() if corpus is None else corpus
     entities = {q: (gallery.entities.get(q) or {}) for q, _m in people}
-    medoids: dict[str, Any] = {}
-    for q in entities:
-        vecs = {i: vec for i, (_ref, _face, vec) in enumerate(gallery.refs.get(q, []))}
-        if vecs:
-            medoids[q] = vecs[medoid_of(vecs)]
+    # (embedding, whether a group photo resolves against it: a medoid of two references or more)
+    medoids: dict[str, tuple[Any, bool]] = {}
+    for q, e in entities.items():
+        _rows, vecs, _side = reference_picks(e, ref_faces)
+        _checked, medoid = consistency_check(e.get("refs") or [], vecs, floor)
+        if medoid is not None:
+            medoids[q] = (vecs[medoid], len(vecs) >= 2)
     own_rows: dict[str, dict[str, Any]] = {}
     for q in entities:
         row = {"usable": 0, "usable_side_on": 0, "refused": 0, "refused_side_on": 0}
@@ -4748,17 +4787,17 @@ def side_view_census(net: Net, backend: FaceBackend, gallery: Gallery, people: S
                 found[f"{q}\n{title}"] = got
                 return
             idx, decision = choose_reference_face(faces)
-            if idx is None and decision == "ambiguous_faces" and q in medoids:
-                sims = [float(decode_embedding(f["embedding"]) @ medoids[q]) for f in faces]
+            medoid, resolves = medoids.get(q, (None, False))
+            if idx is None and decision == "ambiguous_faces" and resolves:
+                sims = [float(decode_embedding(f["embedding"]) @ medoid) for f in faces]
                 if max(sims) >= floor:
                     idx, decision = int(np.argmax(sims)), "resolved_by_medoid"
             got["decision"] = decision
             if idx is not None:
                 vec = decode_embedding(faces[idx]["embedding"])
-                sim = float(vec @ medoids[q]) if q in medoids else None
-                got["face"] = {"side_on": side_on(face_geometry(faces[idx])), "similarity_to_medoid":
-                               None if sim is None else round(sim, 4), "agrees": sim is not None and sim >= floor,
-                               "vector": vec}
+                sim = None if medoid is None else round(float(vec @ medoid), 4)
+                got["face"] = {"side_on": side_on(face_geometry(faces[idx])), "similarity_to_medoid": sim,
+                               "agrees": sim is not None and sim >= floor, "vector": vec}
         found[f"{q}\n{title}"] = got
 
     try:
@@ -4883,6 +4922,18 @@ SIDE_VIEWS_FETCH_PASS = "gallery-side-views-fetch-2026-10"
 #: refused, null is undecided. assemble reads them at every embed.
 REFERENCE_DECISIONS = REVIEW_DIR / "reference_decisions.json"
 REFERENCE_DECISION_VALUES = ("same_person", "someone_else", "unsure")
+
+
+def reference_decisions(path: Path = REFERENCE_DECISIONS) -> dict[str, str | None]:
+    """A person's reference decisions, refused whole when one of them is not a
+    decision: a mistyped "same person" would otherwise leave its reference
+    refused, and nobody would see it."""
+    decisions = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
+    wrong = {k: v for k, v in decisions.items() if v is not None and v not in REFERENCE_DECISION_VALUES}
+    if wrong:
+        raise GalleryError(f"{path}: not a decision ({', '.join(REFERENCE_DECISION_VALUES)}, or null): "
+                           + "; ".join(f"{k}: {v!r}" for k, v in sorted(wrong.items())))
+    return decisions
 
 
 def side_view_outcomes(rows: Sequence[dict[str, Any]]) -> dict[str, Any]:

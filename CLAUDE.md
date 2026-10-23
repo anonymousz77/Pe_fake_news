@@ -292,7 +292,11 @@ Wikidata items with reference images from Wikimedia Commons. It is how the
     namesakes and 10 are unclear.
     - The link row keeps the match, the reason and who held it, so a later
       pass revisits it rather than rediscovering it.
-    - Nothing resolves the name to that person, not even their own label.
+    - Nothing resolves the name to that person, not even their own label,
+      unless another form of the name, with the same letters, is linked to
+      them: the name then resolves through that form. 3 of the 735 holds are
+      moot this way (A. P. J. Abdul Kalam, Chandra Shekhar Azad and HC
+      Verma, each reached through an older linked form).
     - The linker never searches the name again. `link --release` restores
       the link once a person has checked it.
   - Of the 119 links kept, 8 (17 mentions) point to someone whose
@@ -307,8 +311,13 @@ Wikidata items with reference images from Wikimedia Commons. It is how the
     - By the same description keywords: 70 read academic, 25 athletic and 22
       only historical (117 in all); 261 read none of these.
     - 135 of the 378 have a usable reference face.
-    - They stay until a person decides. Their labels still make words
-      ambiguous: the botanist came in through "sasikala".
+    - **They stay** (the person's decision, 2026-10-23): a known artefact of
+      the linker before the one-word rule. No name resolves to them, so
+      verify can never return them, and they cost disk, not correctness.
+      Their labels can still make a word ambiguous (the botanist came in
+      through "sasikala"), which costs a refusal, never a wrong answer.
+      Removing them gains nothing and would change the population the pinned
+      consistency threshold was derived from.
   - **The full-ledger link** (2026-10-23) searched the 10,912 new names and
     linked 3,754: 2,062 people and 1,692 organisations. One name is left in
     error for the next run.
@@ -332,13 +341,25 @@ Wikidata items with reference images from Wikimedia Commons. It is how the
     - 718 links are held in all (827 mentions, 713 people), 735 with the 17
       above. 19 of those people were already in the gallery. The check is an
       agent reading descriptions by keyword, not a person's check.
+    - **The keyword flag over-fires; the rule stays** (the person's
+      decision, 2026-10-23). A description that reads "scientist" is right
+      for Kalam and wrong for a botanist namesake. But a wrong face in the
+      gallery is the failure this block exists to prevent.
+      - By mentions: no held name is seen 10 times or more. 95 are seen 2-9
+        times and 640 once.
+      - The person reviews the 2-9 band by hand, except the one-word rule's
+        26, which stay held because that rule stays. That leaves 69 names
+        (a local list: `review/held_names_2_to_9.html`).
+      - The 640 seen once stay held.
   - **Fetched after the holds** (2026-10-23): 2,697 entities, 1,209 people
     and 1,488 organisations, in 6,933 requests (0.92 GiB), every answer a
     200. 827 of the new people have a usable Commons reference (4,019 in
-    all), and 380 have none listed. Their faces wait for the next `embed`:
-    the laptop's run was stopped for low memory at 3,500 of 3,916 images. It
-    resumes from there, and until it runs, the assembled gallery is the 3,556
-    people the coverage ceiling below counts.
+    all), and 380 have none listed.
+  - **Embedded** under the pinned 0.3811 (derived now 0.3803): 16,089
+    reference images. None of the 5,826 entries already in the gallery
+    changed. 789 of the new people have a usable reference face, and the
+    gallery then held 4,765 people, 3,179 of them with one (3,174 after the
+    two-reference fix: see "References must agree").
   - **Near-matches are reported, never linked** (decided 2026-10-23). A
     wrong link puts the wrong face in the gallery, where nothing downstream
     can see it, and is worse than none. Linking the alias gaps would need a
@@ -427,6 +448,51 @@ Wikidata items with reference images from Wikimedia Commons. It is how the
   their medoid. The threshold is the 0.999 quantile of similarities between
   different entities' medoids, taken from gallery references only. When two
   references disagree, Wikidata's own image (P18) is kept.
+  - **No face is checked against a reference the check refused**
+    (`consistency_check`; fixed 2026-10-23 by the person's decision, before
+    calibration). A group photo's faces and a side view are checked against
+    the medoid the check keeps: of two references that disagree, the P18.
+    With no P18 the check refuses both, and nothing is checked against
+    either.
+    - **The defect.** Two references' medoid is a tie, and float rounding
+      broke it, not their order: 229 of 653 pairs fell to the second. Faces
+      were matched against it before the pair check, so where the check then
+      refused it, the gallery used faces matched against a face it had
+      rejected. The first count assumed the tie fell to the first and found
+      5 people; there were 45.
+    - **The fix moved those 45 entries and no other**, under the pinned
+      0.3811 (derived now 0.3803, unchanged).
+      - 5 people whose pair has no P18 lost the 6 group-photo faces matched
+        against a refused reference, which were their only usable faces:
+        3,179 people with one became 3,174.
+      - 40 people whose medoid was the refused one of a P18 pair are now
+        checked against the P18. They gained 67 group-photo faces, lost 2,
+        moved 7 to another face of the same photo, and kept 6 side views (5
+        of them Chandrababu Naidu's).
+    - **Open: the tie where both are kept.** For the 466 pairs whose two
+      references the check keeps, the medoid is still the rounding tie: 461
+      agree, and 5 are two P18 images that disagree, both kept by the P18
+      rule. Either is a kept face of the person, but another machine can
+      break the tie the other way, and its embed would then move up to 109
+      entries (20 in a decision, the rest in a similarity). Breaking the tie
+      by rule (the P18, else the first) moves those 109 once, here. The
+      person's decision.
+  - **Group photos.** A reference with several faces, none dominant, is used
+    only when one face scores at or above the threshold against the person's
+    medoid (`resolved_by_medoid`). After the fix, 1,451 frontal group photos
+    are left unused (`ambiguous_faces`; 1,510 before it):
+    - 629 belong to people with a medoid, and no face reaches the threshold.
+      That is the rule working.
+    - 713 belong to people with one single-face reference. The medoid needs
+      two, so these are never tried, although a side view is checked against
+      a lone reference. Against it, 567 would resolve, for 247 people.
+      - **A known asymmetry, kept** (the person's decision, 2026-10-23). It
+        is a coverage gain, and coverage is not what blocks the calibration.
+        Revisit it after the calibration, with this number.
+    - 94 belong to people with no single-face reference. 54 such people have
+      no usable face at all.
+    - 15 belong to the 9 people whose two references disagree with no P18:
+      no medoid stands.
 - **Calibration is the deliverable, and it reads Factify2 TRAIN only**: only
   images every one of whose records is train. VERITE is never read for any
   threshold.
@@ -509,9 +575,10 @@ Wikidata items with reference images from Wikimedia Commons. It is how the
     - The point survives: random-pair calibration still fails 0.90, so the
       threshold is calibrated on the VLM's own names. `calibrate` measures
       this every run (`look_alike_finding`), raw and adjudicated.
-  - **Coverage ceiling, stated beside every calibration.** 1,166 of the
-    gallery's 3,556 people have no usable reference face; 1,049 of them have
-    no Commons reference at all. Verify can only answer "no usable reference"
+  - **Coverage ceiling, stated beside every calibration.** 1,591 of the
+    gallery's 4,765 people have no usable reference face (after the
+    full-ledger top-up and the two-reference fix, 2026-10-23; 1,166 of 3,556
+    before); 1,429 of them have no Commons reference at all. Verify can only answer "no usable reference"
     for them, whatever the threshold. `calibrate` reports it (`coverage`), and
     so does `embed`. A right name the gallery cannot score counts against TAR
     and is never a true accept. That covers no usable reference, a name
@@ -544,25 +611,45 @@ Wikidata items with reference images from Wikimedia Commons. It is how the
       On the sample: 2, both Modi profiles (eyes 5-6 px apart, 22 px from eyes
       to mouth).
       - **Commons has the side views** (`side-views`, 2026-10-23; a
-        measurement that stored nothing). Of the 50 most-mentioned people, 38
-        have one the gallery would keep: 21 among their references, the rest
-        on Commons, side-on and agreeing with their medoid. That is enough to
-        fetch for by the half rule (`SIDE_VIEW_ENOUGH`).
+        measurement that stored nothing). Of the 50 most-mentioned people,
+        the census found 38 with one the gallery would keep: 21 among their
+        references, the rest on Commons, side-on and agreeing with their
+        medoid. That cleared the half rule (`SIDE_VIEW_ENOUGH`).
+        - **The census overstated what the check keeps** (found and fixed
+          2026-10-23). It measured agreement against the medoid of the
+          references the gallery kept. The check uses the medoid of every
+          single-face reference, before it refuses any. For some people the
+          two are different faces.
+        - The census predicted that 67 of the 89 side-on files would agree;
+          the check kept 49. All 18 differences are files of those people.
+        - `side_view_census` now scores against the medoid the check keeps,
+          through the check's own code (`consistency_check`), so a run again
+          predicts what the check keeps.
+        - 35 of the 50 people have a kept side-on reference, 14 more than the
+          21 before the fetch (33 before the two-reference fix).
       - **Fetched** (`fetch-side-views`, the person's decision, 2026-10-23):
         the census's 89 side-on files for 32 people, all through the
         reference gates, stored as references with source `side_view`.
         - A side view is checked against the medoid of the person's other
           references and never enters it, so no other reference, medoid or
           threshold moves.
-        - The check kept 49: 44 faces the medoid picked out of group photos,
-          and 5 single-face files. It refused 25 of the 74 it checked (34%).
-          In 15 group photos the medoid could pick no face at all.
-        - Of the 30 single-face side views, the check refused 25. Those may be
+        - The check keeps 55 (49 before the two-reference fix): 49 faces the
+          medoid picked out of group photos, and 6 single-face files. It
+          refuses 24 of the 79 it checks (30%; 25 of 74, 34%, before).
+        - The other 10 (15 before) are group photos (2 to 7 faces, none
+          dominant) in which no face reaches the threshold against the
+          medoid. The gallery cannot say which face is the person
+          (`ambiguous_faces`), the rule every frontal group photo follows
+          (see "References must agree"). The sheet does not show them: a
+          decision would have to say which face, and the decisions file
+          takes none.
+        - Of the 30 single-face side views, the check refuses 24. Those may be
           real profiles or other people, and no threshold can tell them apart.
       - **A refusal goes to a person, never to the threshold**
-        (`review-side-views`). A local sheet shows the 40 side-on references
-        the check refused for these people: the 25 above and 15 it had
-        refused before. Each sits beside the references the gallery kept.
+        (`review-side-views`). A local sheet shows the 39 side-on references
+        the check refuses for these people: the 24 above and 15 it had
+        refused before (40 before: the two-reference fix kept one of them).
+        Each sits beside the references the gallery kept.
         Decisions go in `reference_decisions.json`, and "same_person" admits
         a reference at the next embed (`person_confirmed`).
       - **Both sample failures would reach the floor.** Modi has none of his
@@ -571,9 +658,10 @@ Wikidata items with reference images from Wikimedia Commons. It is how the
         0.288 → 0.448).
       - **The consistency check is half the obstacle.** For those 50 people,
         15 of the 24 references it refused are side-on, against 27 of the 176
-        it kept. Of the 89 side-on Commons faces, 22 disagree with a mostly
-        face-on medoid, and only a person can say whether they show the
-        person turned away.
+        it kept. Of the 89 side-on Commons faces, 34 disagree with the
+        check's mostly face-on medoid (40 before the two-reference fix; 22 by
+        the census's), and only a person can say whether they show the person
+        turned away.
     - **Size:** from eyes to mouth, smaller than every face the gallery
       recognised. No reference lifts it. Under the 20 px floor a face is never
       scored, so it counts as coverage rather than as a failure. On the

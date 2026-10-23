@@ -1035,6 +1035,44 @@ def test_two_references_that_disagree_keep_wikidatas_own_image():
         "Q1r0": "usable", "Q1r1": "inconsistent_reference"}
 
 
+def test_no_face_is_checked_against_a_reference_the_check_refused():
+    """Two references' medoid is a tie that float rounding breaks, and it fell
+    to the reference the pair check refused for 40 people (2026-10-23): their
+    group photos and side views were matched against a face the gallery had
+    rejected. They are matched against the P18 the check keeps, in either
+    order; with no P18 neither stands, and nothing is matched."""
+    bases, entities, faces = _people()
+    pin = gallery.assemble(entities, faces)[1]["consistency_threshold"]
+    stranger = _vec(7, bases["Q5"]) * 1.001     # a norm a hair over 1, as rounding leaves: the tie falls to it
+    faces["Q1r1"] = {"faces": [_face(stranger)]}
+    faces["Q1g1"] = {"faces": [_face(_vec(8, bases["Q5"])), _face(_vec(9, bases["Q6"]))]}  # the stranger, and another
+    faces["Q1g2"] = {"faces": [_face(_vec(10, bases["Q7"])), _face(_vec(11, bases["Q1"]))]}
+    faces["Q1side"] = {"faces": [_face(_vec(12, bases["Q1"]), landmarks=SIDE_ON)]}
+    faces["Q1odd"] = {"faces": [_face(_vec(13, bases["Q5"]), landmarks=SIDE_ON)]}
+    p18, depicts = entities[0]["refs"][:2]
+    extra = [_ref("Q1g1"), _ref("Q1g2"), {**_ref("Q1side"), "source": "side_view"},
+             {**_ref("Q1odd"), "source": "side_view"}]
+    for refs in ([p18, depicts, *extra], [depicts, p18, *extra]):
+        rows, _ = gallery.assemble([{**entities[0], "refs": refs}, *entities[1:]], faces, pin)
+        by = {r["sha256"]: r for r in rows[0]["refs"]}
+        assert (by["Q1r0"]["decision"], by["Q1r1"]["decision"]) == ("usable", "inconsistent_reference")
+        assert by["Q1g1"]["decision"] == "ambiguous_faces", "only the refused stranger's face matches"
+        assert (by["Q1g2"]["selected_by"], by["Q1g2"]["face"]) == ("resolved_by_medoid", 1)
+        assert by["Q1side"]["decision"] == "usable" and by["Q1odd"]["decision"] == "inconsistent_reference"
+    # no P18: the pair check refuses both, no medoid stands, and no face is matched against either
+    faces["Q2r1"] = {"faces": [_face(_vec(14, bases["Q2"]) * 1.001)]}
+    faces["Q2r2"] = {"faces": [_face(_vec(15, bases["Q8"]))]}
+    faces["Q2g"] = {"faces": [_face(_vec(16, bases["Q2"])), _face(_vec(17, bases["Q9"]))]}
+    faces["Q2side"] = {"faces": [_face(_vec(18, bases["Q2"]), landmarks=SIDE_ON)]}
+    q2 = {**entities[1], "refs": [entities[1]["refs"][1], entities[1]["refs"][2], _ref("Q2g"),
+                                  {**_ref("Q2side"), "source": "side_view"}]}
+    rows, summary = gallery.assemble([entities[0], q2, *entities[2:]], faces, pin)
+    assert {r["sha256"]: r["decision"] for r in rows[1]["refs"]} == {
+        "Q2r1": "unresolved_pair", "Q2r2": "unresolved_pair", "Q2g": "ambiguous_faces",
+        "Q2side": "side_view_unchecked"}
+    assert rows[1]["usable_refs"] == 0 and summary["people_with_usable_faces"] == 39
+
+
 def test_a_pinned_consistency_threshold_leaves_every_existing_entry_as_it_is():
     bases, entities, faces = _people(40)
     faces["Q1r3"] = {"faces": [_face(_vec(999, bases["Q2"]))]}      # an outlier under Q1
@@ -1722,6 +1760,68 @@ def test_the_side_view_census_counts_what_commons_holds_by_pose_and_stores_nothi
     assert after == before, "a measurement stores nothing"
     published = json.dumps(gallery.public_report(report))
     assert "Modi" not in published and "File:" not in published, "titles and names stay local"
+
+
+def test_the_side_view_census_measures_against_the_medoid_the_check_uses(net, tmp_path, media_root,
+                                                                          monkeypatch):
+    """The census predicts what the consistency check keeps, so it scores a
+    side-on file against the medoid the check scores it against. The medoid of
+    the references the check KEPT is another face when kept side views pull
+    it their way: against that, the first census predicted 67 kept side views
+    where the check kept 49 (2026-10-23)."""
+    import numpy as np
+
+    bases, entities, faces = _people()
+    b = bases["Q1"]
+    d = np.random.default_rng(77).normal(size=DIM)
+    d -= (d @ b) * b
+
+    def turned(k):  # the person, turned: further from every face-on reference as k grows
+        v = b + k * d / np.linalg.norm(d)
+        return v / np.linalg.norm(v)
+
+    for j in range(3):  # three side views the check keeps, turned the same way: alike, so the kept medoid
+        faces[f"Q1s{j}"] = {"faces": [_face(_vec(50 + j, turned(0.9), noise=0.001), landmarks=SIDE_ON)]}
+    entities[0]["refs"] += [{**_ref(f"Q1s{j}"), "source": "side_view"} for j in range(3)]
+    entities[0].update(label="Narendra Modi", commons_category="Narendra Modi")
+    g = _gallery_on_disk(tmp_path, entities, faces, [])
+    assert sum(r["decision"] == "usable" for r in g.rows["Q1"]["refs"]) == 7
+    monkeypatch.setattr(placeholders, "registry", lambda: {})
+    far = _face(_vec(60, turned(5.0), noise=0.001), landmarks=SIDE_ON)
+    colour = (10, 20, 30)
+    files = {"Modi profile.png": _info("Modi profile.png", "https://upload.wikimedia.org/far")}
+
+    def handler(host, q, url):
+        if host == "upload.wikimedia.org":
+            return 200, {}, _png(colour, (64, 48))
+        if q.get("list") == "search":
+            return _json({"query": {"search": [{"title": "File:Modi profile.png"}]}})
+        if q.get("list") == "categorymembers":
+            return _json({"query": {"categorymembers": []}})
+        if q.get("prop") == "imageinfo":
+            return _json({"query": {"pages": {str(i): files[t[5:]] for i, t in enumerate(q["titles"].split("|"))}}})
+        return 404, {}, b""
+
+    make, _holder, _ledger = net
+    _report, side = gallery.side_view_census(make(handler), _ColourFaces({colour: [far]}), g, [("Q1", 100)],
+                                             faces, 0.381, per_person=20, corpus=frozenset())
+    assert [(t, agrees) for t, agrees, _v in side["Q1"]] == [("File:Modi profile.png", False)], \
+        "it agrees with the kept side views' medoid, and not with the medoid the check uses"
+    faces["Q1far"] = {"faces": [far]}
+    entities[0]["refs"].append({**_ref("Q1far"), "source": "side_view"})
+    rows, _ = gallery.assemble(entities, faces, 0.381)
+    assert {r["sha256"]: r for r in rows[0]["refs"]}["Q1far"]["decision"] == "inconsistent_reference", \
+        "as the check decides when it is fetched"
+
+
+def test_a_reference_decision_that_is_not_one_refuses_the_whole_file(tmp_path):
+    path = tmp_path / "reference_decisions.json"
+    assert gallery.reference_decisions(path) == {}, "no file: no decisions"
+    path.write_text(json.dumps({"Q1:aaa": "same_person", "Q1:bbb": None, "Q2:ccc": "unsure"}), encoding="utf-8")
+    assert gallery.reference_decisions(path)["Q1:aaa"] == "same_person"
+    path.write_text(json.dumps({"Q1:aaa": "same person", "Q1:bbb": "someone_else"}), encoding="utf-8")
+    with pytest.raises(gallery.GalleryError, match="Q1:aaa: 'same person'"):
+        gallery.reference_decisions(path)
 
 
 def test_a_side_view_is_checked_against_the_others_and_never_moves_them():

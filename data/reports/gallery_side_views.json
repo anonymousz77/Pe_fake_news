@@ -42,11 +42,11 @@
  },
  "fetched": {
   "fetched": 89,
-  "kept": 49,
-  "refused_by_the_check": 25,
+  "kept": 55,
+  "refused_by_the_check": 24,
   "admitted_by_a_person": 0,
-  "no_single_face_or_gated": 15,
-  "refusal_rate": 0.3378,
-  "statement": "89 side views fetched: the consistency check kept 49 and refused 25 of the 74 it checked (34%), 0 of them since admitted by a person; 15 never reached the check"
+  "no_single_face_or_gated": 10,
+  "refusal_rate": 0.3038,
+  "statement": "89 side views fetched: the consistency check kept 55 and refused 24 of the 79 it checked (30%), 0 of them since admitted by a person; 10 never reached the check"
  }
 }
