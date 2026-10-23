@@ -1073,6 +1073,25 @@ def test_no_face_is_checked_against_a_reference_the_check_refused():
     assert rows[1]["usable_refs"] == 0 and summary["people_with_usable_faces"] == 39
 
 
+def test_a_pairs_medoid_is_wikidatas_own_image_else_the_first_whatever_the_rounding():
+    """Two references' medoid is a tie that float rounding breaks, and another
+    machine's rounding can break it the other way: it is the P18, else the
+    first, so the gallery is the same on every machine."""
+    bases, entities, faces = _people()
+    pin = gallery.assemble(entities, faces)[1]["consistency_threshold"]
+    faces["Q1r1"] = {"faces": [_face(_vec(21, bases["Q1"]) * 1.001)]}   # agrees, and rounding would pick it
+    faces["Q1r2"] = {"faces": [_face(_vec(22, bases["Q1"]))]}
+    faces["Q1g"] = {"faces": [_face(_vec(23, bases["Q1"])), _face(_vec(24, bases["Q9"]))]}
+    vec = {s: gallery.decode_embedding(faces[s]["faces"][0]["embedding"]) for s in ("Q1r0", "Q1r1", "Q1r2", "Q1g")}
+    p18, depicts, other = entities[0]["refs"][:3]
+    for refs, medoid in (([p18, depicts], "Q1r0"), ([depicts, p18], "Q1r0"), ([other, depicts], "Q1r2")):
+        rows, _ = gallery.assemble([{**entities[0], "refs": [*refs, _ref("Q1g")]}, *entities[1:]], faces, pin)
+        group = {r["sha256"]: r for r in rows[0]["refs"]}["Q1g"]
+        assert (group["selected_by"], group["face"]) == ("resolved_by_medoid", 0)
+        assert group["similarity_to_medoid"] == round(float(vec["Q1g"] @ vec[medoid]), 4), \
+            f"checked against {medoid}, not the reference rounding favours"
+
+
 def test_a_pinned_consistency_threshold_leaves_every_existing_entry_as_it_is():
     bases, entities, faces = _people(40)
     faces["Q1r3"] = {"faces": [_face(_vec(999, bases["Q2"]))]}      # an outlier under Q1
@@ -1086,8 +1105,8 @@ def test_a_pinned_consistency_threshold_leaves_every_existing_entry_as_it_is():
     assert again[:40] == rows, "every existing entry is exactly what it was"
 
 
-def _gallery_on_disk(tmp_path, entities, faces, links, aliases=None):
-    rows, _ = gallery.assemble(entities, faces)
+def _gallery_on_disk(tmp_path, entities, faces, links, aliases=None, flags=None):
+    rows, _ = gallery.assemble(entities, faces, flags=flags)
     cid = "testcid"
     gallery.write_jsonl(tmp_path / "faces" / cid / "gallery.jsonl", rows)
     gallery.write_jsonl(tmp_path / "faces" / cid / "refs.jsonl",
@@ -1822,6 +1841,57 @@ def test_a_reference_decision_that_is_not_one_refuses_the_whole_file(tmp_path):
     path.write_text(json.dumps({"Q1:aaa": "same person", "Q1:bbb": "someone_else"}), encoding="utf-8")
     with pytest.raises(gallery.GalleryError, match="Q1:aaa: 'same person'"):
         gallery.reference_decisions(path)
+
+
+def test_a_flag_rides_on_its_reference_to_verify_and_into_calibration(tmp_path):
+    """A person flags a reference that may match unlike the others (Gandhi
+    young, beside Gandhi old): verify returns the flag with the reference it
+    matched, and calibration counts the trials a flagged reference decides."""
+    bases, entities, faces = _people()
+    known = {gallery.reference_id(e["qid"], r) for e in entities for r in e["refs"]}
+    young = gallery.reference_id("Q1", {"sha256": "Q1r2"})
+    path = tmp_path / "reference_flags.json"
+    assert gallery.reference_flags(path, known) == {}, "no file: no flags"
+    path.write_text(json.dumps({young: ["age_gap"]}), encoding="utf-8")
+    flags = gallery.reference_flags(path, known)
+    rows, _ = gallery.assemble(entities, faces, flags=flags)
+    plain, _ = gallery.assemble(entities, faces)
+    by = {r["sha256"]: r for r in rows[0]["refs"]}
+    assert by["Q1r2"]["flags"] == ["age_gap"] and "flags" not in by["Q1r1"]
+    assert rows[1:] == plain[1:] and [{k: v for k, v in r.items() if k != "flags"} for r in rows[0]["refs"]] \
+        == plain[0]["refs"], "a flag moves nothing else"
+    g = _gallery_on_disk(tmp_path, entities, faces, [], flags=flags)
+    out = g.verify(faces["Q1r2"]["faces"], "Person Q1", threshold=0.5)
+    assert out["matched_reference"]["sha256"] == "Q1r2" and out["matched_reference"]["flags"] == ["age_gap"]
+    assert "flags" not in g.verify(faces["Q1r1"]["faces"], "Person Q1", threshold=0.5)["matched_reference"]
+    trials = [{"scorable": True, "label": "right", "matched_flags": ["age_gap"]},
+              {"scorable": True, "label": "wrong"}, {"scorable": False, "label": "right"}]
+    assert gallery.flagged_references(g, trials) == {
+        "age_gap": {"usable_references": 1, "trials_matched": 1, "by_label": {"right": 1}}}
+    for wrong, why in (({young: ["age gap"]}, "not a list of flags"), ({young: "age_gap"}, "not a list of flags"),
+                       ({"Q1:nosuchfile0": ["age_gap"]}, "no such reference: Q1:nosuchfile0")):
+        path.write_text(json.dumps(wrong), encoding="utf-8")
+        with pytest.raises(gallery.GalleryError, match=why):
+            gallery.reference_flags(path, known)
+
+
+def test_the_refusals_a_person_judged_measure_the_check():
+    """Only a refusal gets a decision slot, so the decided references are the
+    check's refusals a person judged: right when they show someone else."""
+    bases, entities, faces = _people()
+    pin = gallery.assemble(entities, faces)[1]["consistency_threshold"]
+    for s, other in (("Q1s1", "Q5"), ("Q1s2", "Q6"), ("Q1s3", "Q7")):
+        faces[s] = {"faces": [_face(_vec(int(other[1:]) + 40, bases[other]), landmarks=SIDE_ON)]}
+    entities[0]["refs"] = entities[0]["refs"] + [{**_ref(s), "source": "side_view"} for s in ("Q1s1", "Q1s2", "Q1s3")]
+    rid = lambda s: gallery.reference_id("Q1", {"sha256": s})  # noqa: E731
+    decisions = {rid("Q1s1"): "someone_else", rid("Q1s2"): "same_person", rid("Q1s3"): "unsure",
+                 rid("Q1r2"): "same_person", rid("Q1r3"): None}   # Q1r2: refused once, kept by the check now
+    rows, _ = gallery.assemble(entities, faces, pin, decisions)
+    out = gallery.reference_review(rows, decisions)
+    assert (out["judged"], out["someone_else"], out["same_person"], out["unsure"], out["refusals_right"]) == \
+        (4, 1, 2, 1, 0.25)
+    assert out["now"] == {"refused": {"someone_else": 1, "same_person": 1, "unsure": 1}, "kept": {"same_person": 1}}
+    assert out["statement"].endswith("right 25% of the time. The check keeps 1 of them now")
 
 
 def test_a_side_view_is_checked_against_the_others_and_never_moves_them():

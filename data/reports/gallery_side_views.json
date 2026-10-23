@@ -43,10 +43,29 @@
  "fetched": {
   "fetched": 89,
   "kept": 55,
-  "refused_by_the_check": 24,
-  "admitted_by_a_person": 0,
+  "refused_by_the_check": 17,
+  "admitted_by_a_person": 7,
   "no_single_face_or_gated": 10,
   "refusal_rate": 0.3038,
-  "statement": "89 side views fetched: the consistency check kept 55 and refused 24 of the 79 it checked (30%), 0 of them since admitted by a person; 10 never reached the check"
+  "statement": "89 side views fetched: the consistency check kept 55 and refused 24 of the 79 it checked (30%), 7 of them since admitted by a person; 10 never reached the check"
+ },
+ "reviewed": {
+  "what": "references the consistency check refused that a person has judged (review-side-views: side-on references of the most-mentioned people): a refusal is right when the reference shows someone else",
+  "judged": 40,
+  "same_person": 9,
+  "someone_else": 30,
+  "unsure": 1,
+  "refusals_right": 0.75,
+  "now": {
+   "refused": {
+    "same_person": 8,
+    "someone_else": 30,
+    "unsure": 1
+   },
+   "kept": {
+    "same_person": 1
+   }
+  },
+  "statement": "A person judged 40 refusals of the consistency check: 30 right (someone else), 9 wrong (the same person), 1 unsure; the check's refusals were right 75% of the time. The check keeps 1 of them now"
  }
 }

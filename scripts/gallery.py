@@ -2188,22 +2188,34 @@ def reference_picks(entity: dict[str, Any], ref_faces: dict[str, dict[str, Any]]
     return rows, frontal, side
 
 
+def person_medoid(refs: Sequence[dict[str, Any]], vectors: dict[int, Any]) -> int | None:
+    """The medoid of a person's single-face frontal references (reference
+    index -> embedding). Of two it is Wikidata's own image (P18), else the
+    first: their medoid is a tie, which float rounding breaks, and another
+    machine's rounding can break it the other way (decided 2026-10-23: a
+    gallery that differs by machine is not reproducible)."""
+    if len(vectors) == 2:
+        p18 = [i for i in vectors if refs[i]["source"] == "P18"]
+        return p18[0] if len(p18) == 1 else next(iter(vectors))
+    return medoid_of(vectors)
+
+
 def consistency_check(refs: Sequence[dict[str, Any]], vectors: dict[int, Any], threshold: float | None
                       ) -> tuple[dict[int, tuple[str | None, float | None]], int | None]:
     """The consistency check over a person's single-face frontal references
     (reference index -> embedding): for each, its refusal (None when kept) and
     its similarity, and the reference the person's other faces are checked
-    against -- group photos' and side views'. That is their medoid when the
-    check keeps it, and never a reference the check refused.
+    against -- group photos' and side views'. That is their medoid
+    (person_medoid) when the check keeps it, and never a reference the check
+    refused.
 
     Two references are checked against each other. When they disagree,
-    Wikidata's own image (P18) is kept and the other refused, and the P18 is
-    the one checked against, whichever of the two float rounding made the
-    medoid (their medoid is a tie); with no P18 both are refused
-    (unresolved_pair), and there is none. Three or more are checked against
-    their medoid, which is never refused. One is its own medoid."""
+    Wikidata's own image (P18) is kept and the other refused; with no P18 both
+    are refused (unresolved_pair), and there is none. Three or more are
+    checked against their medoid, which is never refused. One is its own
+    medoid."""
     checked: dict[int, tuple[str | None, float | None]] = {i: (None, None) for i in vectors}
-    medoid = medoid_of(vectors)
+    medoid = person_medoid(refs, vectors)
     if medoid is None or threshold is None:
         return checked, None
     if len(vectors) == 2:
@@ -2220,13 +2232,12 @@ def consistency_check(refs: Sequence[dict[str, Any]], vectors: dict[int, Any], t
         for i, v in vectors.items():
             sim = float(v @ vectors[medoid])
             checked[i] = ("inconsistent_reference" if i != medoid and sim < threshold else None, round(sim, 4))
-    kept = [i for i in vectors if checked[i][0] is None]
-    return checked, medoid if medoid in kept else next(iter(kept), None)
+    return checked, None if checked[medoid][0] else medoid
 
 
 def assemble(entities: Sequence[dict[str, Any]], ref_faces: dict[str, dict[str, Any]],
-             pinned: float | None = None, decisions: dict[str, str | None] | None = None
-             ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+             pinned: float | None = None, decisions: dict[str, str | None] | None = None,
+             flags: dict[str, list[str]] | None = None) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """One row per entity: every reference with what the gallery decided about
     it. A person's usable references are faces that agree with each other.
 
@@ -2240,7 +2251,8 @@ def assemble(entities: Sequence[dict[str, Any]], ref_faces: dict[str, dict[str, 
     every other reference's decision, the medoid and the threshold as they
     were. ``decisions`` (reference_id -> a person's decision) admit a
     reference the check refused when a person says it is the same person;
-    the threshold itself is never relaxed."""
+    the threshold itself is never relaxed. ``flags`` (reference_id -> a
+    person's flags, REFERENCE_FLAG_VALUES) ride on the reference's row."""
     import numpy as np
 
     picks: dict[str, list[tuple[int, int | None, str]]] = {}
@@ -2253,7 +2265,7 @@ def assemble(entities: Sequence[dict[str, Any]], ref_faces: dict[str, dict[str, 
         picks[e["qid"]], vec, side[e["qid"]] = reference_picks(e, ref_faces)
         if vec:
             vectors[e["qid"]] = vec
-            medoids[e["qid"]] = vec[medoid_of(vec)]
+            medoids[e["qid"]] = vec[person_medoid(e["refs"], vec)]
     derived = consistency_threshold(medoids)
     threshold = derived if pinned is None else pinned
     out = []
@@ -2301,9 +2313,11 @@ def assemble(entities: Sequence[dict[str, Any]], ref_faces: dict[str, dict[str, 
             idx, decision, sim = decided.get(i, (None, ref.get("outcome"), None))
             ok = idx is not None
             usable += ok
+            flagged = (flags or {}).get(reference_id(e["qid"], ref))
             refs.append({"sha256": ref.get("sha256"), "title": ref["title"], "source": ref["source"],
                          "decision": "usable" if ok else decision, "selected_by": decision if ok else None,
-                         "face": idx if ok else None, "similarity_to_medoid": sim})
+                         "face": idx if ok else None, "similarity_to_medoid": sim,
+                         **({"flags": flagged} if flagged else {})})
         out.append({"qid": e["qid"], "type": e["type"], "refs": refs, "usable_refs": usable,
                     "single_reference": usable == 1})
     people = [r for r in out if r["type"] == "PERSON"]
@@ -2386,8 +2400,10 @@ class Gallery:
             for ref in row["refs"]:
                 if ref["decision"] == "usable":
                     face = ref_faces[ref["sha256"]]["faces"][ref["face"]]
+                    stored = by_sha.get(ref["sha256"], {})
                     self.refs.setdefault(qid, []).append(
-                        (by_sha.get(ref["sha256"], {}), face, decode_embedding(face["embedding"])))
+                        ({**stored, "flags": ref["flags"]} if ref.get("flags") else stored, face,
+                         decode_embedding(face["embedding"])))
         self.index: dict[tuple[str, str], set[str]] = {}
         held: dict[tuple[str, str], str] = {}
         for link in latest(read_jsonl(links_path), lambda r: (r["type"], r["key"])).values():
@@ -2524,7 +2540,8 @@ class Gallery:
                    matched_reference={"title": ref.get("title"), "page_url": ref.get("page_url"),
                                       "path": ref.get("path"), "sha256": ref.get("sha256"),
                                       "licence": ref.get("licence"), "attribution": ref.get("attribution"),
-                                      "face_box": best["reference_face"]["box"]},
+                                      "face_box": best["reference_face"]["box"],
+                                      **({"flags": ref["flags"]} if ref.get("flags") else {})},
                    same_photo=best["same_photo"])
         if threshold is None:
             out["reason"] = ("no_certified_threshold: the gallery neither accepts nor rejects at this "
@@ -2656,8 +2673,23 @@ def build_trials(population: Sequence[dict[str, Any]], links: dict[tuple[str, st
                                      same_photo=best["same_photo"],
                                      matched_reference=best["reference"].get("sha256"),
                                      refs=len(gallery.refs[q]), **geometry)
+                        if best["reference"].get("flags"):
+                            trial["matched_flags"] = best["reference"]["flags"]
             out.append(trial)
     return out, tally
+
+
+def flagged_references(gallery: Gallery, trials: Sequence[dict[str, Any]]) -> dict[str, Any]:
+    """The usable references a person flagged (REFERENCE_FLAGS), and the
+    scorable trials whose best match is one of them: an age-gap reference may
+    match unlike the person's others, so what it decides is counted apart."""
+    out = {}
+    for flag in REFERENCE_FLAG_VALUES:
+        hit = [x for x in trials if x["scorable"] and flag in (x.get("matched_flags") or [])]
+        out[flag] = {"usable_references": sum(1 for refs in gallery.refs.values() for ref, _f, _v in refs
+                                              if flag in (ref.get("flags") or [])),
+                     "trials_matched": len(hit), "by_label": dict(Counter(x["label"] for x in hit))}
+    return out
 
 
 def verification_coverage(gallery: Gallery) -> dict[str, Any]:
@@ -3425,6 +3457,7 @@ def calibrate(trials: Sequence[dict[str, Any]], tally: Counter, gallery: Gallery
     return {
         "backend": backend, "face_config": gallery.cid,
         "coverage": verification_coverage(gallery),
+        "reference_flags": flagged_references(gallery, headline),
         "population": {"what": ("Factify2 TRAIN claim images (every record using the image is "
                                 "train) whose claims say an image shows someone and name one figure: "
                                 "exactly one of the probe's listed figures, or else exactly one person "
@@ -3894,8 +3927,11 @@ def cmd_embed(args) -> int:
     if pin is not None and args.pin_consistency:
         raise GalleryError(f"{pin_path} already pins {pin['threshold']}; delete it to derive again")
     decisions = reference_decisions()
-    rows, summary = assemble(entities, ref_faces, None if pin is None else pin["threshold"], decisions)
+    flags = reference_flags(known={reference_id(e["qid"], r) for e in entities for r in e["refs"] if r.get("sha256")})
+    rows, summary = assemble(entities, ref_faces, None if pin is None else pin["threshold"], decisions, flags)
     summary["side_views"] = side_view_outcomes(rows)
+    summary["reference_review"] = reference_review(rows, decisions)
+    summary["reference_flags"] = dict(Counter(f for r in rows for ref in r["refs"] for f in ref.get("flags", [])))
     if args.pin_consistency:
         pin = {"threshold": summary["consistency_threshold"], "pinned_at": utcnow(),
                "entities_with_faces": summary["entities_with_faces"],
@@ -3921,11 +3957,16 @@ def cmd_embed(args) -> int:
         f"({'pinned' if summary['pinned'] else 'derived'}; derived now {summary['derived_now']}); "
         f"{summary['people_with_usable_faces']:,} of {summary['people']:,} people have a usable "
         "reference face, and verify can only answer 'no usable reference' for the rest")
+    if summary["reference_review"]["judged"]:
+        log(f"  reviewed: {summary['reference_review']['statement']}")
+    if summary["reference_flags"]:
+        log(f"  flagged references: {summary['reference_flags']}")
     if summary["side_views"]["fetched"]:
         log(f"  side views: {summary['side_views']['statement']}")
         if SIDE_VIEWS_REPORT.is_file():  # the census's published aggregate gains what the check decided
             published = json.loads(SIDE_VIEWS_REPORT.read_text(encoding="utf-8"))
-            write_json(SIDE_VIEWS_REPORT, {**published, "fetched": summary["side_views"]})
+            write_json(SIDE_VIEWS_REPORT, {**published, "fetched": summary["side_views"],
+                                           "reviewed": summary["reference_review"]})
     return 0
 
 
@@ -4934,6 +4975,64 @@ def reference_decisions(path: Path = REFERENCE_DECISIONS) -> dict[str, str | Non
         raise GalleryError(f"{path}: not a decision ({', '.join(REFERENCE_DECISION_VALUES)}, or null): "
                            + "; ".join(f"{k}: {v!r}" for k, v in sorted(wrong.items())))
     return decisions
+
+
+#: A person's flags on references, by reference_id: how a reference may behave
+#: at verify time. "age_gap": the person at a very different age from their
+#: other references (Gandhi young, beside Gandhi old). They ride on the
+#: gallery's rows; verify returns them with the reference it matched, and
+#: calibrate counts the trials a flagged reference decides.
+REFERENCE_FLAGS = REVIEW_DIR / "reference_flags.json"
+REFERENCE_FLAG_VALUES = ("age_gap",)
+
+
+def reference_flags(path: Path = REFERENCE_FLAGS, known: Iterable[str] | None = None) -> dict[str, list[str]]:
+    """A person's reference flags, refused whole when one is not a flag, or
+    (given the ``known`` reference ids) names no reference: a flag that lands
+    nowhere would leave its reference unflagged, and nobody would see it."""
+    flags = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
+    wrong = {k: v for k, v in flags.items()
+             if not isinstance(v, list) or not v or any(f not in REFERENCE_FLAG_VALUES for f in v)}
+    if wrong:
+        raise GalleryError(f"{path}: not a list of flags ({', '.join(REFERENCE_FLAG_VALUES)}): "
+                           + "; ".join(f"{k}: {v!r}" for k, v in sorted(wrong.items())))
+    unknown = sorted(set(flags) - set(known)) if known is not None else []
+    if unknown:
+        raise GalleryError(f"{path}: no such reference: {', '.join(unknown)}")
+    return flags
+
+
+def reference_review(rows: Sequence[dict[str, Any]], decisions: dict[str, str | None]) -> dict[str, Any]:
+    """The consistency check's measured accuracy where a person has looked: a
+    reference gets a decision slot only when the check refused it
+    (review-side-views), so every decided reference is a refusal a person
+    judged -- right when it shows someone else. And what the check decides
+    about them now, which can differ after a change to the check."""
+    decided = {k: v for k, v in decisions.items() if v is not None}
+    judged = Counter(decided.values())
+    now: Counter = Counter()
+    for row in rows:
+        for ref in row["refs"]:
+            verdict = decided.get(reference_id(row["qid"], ref))
+            if verdict is None:
+                continue
+            refused = ref["decision"] in REFUSED_BY_CHECK or ref.get("selected_by") == "person_confirmed"
+            now[("refused" if refused else "kept" if ref["decision"] == "usable" else "unchecked", verdict)] += 1
+    right = judged["someone_else"]
+    share = image_text._ratio(right, len(decided), 4)
+    kept = sum(n for (state, _v), n in now.items() if state == "kept")
+    return {"what": ("references the consistency check refused that a person has judged (review-side-views: "
+                     "side-on references of the most-mentioned people): a refusal is right when the reference "
+                     "shows someone else"),
+            "judged": len(decided), **{v: judged[v] for v in REFERENCE_DECISION_VALUES},
+            "refusals_right": share,
+            "now": {state: {v: now[(state, v)] for v in REFERENCE_DECISION_VALUES if now[(state, v)]}
+                    for state in ("refused", "kept", "unchecked") if any(now[(state, v)]
+                                                                         for v in REFERENCE_DECISION_VALUES)},
+            "statement": (f"A person judged {len(decided)} refusals of the consistency check: {right} right (someone "
+                          f"else), {judged['same_person']} wrong (the same person), {judged['unsure']} unsure; "
+                          f"the check's refusals were right {(share or 0):.0%} of the time"
+                          + (f". The check keeps {kept} of them now" if kept else ""))}
 
 
 def side_view_outcomes(rows: Sequence[dict[str, Any]]) -> dict[str, Any]:
