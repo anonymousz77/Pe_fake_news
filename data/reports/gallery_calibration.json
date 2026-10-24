@@ -1,124 +1,134 @@
 {
  "sface": {
-  "generated_at": "2026-10-22T20:36:50+00:00",
+  "generated_at": "2026-10-23T21:33:32+00:00",
   "backend": "sface",
   "face_config": "b6abc4a9f987",
   "coverage": {
-   "people": 3556,
-   "with_usable_reference_faces": 2390,
-   "without": 1166,
-   "share_without": 0.3279,
-   "without_any_commons_reference": 1049,
-   "references_but_no_usable_face": 117,
-   "statement": "1,166 of the 3,556 people in the gallery have no usable reference face (1,049 have no Commons reference at all): for them verify can only answer 'no usable reference'. That is a ceiling on coverage, apart from the threshold. In calibration, a name that resolves only to such a person is unscorable, as is one that resolves to several people (verify refuses it): it counts as a rejection against TAR (cost_in_true_accepts; tar_scorable leaves it out), as coverage when a person confirms it (review_findings), and never as a true or a false accept."
+   "people": 4776,
+   "with_usable_reference_faces": 3184,
+   "without": 1592,
+   "share_without": 0.3333,
+   "without_any_commons_reference": 1430,
+   "references_but_no_usable_face": 162,
+   "statement": "1,592 of the 4,776 people in the gallery have no usable reference face (1,430 have no Commons reference at all): for them verify can only answer 'no usable reference'. That is a ceiling on coverage, apart from the threshold. In calibration, a name that resolves only to such a person is unscorable, as is one that resolves to several people (verify refuses it): it counts as a rejection against TAR (cost_in_true_accepts; tar_scorable leaves it out), as coverage when a person confirms it (review_findings), and never as a true or a false accept."
+  },
+  "reference_flags": {
+   "age_gap": {
+    "usable_references": 1,
+    "trials_matched": 0,
+    "by_label": {}
+   }
   },
   "population": {
    "what": "Factify2 TRAIN claim images (every record using the image is train) whose claims say an image shows someone and name one figure: exactly one of the probe's listed figures, or else exactly one person by claim NER. The figure is the stratum for per-figure reporting; a name is scored against everyone the image's claims name",
-   "images": 60,
-   "images_claim_ner": 13,
-   "images_figure_unlinked": 4,
-   "images_probe_list": 51,
-   "images_with_trials": 35,
-   "no_figure_named": 1187,
-   "not_train_only": 1575,
-   "several_figures": 2
+   "images": 447,
+   "images_claim_ner": 328,
+   "images_figure_unlinked": 63,
+   "images_probe_list": 182,
+   "images_with_trials": 228,
+   "no_figure_named": 19028,
+   "not_train_only": 25640,
+   "several_figures": 8
   },
   "trials": {
-   "total": 44,
-   "headline": 44,
-   "excluded_same_photo": 0,
+   "total": 284,
+   "headline": 282,
+   "excluded_same_photo": 2,
    "forced_lines": 0,
    "by_label": {
-    "right": 31,
-    "wrong": 12,
-    "unlinked": 1
+    "right": 179,
+    "wrong": 92,
+    "unlinked": 11
    },
    "unscorable": {
-    "no_usable_reference": 1,
-    "name_unlinked": 1,
-    "no_usable_face": 1
+    "no_usable_face": 28,
+    "no_usable_reference": 4,
+    "no_face_in_image": 17,
+    "name_unlinked": 11,
+    "ambiguous_name": 2
    }
   },
   "vlm_precision": {
-   "qid": 0.7045,
-   "names": 44,
-   "right": 31,
-   "excluding_unlinked": 0.7209,
+   "qid": 0.6348,
+   "names": 282,
+   "right": 179,
+   "excluding_unlinked": 0.6605,
    "rule": "right when the name resolves, by QID, to anyone the image's claims name: the probe's listed figures and claim NER's people. A claim name that resolves to several people decides nothing",
-   "single_figure_rule": 0.5455,
-   "token_rule_on_probe_list_images": 0.561,
+   "single_figure_rule": 0.5426,
+   "token_rule_on_probe_list_images": 0.6566,
    "note": "The earlier figures carried a defect in this measurement: the pilot's 47.8% and the first QID-based figure (0.5455, the 2026-10-21 sample pass) scored a name against one figure per image, so a person the claims name beside that figure, correctly named, counted as wrong. Both were understated. single_figure_rule is that defective figure recomputed on these trials. The token rule is the pilot's own method on the same images: its loose token pattern, with the same defect. The pilot's 47.8% is also APPROXIMATE for that token pattern"
   },
   "bar": {
    "accepted_name_precision": 0.9,
-   "max_fmr_over_tar": 0.2649,
+   "max_fmr_over_tar": 0.1931,
    "rule": "p*TAR / (p*TAR + (1-p)*FMR) >= 0.90, i.e. FMR/TAR <= p / (9 (1 - p))"
   },
   "threshold": {
    "chosen": null,
    "certified": false,
-   "chosen_by": "unset: only a calibration over the complete Factify2 run sets the threshold, and this ledger holds 2,828 of 45,186 images. The candidate, and every figure at it, are reported and never adopted",
-   "candidate": 0.5531,
-   "candidate_by": "closest to the bound and short of it: the highest lower bound of accepted-name precision is 0.8171, at 0.5531: 23 of 24 accepted names right (0.9583). That clears 0.90 as a point estimate, on too few trials to certify it: at that precision about 103 accepted names would",
+   "chosen_by": "unset: no threshold reaches the one-sided 95% lower bound of 0.90, and a point estimate is never adopted, so the gallery does not decide at this confidence. Short of the bound: the highest lower bound of accepted-name precision is 0.8658, at 0.5214: 129 of 141 accepted names right (0.9149). That clears 0.90 as a point estimate, on too few trials to certify it: at that precision about 1,183 accepted names would",
+   "candidate": 0.5214,
+   "candidate_by": "closest to the bound and short of it: the highest lower bound of accepted-name precision is 0.8658, at 0.5214: 129 of 141 accepted names right (0.9149). That clears 0.90 as a point estimate, on too few trials to certify it: at that precision about 1,183 accepted names would",
    "bound_shortfall": {
-    "threshold": 0.5531,
+    "threshold": 0.5214,
     "at": {
-     "threshold": 0.5531,
-     "right": 31,
-     "wrong": 13,
-     "accepted_right": 23,
-     "accepted_wrong": 1,
-     "tar": 0.7419,
-     "fmr": 0.0769,
-     "fmr_upper_95": 0.3163,
-     "precision": 0.9583,
-     "precision_lower_95": 0.8171
+     "threshold": 0.5214,
+     "right": 179,
+     "wrong": 103,
+     "accepted_right": 129,
+     "accepted_wrong": 12,
+     "tar": 0.7207,
+     "fmr": 0.1165,
+     "fmr_upper_95": 0.1819,
+     "precision": 0.9149,
+     "precision_lower_95": 0.8658
     },
-    "accepted_names": 24,
+    "accepted_names": 141,
     "reason": "too_few_trials",
-    "accepted_names_needed": 103,
-    "statement": "the highest lower bound of accepted-name precision is 0.8171, at 0.5531: 23 of 24 accepted names right (0.9583). That clears 0.90 as a point estimate, on too few trials to certify it: at that precision about 103 accepted names would"
+    "accepted_names_needed": 1183,
+    "statement": "the highest lower bound of accepted-name precision is 0.8658, at 0.5214: 129 of 141 accepted names right (0.9149). That clears 0.90 as a point estimate, on too few trials to certify it: at that precision about 1,183 accepted names would"
    },
    "by_bound": null,
-   "by_point_estimate": 0.3889
+   "by_point_estimate": 0.4752
   },
   "at_threshold": {
-   "threshold": 0.5531,
-   "right": 31,
-   "wrong": 13,
-   "accepted_right": 23,
-   "accepted_wrong": 1,
-   "tar": 0.7419,
-   "fmr": 0.0769,
-   "fmr_upper_95": 0.3163,
-   "precision": 0.9583,
-   "precision_lower_95": 0.8171
+   "threshold": 0.5214,
+   "right": 179,
+   "wrong": 103,
+   "accepted_right": 129,
+   "accepted_wrong": 12,
+   "tar": 0.7207,
+   "fmr": 0.1165,
+   "fmr_upper_95": 0.1819,
+   "precision": 0.9149,
+   "precision_lower_95": 0.8658
   },
-  "fmr_over_tar": 0.1037,
+  "fmr_over_tar": 0.1616,
   "cost_in_true_accepts": {
-   "right_names": 31,
-   "rejected": 8,
+   "right_names": 179,
+   "rejected": 50,
    "rejected_unscorable": {
+    "no_usable_face": 17,
     "no_usable_reference": 1,
-    "no_usable_face": 1
+    "no_face_in_image": 11
    },
-   "rejected_below_threshold": 6,
-   "right_names_scorable": 29,
-   "tar_scorable": 0.7931,
+   "rejected_below_threshold": 21,
+   "right_names_scorable": 150,
+   "tar_scorable": 0.86,
    "note": "TAR is (right names the gallery can score / right names) x tar_scorable: a name it cannot score is coverage, and tar_scorable is the recognizer's own rate without it"
   },
   "bootstrap_95": {
    "tar": [
-    0.5938,
-    0.9032
+    0.6432,
+    0.7919
    ],
    "fmr": [
-    0.0,
-    0.2727
+    0.0574,
+    0.1842
    ],
    "precision": [
-    0.8571,
-    1.0
+    0.8652,
+    0.9571
    ]
   },
   "cross_validated": {
@@ -140,463 +150,883 @@
    "point": {
     "rule": "point",
     "fold_thresholds": [
-     0.4865,
-     0.4383,
-     0.4383,
-     0.3889,
-     0.3889
+     0.4752,
+     0.4859,
+     0.4526,
+     0.4526,
+     0.7661
     ],
-    "accepted_right": 28,
-    "accepted_wrong": 2,
-    "tar": 0.9032,
-    "fmr": 0.1538,
-    "precision": 0.9333
+    "accepted_right": 112,
+    "accepted_wrong": 14,
+    "tar": 0.6257,
+    "fmr": 0.1359,
+    "precision": 0.8889
    }
   },
   "curve": [
    {
-    "threshold": 0.09,
-    "right": 31,
-    "wrong": 13,
-    "accepted_right": 29,
-    "accepted_wrong": 12,
-    "tar": 0.9355,
-    "fmr": 0.9231,
-    "fmr_upper_95": 0.9961,
-    "precision": 0.7073,
-    "precision_lower_95": 0.5693
+    "threshold": -0.01,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 150,
+    "accepted_wrong": 70,
+    "tar": 0.838,
+    "fmr": 0.6796,
+    "fmr_upper_95": 0.7554,
+    "precision": 0.6818,
+    "precision_lower_95": 0.6263
+   },
+   {
+    "threshold": 0.01,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 149,
+    "accepted_wrong": 70,
+    "tar": 0.8324,
+    "fmr": 0.6796,
+    "fmr_upper_95": 0.7554,
+    "precision": 0.6804,
+    "precision_lower_95": 0.6246
+   },
+   {
+    "threshold": 0.1,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 149,
+    "accepted_wrong": 69,
+    "tar": 0.8324,
+    "fmr": 0.6699,
+    "fmr_upper_95": 0.7465,
+    "precision": 0.6835,
+    "precision_lower_95": 0.6277
+   },
+   {
+    "threshold": 0.13,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 149,
+    "accepted_wrong": 67,
+    "tar": 0.8324,
+    "fmr": 0.6505,
+    "fmr_upper_95": 0.7285,
+    "precision": 0.6898,
+    "precision_lower_95": 0.634
    },
    {
     "threshold": 0.15,
-    "right": 31,
-    "wrong": 13,
-    "accepted_right": 29,
-    "accepted_wrong": 11,
-    "tar": 0.9355,
-    "fmr": 0.8462,
-    "fmr_upper_95": 0.9719,
-    "precision": 0.725,
-    "precision_lower_95": 0.5861
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 149,
+    "accepted_wrong": 66,
+    "tar": 0.8324,
+    "fmr": 0.6408,
+    "fmr_upper_95": 0.7195,
+    "precision": 0.693,
+    "precision_lower_95": 0.6372
    },
    {
-    "threshold": 0.21,
-    "right": 31,
-    "wrong": 13,
-    "accepted_right": 29,
-    "accepted_wrong": 10,
-    "tar": 0.9355,
-    "fmr": 0.7692,
-    "fmr_upper_95": 0.934,
-    "precision": 0.7436,
-    "precision_lower_95": 0.604
-   },
-   {
-    "threshold": 0.23,
-    "right": 31,
-    "wrong": 13,
-    "accepted_right": 29,
-    "accepted_wrong": 8,
-    "tar": 0.9355,
-    "fmr": 0.6154,
-    "fmr_upper_95": 0.8343,
-    "precision": 0.7838,
+    "threshold": 0.16,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 149,
+    "accepted_wrong": 64,
+    "tar": 0.8324,
+    "fmr": 0.6214,
+    "fmr_upper_95": 0.7014,
+    "precision": 0.6995,
     "precision_lower_95": 0.6436
    },
    {
+    "threshold": 0.18,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 149,
+    "accepted_wrong": 64,
+    "tar": 0.8324,
+    "fmr": 0.6214,
+    "fmr_upper_95": 0.7014,
+    "precision": 0.6995,
+    "precision_lower_95": 0.6436
+   },
+   {
+    "threshold": 0.19,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 148,
+    "accepted_wrong": 63,
+    "tar": 0.8268,
+    "fmr": 0.6117,
+    "fmr_upper_95": 0.6922,
+    "precision": 0.7014,
+    "precision_lower_95": 0.6453
+   },
+   {
+    "threshold": 0.2,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 148,
+    "accepted_wrong": 60,
+    "tar": 0.8268,
+    "fmr": 0.5825,
+    "fmr_upper_95": 0.6647,
+    "precision": 0.7115,
+    "precision_lower_95": 0.6554
+   },
+   {
+    "threshold": 0.21,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 147,
+    "accepted_wrong": 58,
+    "tar": 0.8212,
+    "fmr": 0.5631,
+    "fmr_upper_95": 0.6461,
+    "precision": 0.7171,
+    "precision_lower_95": 0.6607
+   },
+   {
+    "threshold": 0.22,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 147,
+    "accepted_wrong": 51,
+    "tar": 0.8212,
+    "fmr": 0.4951,
+    "fmr_upper_95": 0.5803,
+    "precision": 0.7424,
+    "precision_lower_95": 0.6862
+   },
+   {
+    "threshold": 0.23,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 147,
+    "accepted_wrong": 50,
+    "tar": 0.8212,
+    "fmr": 0.4854,
+    "fmr_upper_95": 0.5708,
+    "precision": 0.7462,
+    "precision_lower_95": 0.6901
+   },
+   {
+    "threshold": 0.24,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 147,
+    "accepted_wrong": 48,
+    "tar": 0.8212,
+    "fmr": 0.466,
+    "fmr_upper_95": 0.5516,
+    "precision": 0.7538,
+    "precision_lower_95": 0.6978
+   },
+   {
+    "threshold": 0.25,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 146,
+    "accepted_wrong": 47,
+    "tar": 0.8156,
+    "fmr": 0.4563,
+    "fmr_upper_95": 0.542,
+    "precision": 0.7565,
+    "precision_lower_95": 0.7003
+   },
+   {
+    "threshold": 0.26,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 146,
+    "accepted_wrong": 45,
+    "tar": 0.8156,
+    "fmr": 0.4369,
+    "fmr_upper_95": 0.5227,
+    "precision": 0.7644,
+    "precision_lower_95": 0.7084
+   },
+   {
+    "threshold": 0.27,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 145,
+    "accepted_wrong": 44,
+    "tar": 0.8101,
+    "fmr": 0.4272,
+    "fmr_upper_95": 0.513,
+    "precision": 0.7672,
+    "precision_lower_95": 0.711
+   },
+   {
     "threshold": 0.28,
-    "right": 31,
-    "wrong": 13,
-    "accepted_right": 29,
-    "accepted_wrong": 7,
-    "tar": 0.9355,
-    "fmr": 0.5385,
-    "fmr_upper_95": 0.776,
-    "precision": 0.8056,
-    "precision_lower_95": 0.6656
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 144,
+    "accepted_wrong": 41,
+    "tar": 0.8045,
+    "fmr": 0.3981,
+    "fmr_upper_95": 0.4837,
+    "precision": 0.7784,
+    "precision_lower_95": 0.7223
    },
    {
     "threshold": 0.29,
-    "right": 31,
-    "wrong": 13,
-    "accepted_right": 29,
-    "accepted_wrong": 5,
-    "tar": 0.9355,
-    "fmr": 0.3846,
-    "fmr_upper_95": 0.6452,
-    "precision": 0.8529,
-    "precision_lower_95": 0.7154
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 144,
+    "accepted_wrong": 38,
+    "tar": 0.8045,
+    "fmr": 0.3689,
+    "fmr_upper_95": 0.4541,
+    "precision": 0.7912,
+    "precision_lower_95": 0.7355
    },
    {
     "threshold": 0.3,
-    "right": 31,
-    "wrong": 13,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 143,
+    "accepted_wrong": 37,
+    "tar": 0.7989,
+    "fmr": 0.3592,
+    "fmr_upper_95": 0.4442,
+    "precision": 0.7944,
+    "precision_lower_95": 0.7386
+   },
+   {
+    "threshold": 0.31,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 143,
+    "accepted_wrong": 35,
+    "tar": 0.7989,
+    "fmr": 0.3398,
+    "fmr_upper_95": 0.4242,
+    "precision": 0.8034,
+    "precision_lower_95": 0.7479
+   },
+   {
+    "threshold": 0.32,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 142,
+    "accepted_wrong": 33,
+    "tar": 0.7933,
+    "fmr": 0.3204,
+    "fmr_upper_95": 0.4041,
+    "precision": 0.8114,
+    "precision_lower_95": 0.7561
+   },
+   {
+    "threshold": 0.35,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 140,
+    "accepted_wrong": 32,
+    "tar": 0.7821,
+    "fmr": 0.3107,
+    "fmr_upper_95": 0.394,
+    "precision": 0.814,
+    "precision_lower_95": 0.7583
+   },
+   {
+    "threshold": 0.36,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 139,
+    "accepted_wrong": 28,
+    "tar": 0.7765,
+    "fmr": 0.2718,
+    "fmr_upper_95": 0.3532,
+    "precision": 0.8323,
+    "precision_lower_95": 0.7774
+   },
+   {
+    "threshold": 0.37,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 139,
+    "accepted_wrong": 27,
+    "tar": 0.7765,
+    "fmr": 0.2621,
+    "fmr_upper_95": 0.3429,
+    "precision": 0.8373,
+    "precision_lower_95": 0.7827
+   },
+   {
+    "threshold": 0.39,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 139,
+    "accepted_wrong": 24,
+    "tar": 0.7765,
+    "fmr": 0.233,
+    "fmr_upper_95": 0.3118,
+    "precision": 0.8528,
+    "precision_lower_95": 0.7992
+   },
+   {
+    "threshold": 0.4,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 139,
+    "accepted_wrong": 21,
+    "tar": 0.7765,
+    "fmr": 0.2039,
+    "fmr_upper_95": 0.2802,
+    "precision": 0.8688,
+    "precision_lower_95": 0.8165
+   },
+   {
+    "threshold": 0.41,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 139,
+    "accepted_wrong": 20,
+    "tar": 0.7765,
+    "fmr": 0.1942,
+    "fmr_upper_95": 0.2695,
+    "precision": 0.8742,
+    "precision_lower_95": 0.8225
+   },
+   {
+    "threshold": 0.42,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 139,
+    "accepted_wrong": 20,
+    "tar": 0.7765,
+    "fmr": 0.1942,
+    "fmr_upper_95": 0.2695,
+    "precision": 0.8742,
+    "precision_lower_95": 0.8225
+   },
+   {
+    "threshold": 0.43,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 139,
+    "accepted_wrong": 19,
+    "tar": 0.7765,
+    "fmr": 0.1845,
+    "fmr_upper_95": 0.2588,
+    "precision": 0.8797,
+    "precision_lower_95": 0.8286
+   },
+   {
+    "threshold": 0.44,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 137,
+    "accepted_wrong": 17,
+    "tar": 0.7654,
+    "fmr": 0.165,
+    "fmr_upper_95": 0.2372,
+    "precision": 0.8896,
+    "precision_lower_95": 0.839
+   },
+   {
+    "threshold": 0.45,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 136,
+    "accepted_wrong": 16,
+    "tar": 0.7598,
+    "fmr": 0.1553,
+    "fmr_upper_95": 0.2263,
+    "precision": 0.8947,
+    "precision_lower_95": 0.8445
+   },
+   {
+    "threshold": 0.46,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 135,
+    "accepted_wrong": 15,
+    "tar": 0.7542,
+    "fmr": 0.1456,
+    "fmr_upper_95": 0.2154,
+    "precision": 0.9,
+    "precision_lower_95": 0.8502
+   },
+   {
+    "threshold": 0.48,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 133,
+    "accepted_wrong": 13,
+    "tar": 0.743,
+    "fmr": 0.1262,
+    "fmr_upper_95": 0.1932,
+    "precision": 0.911,
+    "precision_lower_95": 0.8622
+   },
+   {
+    "threshold": 0.49,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 131,
+    "accepted_wrong": 13,
+    "tar": 0.7318,
+    "fmr": 0.1262,
+    "fmr_upper_95": 0.1932,
+    "precision": 0.9097,
+    "precision_lower_95": 0.8603
+   },
+   {
+    "threshold": 0.5,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 131,
+    "accepted_wrong": 13,
+    "tar": 0.7318,
+    "fmr": 0.1262,
+    "fmr_upper_95": 0.1932,
+    "precision": 0.9097,
+    "precision_lower_95": 0.8603
+   },
+   {
+    "threshold": 0.52,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 129,
+    "accepted_wrong": 13,
+    "tar": 0.7207,
+    "fmr": 0.1262,
+    "fmr_upper_95": 0.1932,
+    "precision": 0.9085,
+    "precision_lower_95": 0.8584
+   },
+   {
+    "threshold": 0.53,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 127,
+    "accepted_wrong": 12,
+    "tar": 0.7095,
+    "fmr": 0.1165,
+    "fmr_upper_95": 0.1819,
+    "precision": 0.9137,
+    "precision_lower_95": 0.8639
+   },
+   {
+    "threshold": 0.54,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 122,
+    "accepted_wrong": 12,
+    "tar": 0.6816,
+    "fmr": 0.1165,
+    "fmr_upper_95": 0.1819,
+    "precision": 0.9104,
+    "precision_lower_95": 0.8589
+   },
+   {
+    "threshold": 0.55,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 121,
+    "accepted_wrong": 12,
+    "tar": 0.676,
+    "fmr": 0.1165,
+    "fmr_upper_95": 0.1819,
+    "precision": 0.9098,
+    "precision_lower_95": 0.8579
+   },
+   {
+    "threshold": 0.56,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 116,
+    "accepted_wrong": 12,
+    "tar": 0.648,
+    "fmr": 0.1165,
+    "fmr_upper_95": 0.1819,
+    "precision": 0.9062,
+    "precision_lower_95": 0.8525
+   },
+   {
+    "threshold": 0.57,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 114,
+    "accepted_wrong": 11,
+    "tar": 0.6369,
+    "fmr": 0.1068,
+    "fmr_upper_95": 0.1706,
+    "precision": 0.912,
+    "precision_lower_95": 0.8585
+   },
+   {
+    "threshold": 0.58,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 107,
+    "accepted_wrong": 11,
+    "tar": 0.5978,
+    "fmr": 0.1068,
+    "fmr_upper_95": 0.1706,
+    "precision": 0.9068,
+    "precision_lower_95": 0.8504
+   },
+   {
+    "threshold": 0.59,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 103,
+    "accepted_wrong": 11,
+    "tar": 0.5754,
+    "fmr": 0.1068,
+    "fmr_upper_95": 0.1706,
+    "precision": 0.9035,
+    "precision_lower_95": 0.8453
+   },
+   {
+    "threshold": 0.6,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 98,
+    "accepted_wrong": 10,
+    "tar": 0.5475,
+    "fmr": 0.0971,
+    "fmr_upper_95": 0.1591,
+    "precision": 0.9074,
+    "precision_lower_95": 0.848
+   },
+   {
+    "threshold": 0.61,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 91,
+    "accepted_wrong": 9,
+    "tar": 0.5084,
+    "fmr": 0.0874,
+    "fmr_upper_95": 0.1475,
+    "precision": 0.91,
+    "precision_lower_95": 0.8482
+   },
+   {
+    "threshold": 0.62,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 80,
+    "accepted_wrong": 9,
+    "tar": 0.4469,
+    "fmr": 0.0874,
+    "fmr_upper_95": 0.1475,
+    "precision": 0.8989,
+    "precision_lower_95": 0.8302
+   },
+   {
+    "threshold": 0.63,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 73,
+    "accepted_wrong": 9,
+    "tar": 0.4078,
+    "fmr": 0.0874,
+    "fmr_upper_95": 0.1475,
+    "precision": 0.8902,
+    "precision_lower_95": 0.8163
+   },
+   {
+    "threshold": 0.64,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 65,
+    "accepted_wrong": 9,
+    "tar": 0.3631,
+    "fmr": 0.0874,
+    "fmr_upper_95": 0.1475,
+    "precision": 0.8784,
+    "precision_lower_95": 0.7974
+   },
+   {
+    "threshold": 0.65,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 58,
+    "accepted_wrong": 7,
+    "tar": 0.324,
+    "fmr": 0.068,
+    "fmr_upper_95": 0.1239,
+    "precision": 0.8923,
+    "precision_lower_95": 0.8072
+   },
+   {
+    "threshold": 0.66,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 47,
+    "accepted_wrong": 6,
+    "tar": 0.2626,
+    "fmr": 0.0583,
+    "fmr_upper_95": 0.1117,
+    "precision": 0.8868,
+    "precision_lower_95": 0.7887
+   },
+   {
+    "threshold": 0.67,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 40,
+    "accepted_wrong": 6,
+    "tar": 0.2235,
+    "fmr": 0.0583,
+    "fmr_upper_95": 0.1117,
+    "precision": 0.8696,
+    "precision_lower_95": 0.7587
+   },
+   {
+    "threshold": 0.68,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 36,
+    "accepted_wrong": 6,
+    "tar": 0.2011,
+    "fmr": 0.0583,
+    "fmr_upper_95": 0.1117,
+    "precision": 0.8571,
+    "precision_lower_95": 0.7374
+   },
+   {
+    "threshold": 0.69,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 32,
+    "accepted_wrong": 5,
+    "tar": 0.1788,
+    "fmr": 0.0485,
+    "fmr_upper_95": 0.0994,
+    "precision": 0.8649,
+    "precision_lower_95": 0.7366
+   },
+   {
+    "threshold": 0.7,
+    "right": 179,
+    "wrong": 103,
     "accepted_right": 29,
     "accepted_wrong": 5,
-    "tar": 0.9355,
-    "fmr": 0.3846,
-    "fmr_upper_95": 0.6452,
+    "tar": 0.162,
+    "fmr": 0.0485,
+    "fmr_upper_95": 0.0994,
     "precision": 0.8529,
     "precision_lower_95": 0.7154
    },
    {
-    "threshold": 0.31,
-    "right": 31,
-    "wrong": 13,
-    "accepted_right": 29,
-    "accepted_wrong": 4,
-    "tar": 0.9355,
-    "fmr": 0.3077,
-    "fmr_upper_95": 0.5726,
-    "precision": 0.8788,
-    "precision_lower_95": 0.7437
-   },
-   {
-    "threshold": 0.39,
-    "right": 31,
-    "wrong": 13,
-    "accepted_right": 29,
-    "accepted_wrong": 2,
-    "tar": 0.9355,
-    "fmr": 0.1538,
-    "fmr_upper_95": 0.4101,
-    "precision": 0.9355,
-    "precision_lower_95": 0.8105
-   },
-   {
-    "threshold": 0.44,
-    "right": 31,
-    "wrong": 13,
-    "accepted_right": 28,
-    "accepted_wrong": 2,
-    "tar": 0.9032,
-    "fmr": 0.1538,
-    "fmr_upper_95": 0.4101,
-    "precision": 0.9333,
-    "precision_lower_95": 0.8047
-   },
-   {
-    "threshold": 0.49,
-    "right": 31,
-    "wrong": 13,
+    "threshold": 0.71,
+    "right": 179,
+    "wrong": 103,
     "accepted_right": 27,
-    "accepted_wrong": 2,
-    "tar": 0.871,
-    "fmr": 0.1538,
-    "fmr_upper_95": 0.4101,
-    "precision": 0.931,
-    "precision_lower_95": 0.7984
+    "accepted_wrong": 3,
+    "tar": 0.1508,
+    "fmr": 0.0291,
+    "fmr_upper_95": 0.0736,
+    "precision": 0.9,
+    "precision_lower_95": 0.7614
    },
    {
-    "threshold": 0.5,
-    "right": 31,
-    "wrong": 13,
-    "accepted_right": 27,
-    "accepted_wrong": 2,
-    "tar": 0.871,
-    "fmr": 0.1538,
-    "fmr_upper_95": 0.4101,
-    "precision": 0.931,
-    "precision_lower_95": 0.7984
-   },
-   {
-    "threshold": 0.53,
-    "right": 31,
-    "wrong": 13,
-    "accepted_right": 25,
-    "accepted_wrong": 2,
-    "tar": 0.8065,
-    "fmr": 0.1538,
-    "fmr_upper_95": 0.4101,
-    "precision": 0.9259,
-    "precision_lower_95": 0.7847
-   },
-   {
-    "threshold": 0.54,
-    "right": 31,
-    "wrong": 13,
+    "threshold": 0.72,
+    "right": 179,
+    "wrong": 103,
     "accepted_right": 24,
-    "accepted_wrong": 2,
-    "tar": 0.7742,
-    "fmr": 0.1538,
-    "fmr_upper_95": 0.4101,
-    "precision": 0.9231,
-    "precision_lower_95": 0.7771
+    "accepted_wrong": 3,
+    "tar": 0.1341,
+    "fmr": 0.0291,
+    "fmr_upper_95": 0.0736,
+    "precision": 0.8889,
+    "precision_lower_95": 0.7373
    },
    {
-    "threshold": 0.55,
-    "right": 31,
-    "wrong": 13,
-    "accepted_right": 23,
-    "accepted_wrong": 1,
-    "tar": 0.7419,
-    "fmr": 0.0769,
-    "fmr_upper_95": 0.3163,
-    "precision": 0.9583,
-    "precision_lower_95": 0.8171
-   },
-   {
-    "threshold": 0.56,
-    "right": 31,
-    "wrong": 13,
+    "threshold": 0.73,
+    "right": 179,
+    "wrong": 103,
     "accepted_right": 21,
-    "accepted_wrong": 1,
-    "tar": 0.6774,
-    "fmr": 0.0769,
-    "fmr_upper_95": 0.3163,
-    "precision": 0.9545,
-    "precision_lower_95": 0.8019
+    "accepted_wrong": 3,
+    "tar": 0.1173,
+    "fmr": 0.0291,
+    "fmr_upper_95": 0.0736,
+    "precision": 0.875,
+    "precision_lower_95": 0.7077
    },
    {
-    "threshold": 0.58,
-    "right": 31,
-    "wrong": 13,
-    "accepted_right": 19,
-    "accepted_wrong": 1,
-    "tar": 0.6129,
-    "fmr": 0.0769,
-    "fmr_upper_95": 0.3163,
-    "precision": 0.95,
-    "precision_lower_95": 0.7839
+    "threshold": 0.74,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 17,
+    "accepted_wrong": 3,
+    "tar": 0.095,
+    "fmr": 0.0291,
+    "fmr_upper_95": 0.0736,
+    "precision": 0.85,
+    "precision_lower_95": 0.6563
    },
    {
-    "threshold": 0.6,
-    "right": 31,
-    "wrong": 13,
-    "accepted_right": 18,
-    "accepted_wrong": 1,
-    "tar": 0.5806,
-    "fmr": 0.0769,
-    "fmr_upper_95": 0.3163,
-    "precision": 0.9474,
-    "precision_lower_95": 0.7736
+    "threshold": 0.75,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 15,
+    "accepted_wrong": 2,
+    "tar": 0.0838,
+    "fmr": 0.0194,
+    "fmr_upper_95": 0.0599,
+    "precision": 0.8824,
+    "precision_lower_95": 0.6738
    },
    {
-    "threshold": 0.62,
-    "right": 31,
-    "wrong": 13,
-    "accepted_right": 14,
-    "accepted_wrong": 1,
-    "tar": 0.4516,
-    "fmr": 0.0769,
-    "fmr_upper_95": 0.3163,
-    "precision": 0.9333,
-    "precision_lower_95": 0.7206
-   },
-   {
-    "threshold": 0.63,
-    "right": 31,
-    "wrong": 13,
-    "accepted_right": 13,
-    "accepted_wrong": 1,
-    "tar": 0.4194,
-    "fmr": 0.0769,
-    "fmr_upper_95": 0.3163,
-    "precision": 0.9286,
-    "precision_lower_95": 0.7033
-   },
-   {
-    "threshold": 0.64,
-    "right": 31,
-    "wrong": 13,
+    "threshold": 0.76,
+    "right": 179,
+    "wrong": 103,
     "accepted_right": 11,
-    "accepted_wrong": 1,
-    "tar": 0.3548,
-    "fmr": 0.0769,
-    "fmr_upper_95": 0.3163,
-    "precision": 0.9167,
-    "precision_lower_95": 0.6613
+    "accepted_wrong": 2,
+    "tar": 0.0615,
+    "fmr": 0.0194,
+    "fmr_upper_95": 0.0599,
+    "precision": 0.8462,
+    "precision_lower_95": 0.5899
    },
    {
-    "threshold": 0.65,
-    "right": 31,
-    "wrong": 13,
-    "accepted_right": 10,
-    "accepted_wrong": 1,
-    "tar": 0.3226,
-    "fmr": 0.0769,
-    "fmr_upper_95": 0.3163,
-    "precision": 0.9091,
-    "precision_lower_95": 0.6356
-   },
-   {
-    "threshold": 0.66,
-    "right": 31,
-    "wrong": 13,
+    "threshold": 0.77,
+    "right": 179,
+    "wrong": 103,
     "accepted_right": 10,
     "accepted_wrong": 0,
-    "tar": 0.3226,
+    "tar": 0.0559,
     "fmr": 0.0,
-    "fmr_upper_95": 0.2058,
+    "fmr_upper_95": 0.0287,
     "precision": 1.0,
     "precision_lower_95": 0.7411
    },
    {
-    "threshold": 0.67,
-    "right": 31,
-    "wrong": 13,
-    "accepted_right": 7,
-    "accepted_wrong": 0,
-    "tar": 0.2258,
-    "fmr": 0.0,
-    "fmr_upper_95": 0.2058,
-    "precision": 1.0,
-    "precision_lower_95": 0.6518
-   },
-   {
-    "threshold": 0.68,
-    "right": 31,
-    "wrong": 13,
+    "threshold": 0.78,
+    "right": 179,
+    "wrong": 103,
     "accepted_right": 6,
     "accepted_wrong": 0,
-    "tar": 0.1935,
+    "tar": 0.0335,
     "fmr": 0.0,
-    "fmr_upper_95": 0.2058,
+    "fmr_upper_95": 0.0287,
     "precision": 1.0,
     "precision_lower_95": 0.607
    },
    {
-    "threshold": 0.69,
-    "right": 31,
-    "wrong": 13,
-    "accepted_right": 6,
+    "threshold": 0.8,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 3,
     "accepted_wrong": 0,
-    "tar": 0.1935,
+    "tar": 0.0168,
     "fmr": 0.0,
-    "fmr_upper_95": 0.2058,
+    "fmr_upper_95": 0.0287,
     "precision": 1.0,
-    "precision_lower_95": 0.607
-   },
-   {
-    "threshold": 0.7,
-    "right": 31,
-    "wrong": 13,
-    "accepted_right": 4,
-    "accepted_wrong": 0,
-    "tar": 0.129,
-    "fmr": 0.0,
-    "fmr_upper_95": 0.2058,
-    "precision": 1.0,
-    "precision_lower_95": 0.4729
-   },
-   {
-    "threshold": 0.71,
-    "right": 31,
-    "wrong": 13,
-    "accepted_right": 4,
-    "accepted_wrong": 0,
-    "tar": 0.129,
-    "fmr": 0.0,
-    "fmr_upper_95": 0.2058,
-    "precision": 1.0,
-    "precision_lower_95": 0.4729
-   },
-   {
-    "threshold": 0.76,
-    "right": 31,
-    "wrong": 13,
-    "accepted_right": 2,
-    "accepted_wrong": 0,
-    "tar": 0.0645,
-    "fmr": 0.0,
-    "fmr_upper_95": 0.2058,
-    "precision": 1.0,
-    "precision_lower_95": 0.2236
+    "precision_lower_95": 0.3684
    },
    {
     "threshold": 0.81,
-    "right": 31,
-    "wrong": 13,
-    "accepted_right": 2,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 3,
     "accepted_wrong": 0,
-    "tar": 0.0645,
+    "tar": 0.0168,
     "fmr": 0.0,
-    "fmr_upper_95": 0.2058,
+    "fmr_upper_95": 0.0287,
     "precision": 1.0,
-    "precision_lower_95": 0.2236
+    "precision_lower_95": 0.3684
    },
    {
     "threshold": 0.82,
-    "right": 31,
-    "wrong": 13,
+    "right": 179,
+    "wrong": 103,
+    "accepted_right": 1,
+    "accepted_wrong": 0,
+    "tar": 0.0056,
+    "fmr": 0.0,
+    "fmr_upper_95": 0.0287,
+    "precision": 1.0,
+    "precision_lower_95": 0.05
+   },
+   {
+    "threshold": 0.84,
+    "right": 179,
+    "wrong": 103,
     "accepted_right": 0,
     "accepted_wrong": 0,
     "tar": 0.0,
     "fmr": 0.0,
-    "fmr_upper_95": 0.2058,
+    "fmr_upper_95": 0.0287,
     "precision": null,
     "precision_lower_95": null
    }
   ],
   "strata": {
    "one_face": {
-    "threshold": 0.5531,
-    "right": 18,
-    "wrong": 3,
-    "accepted_right": 15,
-    "accepted_wrong": 1,
-    "tar": 0.8333,
-    "fmr": 0.3333,
-    "fmr_upper_95": 0.8646,
-    "precision": 0.9375,
-    "precision_lower_95": 0.736
+    "threshold": 0.5214,
+    "right": 94,
+    "wrong": 20,
+    "accepted_right": 88,
+    "accepted_wrong": 2,
+    "tar": 0.9362,
+    "fmr": 0.1,
+    "fmr_upper_95": 0.2826,
+    "precision": 0.9778,
+    "precision_lower_95": 0.9317
    },
    "several_faces": {
-    "threshold": 0.5531,
-    "right": 13,
-    "wrong": 9,
-    "accepted_right": 8,
-    "accepted_wrong": 0,
-    "tar": 0.6154,
-    "fmr": 0.0,
-    "fmr_upper_95": 0.2831,
-    "precision": 1.0,
-    "precision_lower_95": 0.6877
+    "threshold": 0.5214,
+    "right": 74,
+    "wrong": 75,
+    "accepted_right": 41,
+    "accepted_wrong": 10,
+    "tar": 0.5541,
+    "fmr": 0.1333,
+    "fmr_upper_95": 0.2157,
+    "precision": 0.8039,
+    "precision_lower_95": 0.6901
    },
    "figure_from_probe_list": {
-    "threshold": 0.5531,
-    "right": 29,
-    "wrong": 12,
-    "accepted_right": 22,
-    "accepted_wrong": 1,
-    "tar": 0.7586,
-    "fmr": 0.0833,
-    "fmr_upper_95": 0.3387,
-    "precision": 0.9565,
-    "precision_lower_95": 0.8098
+    "threshold": 0.5214,
+    "right": 122,
+    "wrong": 44,
+    "accepted_right": 89,
+    "accepted_wrong": 9,
+    "tar": 0.7295,
+    "fmr": 0.2045,
+    "fmr_upper_95": 0.3298,
+    "precision": 0.9082,
+    "precision_lower_95": 0.8452
    },
    "figure_from_claim_ner": {
-    "threshold": 0.5531,
-    "right": 2,
-    "wrong": 1,
-    "accepted_right": 1,
-    "accepted_wrong": 0,
-    "tar": 0.5,
-    "fmr": 0.0,
-    "fmr_upper_95": 0.95,
-    "precision": 1.0,
-    "precision_lower_95": 0.05
+    "threshold": 0.5214,
+    "right": 57,
+    "wrong": 59,
+    "accepted_right": 40,
+    "accepted_wrong": 3,
+    "tar": 0.7018,
+    "fmr": 0.0508,
+    "fmr_upper_95": 0.1262,
+    "precision": 0.9302,
+    "precision_lower_95": 0.8294
    },
    "ambiguous_link": {
-    "threshold": 0.5531,
+    "threshold": 0.5214,
     "right": 1,
-    "wrong": 0,
+    "wrong": 4,
     "accepted_right": 1,
     "accepted_wrong": 0,
     "tar": 1.0,
-    "fmr": null,
-    "fmr_upper_95": null,
+    "fmr": 0.0,
+    "fmr_upper_95": 0.5271,
     "precision": 1.0,
     "precision_lower_95": 0.05
    },
    "figure_link_ambiguous": {
-    "threshold": 0.5531,
+    "threshold": 0.5214,
     "right": 1,
-    "wrong": 0,
+    "wrong": 1,
     "accepted_right": 1,
     "accepted_wrong": 0,
     "tar": 1.0,
-    "fmr": null,
-    "fmr_upper_95": null,
+    "fmr": 0.0,
+    "fmr_upper_95": 0.95,
     "precision": 1.0,
     "precision_lower_95": 0.05
    }
@@ -604,71 +1034,218 @@
   "figures": {
    "what": "per figure, the image's stratum, most trials first: trials and what the candidate threshold accepts of them. Local report only: the published one gives ranks, never a name or QID",
    "concentration": {
-    "figures": 17,
-    "trials": 44,
-    "top_1_share": 0.25,
-    "top_2_share": 0.3864,
-    "effective_figures": 8.34,
-    "figures_with_5_trials_or_more": 3,
-    "figures_with_1_trial": 9,
+    "figures": 61,
+    "trials": 282,
+    "top_1_share": 0.3688,
+    "top_2_share": 0.4787,
+    "effective_figures": 6.21,
+    "figures_with_5_trials_or_more": 9,
+    "figures_with_1_trial": 36,
     "concentrated": false,
-    "statement": "The two most-tried figures carry 39% of the trials; the figure-stratified estimate weighs every figure the same, beside the pooled one."
+    "statement": "The two most-tried figures carry 48% of the trials; the figure-stratified estimate weighs every figure the same, beside the pooled one."
    },
    "table": [
     {
      "rank": 1,
      "figure_source": [
+      "claim_ner",
       "probe_list"
      ],
-     "trials": 11,
-     "right": 9,
-     "wrong": 2,
-     "unlinked": 0,
-     "scorable": 10,
-     "accepted_right": 7,
-     "accepted_wrong": 0
+     "trials": 104,
+     "right": 85,
+     "wrong": 19,
+     "unlinked": 1,
+     "scorable": 82,
+     "accepted_right": 64,
+     "accepted_wrong": 2
     },
     {
      "rank": 2,
      "figure_source": [
       "probe_list"
      ],
-     "trials": 6,
-     "right": 5,
-     "wrong": 1,
-     "unlinked": 0,
-     "scorable": 6,
-     "accepted_right": 2,
-     "accepted_wrong": 0
+     "trials": 31,
+     "right": 18,
+     "wrong": 13,
+     "unlinked": 1,
+     "scorable": 23,
+     "accepted_right": 6,
+     "accepted_wrong": 4
     },
     {
      "rank": 3,
      "figure_source": [
+      "claim_ner",
       "probe_list"
      ],
-     "trials": 6,
+     "trials": 23,
+     "right": 14,
+     "wrong": 9,
+     "unlinked": 0,
+     "scorable": 19,
+     "accepted_right": 9,
+     "accepted_wrong": 3
+    },
+    {
+     "rank": 4,
+     "figure_source": [
+      "claim_ner",
+      "probe_list"
+     ],
+     "trials": 10,
      "right": 4,
+     "wrong": 6,
+     "unlinked": 0,
+     "scorable": 6,
+     "accepted_right": 3,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 5,
+     "figure_source": [
+      "claim_ner"
+     ],
+     "trials": 8,
+     "right": 4,
+     "wrong": 4,
+     "unlinked": 1,
+     "scorable": 6,
+     "accepted_right": 2,
+     "accepted_wrong": 1
+    },
+    {
+     "rank": 6,
+     "figure_source": [
+      "claim_ner"
+     ],
+     "trials": 7,
+     "right": 5,
+     "wrong": 2,
+     "unlinked": 0,
+     "scorable": 6,
+     "accepted_right": 5,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 7,
+     "figure_source": [
+      "probe_list"
+     ],
+     "trials": 7,
+     "right": 5,
      "wrong": 2,
      "unlinked": 0,
      "scorable": 5,
+     "accepted_right": 5,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 8,
+     "figure_source": [
+      "claim_ner",
+      "probe_list"
+     ],
+     "trials": 7,
+     "right": 4,
+     "wrong": 3,
+     "unlinked": 1,
+     "scorable": 5,
+     "accepted_right": 3,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 9,
+     "figure_source": [
+      "claim_ner"
+     ],
+     "trials": 6,
+     "right": 0,
+     "wrong": 6,
+     "unlinked": 1,
+     "scorable": 2,
+     "accepted_right": 0,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 10,
+     "figure_source": [
+      "claim_ner"
+     ],
+     "trials": 4,
+     "right": 0,
+     "wrong": 4,
+     "unlinked": 1,
+     "scorable": 2,
+     "accepted_right": 0,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 11,
+     "figure_source": [
+      "claim_ner"
+     ],
+     "trials": 4,
+     "right": 4,
+     "wrong": 0,
+     "unlinked": 0,
+     "scorable": 4,
+     "accepted_right": 4,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 12,
+     "figure_source": [
+      "claim_ner"
+     ],
+     "trials": 4,
+     "right": 2,
+     "wrong": 2,
+     "unlinked": 0,
+     "scorable": 4,
      "accepted_right": 2,
      "accepted_wrong": 0
     },
     {
-     "rank": 4,
+     "rank": 13,
+     "figure_source": [
+      "claim_ner"
+     ],
+     "trials": 4,
+     "right": 0,
+     "wrong": 4,
+     "unlinked": 0,
+     "scorable": 4,
+     "accepted_right": 0,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 14,
      "figure_source": [
       "probe_list"
      ],
      "trials": 3,
      "right": 2,
      "wrong": 1,
-     "unlinked": 1,
-     "scorable": 2,
+     "unlinked": 0,
+     "scorable": 3,
      "accepted_right": 2,
      "accepted_wrong": 0
     },
     {
-     "rank": 5,
+     "rank": 15,
+     "figure_source": [
+      "claim_ner"
+     ],
+     "trials": 3,
+     "right": 3,
+     "wrong": 0,
+     "unlinked": 0,
+     "scorable": 1,
+     "accepted_right": 0,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 16,
      "figure_source": [
       "probe_list"
      ],
@@ -681,22 +1258,61 @@
      "accepted_wrong": 0
     },
     {
-     "rank": 6,
+     "rank": 17,
      "figure_source": [
-      "probe_list"
+      "claim_ner"
      ],
      "trials": 2,
-     "right": 1,
-     "wrong": 1,
+     "right": 0,
+     "wrong": 2,
      "unlinked": 0,
      "scorable": 2,
+     "accepted_right": 0,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 18,
+     "figure_source": [
+      "claim_ner"
+     ],
+     "trials": 2,
+     "right": 2,
+     "wrong": 0,
+     "unlinked": 0,
+     "scorable": 1,
+     "accepted_right": 0,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 19,
+     "figure_source": [
+      "claim_ner"
+     ],
+     "trials": 2,
+     "right": 0,
+     "wrong": 2,
+     "unlinked": 2,
+     "scorable": 0,
+     "accepted_right": 0,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 20,
+     "figure_source": [
+      "claim_ner"
+     ],
+     "trials": 2,
+     "right": 2,
+     "wrong": 0,
+     "unlinked": 0,
+     "scorable": 1,
      "accepted_right": 1,
      "accepted_wrong": 0
     },
     {
-     "rank": 7,
+     "rank": 21,
      "figure_source": [
-      "probe_list"
+      "claim_ner"
      ],
      "trials": 2,
      "right": 2,
@@ -707,8 +1323,22 @@
      "accepted_wrong": 0
     },
     {
-     "rank": 8,
+     "rank": 22,
      "figure_source": [
+      "claim_ner"
+     ],
+     "trials": 2,
+     "right": 2,
+     "wrong": 0,
+     "unlinked": 0,
+     "scorable": 2,
+     "accepted_right": 2,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 23,
+     "figure_source": [
+      "claim_ner",
       "probe_list"
      ],
      "trials": 2,
@@ -720,7 +1350,33 @@
      "accepted_wrong": 0
     },
     {
-     "rank": 9,
+     "rank": 24,
+     "figure_source": [
+      "claim_ner"
+     ],
+     "trials": 2,
+     "right": 0,
+     "wrong": 2,
+     "unlinked": 0,
+     "scorable": 2,
+     "accepted_right": 0,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 25,
+     "figure_source": [
+      "claim_ner"
+     ],
+     "trials": 2,
+     "right": 2,
+     "wrong": 0,
+     "unlinked": 0,
+     "scorable": 2,
+     "accepted_right": 2,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 26,
      "figure_source": [
       "probe_list"
      ],
@@ -733,33 +1389,7 @@
      "accepted_wrong": 0
     },
     {
-     "rank": 10,
-     "figure_source": [
-      "probe_list"
-     ],
-     "trials": 1,
-     "right": 1,
-     "wrong": 0,
-     "unlinked": 0,
-     "scorable": 1,
-     "accepted_right": 1,
-     "accepted_wrong": 0
-    },
-    {
-     "rank": 11,
-     "figure_source": [
-      "probe_list"
-     ],
-     "trials": 1,
-     "right": 1,
-     "wrong": 0,
-     "unlinked": 0,
-     "scorable": 1,
-     "accepted_right": 1,
-     "accepted_wrong": 0
-    },
-    {
-     "rank": 12,
+     "rank": 27,
      "figure_source": [
       "claim_ner"
      ],
@@ -768,11 +1398,63 @@
      "wrong": 0,
      "unlinked": 0,
      "scorable": 1,
+     "accepted_right": 1,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 28,
+     "figure_source": [
+      "probe_list"
+     ],
+     "trials": 1,
+     "right": 1,
+     "wrong": 0,
+     "unlinked": 0,
+     "scorable": 1,
+     "accepted_right": 1,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 29,
+     "figure_source": [
+      "probe_list"
+     ],
+     "trials": 1,
+     "right": 1,
+     "wrong": 0,
+     "unlinked": 0,
+     "scorable": 1,
+     "accepted_right": 1,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 30,
+     "figure_source": [
+      "claim_ner"
+     ],
+     "trials": 1,
+     "right": 1,
+     "wrong": 0,
+     "unlinked": 0,
+     "scorable": 1,
+     "accepted_right": 1,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 31,
+     "figure_source": [
+      "claim_ner"
+     ],
+     "trials": 1,
+     "right": 0,
+     "wrong": 1,
+     "unlinked": 1,
+     "scorable": 0,
      "accepted_right": 0,
      "accepted_wrong": 0
     },
     {
-     "rank": 13,
+     "rank": 32,
      "figure_source": [
       "claim_ner"
      ],
@@ -785,7 +1467,33 @@
      "accepted_wrong": 0
     },
     {
-     "rank": 14,
+     "rank": 33,
+     "figure_source": [
+      "claim_ner"
+     ],
+     "trials": 1,
+     "right": 1,
+     "wrong": 0,
+     "unlinked": 0,
+     "scorable": 1,
+     "accepted_right": 1,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 34,
+     "figure_source": [
+      "claim_ner"
+     ],
+     "trials": 1,
+     "right": 0,
+     "wrong": 1,
+     "unlinked": 0,
+     "scorable": 0,
+     "accepted_right": 0,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 35,
      "figure_source": [
       "probe_list"
      ],
@@ -798,7 +1506,20 @@
      "accepted_wrong": 1
     },
     {
-     "rank": 15,
+     "rank": 36,
+     "figure_source": [
+      "claim_ner"
+     ],
+     "trials": 1,
+     "right": 1,
+     "wrong": 0,
+     "unlinked": 0,
+     "scorable": 1,
+     "accepted_right": 0,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 37,
      "figure_source": [
       "claim_ner"
      ],
@@ -811,7 +1532,202 @@
      "accepted_wrong": 0
     },
     {
-     "rank": 16,
+     "rank": 38,
+     "figure_source": [
+      "claim_ner"
+     ],
+     "trials": 1,
+     "right": 0,
+     "wrong": 1,
+     "unlinked": 0,
+     "scorable": 0,
+     "accepted_right": 0,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 39,
+     "figure_source": [
+      "claim_ner"
+     ],
+     "trials": 1,
+     "right": 1,
+     "wrong": 0,
+     "unlinked": 0,
+     "scorable": 1,
+     "accepted_right": 1,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 40,
+     "figure_source": [
+      "claim_ner"
+     ],
+     "trials": 1,
+     "right": 0,
+     "wrong": 1,
+     "unlinked": 0,
+     "scorable": 1,
+     "accepted_right": 0,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 41,
+     "figure_source": [
+      "claim_ner"
+     ],
+     "trials": 1,
+     "right": 0,
+     "wrong": 1,
+     "unlinked": 0,
+     "scorable": 1,
+     "accepted_right": 0,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 42,
+     "figure_source": [
+      "claim_ner"
+     ],
+     "trials": 1,
+     "right": 1,
+     "wrong": 0,
+     "unlinked": 0,
+     "scorable": 1,
+     "accepted_right": 1,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 43,
+     "figure_source": [
+      "claim_ner"
+     ],
+     "trials": 1,
+     "right": 0,
+     "wrong": 1,
+     "unlinked": 0,
+     "scorable": 1,
+     "accepted_right": 0,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 44,
+     "figure_source": [
+      "claim_ner"
+     ],
+     "trials": 1,
+     "right": 0,
+     "wrong": 1,
+     "unlinked": 1,
+     "scorable": 0,
+     "accepted_right": 0,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 45,
+     "figure_source": [
+      "claim_ner"
+     ],
+     "trials": 1,
+     "right": 0,
+     "wrong": 1,
+     "unlinked": 0,
+     "scorable": 1,
+     "accepted_right": 0,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 46,
+     "figure_source": [
+      "claim_ner"
+     ],
+     "trials": 1,
+     "right": 0,
+     "wrong": 1,
+     "unlinked": 0,
+     "scorable": 1,
+     "accepted_right": 0,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 47,
+     "figure_source": [
+      "claim_ner"
+     ],
+     "trials": 1,
+     "right": 1,
+     "wrong": 0,
+     "unlinked": 0,
+     "scorable": 1,
+     "accepted_right": 1,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 48,
+     "figure_source": [
+      "claim_ner"
+     ],
+     "trials": 1,
+     "right": 1,
+     "wrong": 0,
+     "unlinked": 0,
+     "scorable": 1,
+     "accepted_right": 1,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 49,
+     "figure_source": [
+      "claim_ner"
+     ],
+     "trials": 1,
+     "right": 0,
+     "wrong": 1,
+     "unlinked": 1,
+     "scorable": 0,
+     "accepted_right": 0,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 50,
+     "figure_source": [
+      "claim_ner"
+     ],
+     "trials": 1,
+     "right": 1,
+     "wrong": 0,
+     "unlinked": 0,
+     "scorable": 1,
+     "accepted_right": 0,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 51,
+     "figure_source": [
+      "claim_ner"
+     ],
+     "trials": 1,
+     "right": 1,
+     "wrong": 0,
+     "unlinked": 0,
+     "scorable": 1,
+     "accepted_right": 1,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 52,
+     "figure_source": [
+      "claim_ner"
+     ],
+     "trials": 1,
+     "right": 0,
+     "wrong": 1,
+     "unlinked": 0,
+     "scorable": 1,
+     "accepted_right": 0,
+     "accepted_wrong": 1
+    },
+    {
+     "rank": 53,
      "figure_source": [
       "probe_list"
      ],
@@ -824,9 +1740,100 @@
      "accepted_wrong": 0
     },
     {
-     "rank": 17,
+     "rank": 54,
      "figure_source": [
-      "probe_list"
+      "claim_ner"
+     ],
+     "trials": 1,
+     "right": 0,
+     "wrong": 1,
+     "unlinked": 0,
+     "scorable": 1,
+     "accepted_right": 0,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 55,
+     "figure_source": [
+      "claim_ner"
+     ],
+     "trials": 1,
+     "right": 0,
+     "wrong": 1,
+     "unlinked": 0,
+     "scorable": 1,
+     "accepted_right": 0,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 56,
+     "figure_source": [
+      "claim_ner"
+     ],
+     "trials": 1,
+     "right": 1,
+     "wrong": 0,
+     "unlinked": 0,
+     "scorable": 1,
+     "accepted_right": 1,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 57,
+     "figure_source": [
+      "claim_ner"
+     ],
+     "trials": 1,
+     "right": 0,
+     "wrong": 1,
+     "unlinked": 0,
+     "scorable": 1,
+     "accepted_right": 0,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 58,
+     "figure_source": [
+      "claim_ner"
+     ],
+     "trials": 1,
+     "right": 0,
+     "wrong": 1,
+     "unlinked": 0,
+     "scorable": 1,
+     "accepted_right": 0,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 59,
+     "figure_source": [
+      "claim_ner"
+     ],
+     "trials": 1,
+     "right": 1,
+     "wrong": 0,
+     "unlinked": 0,
+     "scorable": 1,
+     "accepted_right": 1,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 60,
+     "figure_source": [
+      "claim_ner"
+     ],
+     "trials": 1,
+     "right": 0,
+     "wrong": 1,
+     "unlinked": 0,
+     "scorable": 1,
+     "accepted_right": 0,
+     "accepted_wrong": 0
+    },
+    {
+     "rank": 61,
+     "figure_source": [
+      "claim_ner"
      ],
      "trials": 1,
      "right": 1,
@@ -840,310 +1847,312 @@
   },
   "figure_stratified": {
    "what": "every figure weighs the same: each trial counts 1 / its figure's trials; 95% intervals by resampling figures",
-   "figures": 17,
-   "threshold": 0.5531,
-   "vlm_precision": 0.6658,
-   "tar": 0.822,
-   "fmr": 0.176,
-   "precision": 0.9029,
-   "precision_lower_95": 0.7384,
+   "figures": 61,
+   "threshold": 0.5214,
+   "vlm_precision": 0.5067,
+   "tar": 0.8124,
+   "fmr": 0.0799,
+   "precision": 0.9126,
+   "precision_lower_95": 0.821,
    "bootstrap_95": {
     "vlm_precision": [
-     0.4902,
-     0.8335
+     0.3908,
+     0.6164
     ],
     "tar": [
-     0.627,
-     0.9702
+     0.685,
+     0.9241
     ],
     "fmr": [
-     0.0,
-     0.4981
+     0.0088,
+     0.1826
     ],
     "precision": [
-     0.7,
-     1.0
+     0.7996,
+     0.9896
     ]
    },
-   "threshold_by_figure_bound": 0.661,
+   "threshold_by_figure_bound": 0.7661,
    "note": "the threshold at which the one-sided 95% lower bound of figure-weighted precision reaches 0.90; when it is above the pooled one, the pooled threshold leans on the most-tried figures",
    "pooled_without_top_two_figures": {
-    "threshold": 0.5531,
-    "right": 17,
-    "wrong": 10,
-    "accepted_right": 14,
-    "accepted_wrong": 1,
-    "tar": 0.8235,
-    "fmr": 0.1,
-    "fmr_upper_95": 0.3942,
-    "precision": 0.9333,
-    "precision_lower_95": 0.7206
+    "threshold": 0.5214,
+    "right": 76,
+    "wrong": 71,
+    "accepted_right": 59,
+    "accepted_wrong": 6,
+    "tar": 0.7763,
+    "fmr": 0.0845,
+    "fmr_upper_95": 0.16,
+    "precision": 0.9077,
+    "precision_lower_95": 0.8259
    }
   },
   "look_alike_finding": {
    "what": "the VLM's wrong names against random strangers: the right names' faces, each scored against a random other person in the gallery (seeded). A contrast, never an input",
    "random_strangers": {
-    "pairs": 28,
-    "max_score": 0.3677,
-    "median_score": 0.1241,
+    "pairs": 146,
+    "max_score": 0.3445,
+    "median_score": 0.1479,
     "accepted_at_threshold": 0
    },
    "vlm_wrong_names": {
-    "wrong": 13,
-    "scorable": 12,
-    "median_score": 0.2844,
-    "above_every_stranger": 3,
-    "accepted_at_threshold": 1
+    "wrong": 103,
+    "scorable": 70,
+    "median_score": 0.3077,
+    "above_every_stranger": 33,
+    "accepted_at_threshold": 12
    },
-   "right_names_median_score": 0.6198,
+   "right_names_median_score": 0.6265,
    "if_calibrated_on_random_pairs": {
-    "threshold": 0.181,
+    "threshold": 0.2328,
     "rule": "the lowest threshold at which p*TAR / (p*TAR + (1-p)*FMR) >= 0.90 with FMR measured on random strangers (point estimate), p the VLM's QID precision",
     "on_the_vlms_own_names": {
-     "threshold": 0.181,
-     "right": 31,
-     "wrong": 13,
-     "accepted_right": 29,
-     "accepted_wrong": 10,
-     "tar": 0.9355,
-     "fmr": 0.7692,
-     "fmr_upper_95": 0.934,
-     "precision": 0.7436,
-     "precision_lower_95": 0.604
+     "threshold": 0.2328,
+     "right": 179,
+     "wrong": 103,
+     "accepted_right": 147,
+     "accepted_wrong": 49,
+     "tar": 0.8212,
+     "fmr": 0.4757,
+     "fmr_upper_95": 0.5612,
+     "precision": 0.75,
+     "precision_lower_95": 0.6939
     }
    },
-   "finding": "Scored against a random other person, the right names' faces reach at most 0.368 (median 0.124); 3 of the 12 scorable wrong names the VLM gave score above every stranger. A threshold calibrated on random pairs would sit at 0.181; on the VLM's own names it accepts 10 of 13 wrong names, an accepted-name precision of 0.7436 against the 0.9 required. A random-pair false-match rate measures strangers; the names a gallery must refuse are the look-alikes the VLM chose, so the threshold is calibrated on those."
+   "finding": "Scored against a random other person, the right names' faces reach at most 0.344 (median 0.148); 33 of the 70 scorable wrong names the VLM gave score above every stranger. A threshold calibrated on random pairs would sit at 0.233; on the VLM's own names it accepts 49 of 103 wrong names, an accepted-name precision of 0.75 against the 0.9 required. A random-pair false-match rate measures strangers; the names a gallery must refuse are the look-alikes the VLM chose, so the threshold is calibrated on those."
   },
   "verite": "not read: calibration reads Factify2 train only",
   "factify2_ledger": {
    "run": "93cd9d679720",
-   "images": 2828,
+   "images": 45186,
    "worklist": 45186,
-   "share_done": 0.0626,
-   "complete": false,
+   "share_done": 1.0,
+   "complete": true,
    "note": "the full calibration needs the finished run; a partial ledger gives a partial population and never sets the threshold"
   },
   "alias_gaps": {
    "what": "the build scope's PERSON names as resolution sees them (the name table, mentions in scope), and plausible aliases that do not collapse: rules for counting, never links. Names of two words or more that resolve to no one: spacing, initials_or_middle, spelling (name_variant) against gallery people's labels and aliases. One word: the same letters as one person's spaced name, or the person holding 90% of 10+ mentions of our full names with that surname (first name, for a word never used as a surname)",
-   "names": 6734,
-   "mentions": 32669,
+   "names": 12627,
+   "mentions": 58032,
    "resolve": {
-    "to_one_person": 3498,
-    "to_several": 523,
-    "to_no_one": 2713
+    "to_one_person": 4837,
+    "to_several": 715,
+    "to_no_one": 7075
    },
    "collapse": {
-    "people": 3167,
-    "people_with_two_names_or_more": 270,
-    "names_in_them": 601,
+    "people": 4361,
+    "people_with_two_names_or_more": 374,
+    "names_in_them": 850,
     "most_names_for_one_person": 6
    },
    "plausible_aliases_not_collapsing": {
-    "names": 230,
-    "mentions": 1762,
-    "share_of_mentions": 0.0539,
-    "with_vlm_mentions": 21,
+    "names": 344,
+    "mentions": 2240,
+    "share_of_mentions": 0.0386,
+    "with_vlm_mentions": 168,
     "by_outcome": {
-     "several": 91,
-     "unresolved": 139
+     "several": 112,
+     "unresolved": 232
     },
     "by_rule": {
      "surname": {
-      "names": 77,
-      "mentions": 1337,
-      "unresolved": 23,
-      "several": 54,
+      "names": 100,
+      "mentions": 1619,
+      "unresolved": 31,
+      "several": 69,
       "someone_else": 0
      },
      "initials_or_middle": {
-      "names": 56,
-      "mentions": 162,
-      "unresolved": 56,
+      "names": 111,
+      "mentions": 267,
+      "unresolved": 111,
       "several": 0,
       "someone_else": 0
      },
      "first_name": {
-      "names": 49,
-      "mentions": 173,
-      "unresolved": 15,
-      "several": 34,
+      "names": 59,
+      "mentions": 231,
+      "unresolved": 20,
+      "several": 39,
       "someone_else": 0
      },
      "spelling": {
-      "names": 45,
-      "mentions": 83,
-      "unresolved": 45,
+      "names": 70,
+      "mentions": 113,
+      "unresolved": 70,
       "several": 0,
       "someone_else": 0
      },
      "spacing": {
-      "names": 3,
-      "mentions": 7,
+      "names": 4,
+      "mentions": 10,
       "unresolved": 0,
-      "several": 3,
+      "several": 4,
       "someone_else": 0
      }
     },
-    "names_that_could_be_several_people": 3
+    "names_that_could_be_several_people": 9
    },
-   "statement": "Of 6,734 person names, 3,498 resolve to one person; 601 of them collapse into the 270 people who have two names or more. 230 names (1,762 of 32,669 mentions) plausibly name a gallery person they do not resolve to: 139 resolve to no one, 91 to several people and 0 to someone else",
+   "statement": "Of 12,627 person names, 4,837 resolve to one person; 850 of them collapse into the 374 people who have two names or more. 344 names (2,240 of 58,032 mentions) plausibly name a gallery person they do not resolve to: 232 resolve to no one, 112 to several people and 0 to someone else",
    "labels": {
-    "trials_not_labelled_right": 13,
-    "an_alias_gap_may_decide": {},
-    "named_in_claim_text": 3,
-    "statement": "Of the 13 trials the label rule does not call right, an alias gap may decide 0; a claim's text carries the name of 3 (a handle, or a name NER did not find), which the review sheet shows a person"
+    "trials_not_labelled_right": 104,
+    "an_alias_gap_may_decide": {
+     "claim_side": 2
+    },
+    "named_in_claim_text": 13,
+    "statement": "Of the 104 trials the label rule does not call right, an alias gap may decide 2; a claim's text carries the name of 13 (a handle, or a name NER did not find), which the review sheet shows a person"
    },
    "resolution_rules": {
     "what": "over the build scope's person names, what each resolver rule changes against an exact key: spacing looks a name up by its letters, as linking does; one_word lets a one-word name resolve only to the one gallery person who holds it, never through a nickname alias, and makes a word with two readings or more ambiguous",
     "cost_by_design": {
-     "names": 407,
-     "mentions": 3377,
-     "share_of_mentions": 0.1034,
-     "statement": "407 names that resolved to one person (3,377 mentions, 10.3% of all) now refuse rather than guess: the word is several people's, or only a nickname. A design choice, not a regression: a guess checks one person's face, and nothing downstream can tell a wrong guess from a right one"
+     "names": 459,
+     "mentions": 4229,
+     "share_of_mentions": 0.0729,
+     "statement": "459 names that resolved to one person (4,229 mentions, 7.3% of all) now refuse rather than guess: the word is several people's, or only a nickname. A design choice, not a regression: a guess checks one person's face, and nothing downstream can tell a wrong guess from a right one"
     },
     "spacing": {
-     "names_changed": 21,
-     "mentions": 68,
+     "names_changed": 42,
+     "mentions": 112,
      "by_change": {
       "no_one_to_one": {
-       "names": 14,
-       "mentions": 49
+       "names": 34,
+       "mentions": 90
       },
       "one_to_several": {
-       "names": 7,
-       "mentions": 19
+       "names": 8,
+       "mentions": 22
       }
      },
      "resolved_to_one_person_no_longer": {
-      "names": 7,
-      "mentions": 19,
-      "share_of_mentions": 0.0006
+      "names": 8,
+      "mentions": 22,
+      "share_of_mentions": 0.0004
      }
     },
     "one_word": {
-     "names_changed": 535,
-     "mentions": 4015,
+     "names_changed": 725,
+     "mentions": 5152,
      "by_change": {
       "no_one_to_several": {
-       "names": 119,
-       "mentions": 444
+       "names": 251,
+       "mentions": 679
       },
       "one_to_no_one": {
-       "names": 36,
-       "mentions": 89
+       "names": 46,
+       "mentions": 476
       },
       "one_to_several": {
-       "names": 364,
-       "mentions": 3269
+       "names": 405,
+       "mentions": 3731
       },
       "several_to_several": {
-       "names": 16,
-       "mentions": 213
+       "names": 23,
+       "mentions": 266
       }
      },
      "resolved_to_one_person_no_longer": {
-      "names": 400,
-      "mentions": 3358,
-      "share_of_mentions": 0.1028
+      "names": 451,
+      "mentions": 4207,
+      "share_of_mentions": 0.0725
      }
     },
     "both": {
-     "names_changed": 555,
-     "mentions": 4082,
+     "names_changed": 765,
+     "mentions": 5259,
      "by_change": {
       "no_one_to_one": {
-       "names": 13,
-       "mentions": 48
+       "names": 32,
+       "mentions": 85
       },
       "no_one_to_several": {
-       "names": 119,
-       "mentions": 444
+       "names": 251,
+       "mentions": 679
       },
       "one_to_no_one": {
-       "names": 36,
-       "mentions": 89
+       "names": 46,
+       "mentions": 476
       },
       "one_to_several": {
-       "names": 371,
-       "mentions": 3288
+       "names": 413,
+       "mentions": 3753
       },
       "several_to_several": {
-       "names": 16,
-       "mentions": 213
+       "names": 23,
+       "mentions": 266
       }
      },
      "resolved_to_one_person_no_longer": {
-      "names": 407,
-      "mentions": 3377,
-      "share_of_mentions": 0.1034
+      "names": 459,
+      "mentions": 4229,
+      "share_of_mentions": 0.0729
      }
     },
-    "statement": "407 names that resolved to one person (3,377 mentions, 10.3% of all) now refuse rather than guess: the word is several people's, or only a nickname. A design choice, not a regression: a guess checks one person's face, and nothing downstream can tell a wrong guess from a right one. Against an exact key, the rules change how 555 names resolve (4,082 mentions): spacing 21, one_word 535"
+    "statement": "459 names that resolved to one person (4,229 mentions, 7.3% of all) now refuse rather than guess: the word is several people's, or only a nickname. A design choice, not a regression: a guess checks one person's face, and nothing downstream can tell a wrong guess from a right one. Against an exact key, the rules change how 765 names resolve (5,259 mentions): spacing 42, one_word 725"
    },
    "no_one": {
     "what": "the build scope's person names that resolve to no one, by the first cause that applies: an alias gap; a one-word name the resolver refuses; what Wikidata's search answered at linking",
-    "names": 2713,
-    "mentions": 5600,
-    "share_of_mentions": 0.1714,
+    "names": 7075,
+    "mentions": 11447,
+    "share_of_mentions": 0.1973,
     "by_cause": {
      "held": {
-      "names": 17,
-      "mentions": 25,
-      "one_word_names": 0,
-      "single_mention_names": 13,
-      "share_of_mentions": 0.0008
+      "names": 637,
+      "mentions": 721,
+      "one_word_names": 163,
+      "single_mention_names": 572,
+      "share_of_mentions": 0.0124
      },
      "a_gallery_person": {
-      "names": 139,
-      "mentions": 499,
-      "one_word_names": 38,
-      "single_mention_names": 86,
-      "share_of_mentions": 0.0153
+      "names": 219,
+      "mentions": 705,
+      "one_word_names": 51,
+      "single_mention_names": 139,
+      "share_of_mentions": 0.0121
      },
      "refused_one_word": {
-      "names": 36,
-      "mentions": 89,
-      "one_word_names": 36,
-      "single_mention_names": 21,
-      "share_of_mentions": 0.0027
+      "names": 44,
+      "mentions": 474,
+      "one_word_names": 44,
+      "single_mention_names": 23,
+      "share_of_mentions": 0.0082
      },
      "no_item": {
-      "names": 1537,
-      "mentions": 2652,
-      "one_word_names": 207,
-      "single_mention_names": 1169,
-      "share_of_mentions": 0.0812
+      "names": 4337,
+      "mentions": 5880,
+      "one_word_names": 391,
+      "single_mention_names": 3702,
+      "share_of_mentions": 0.1013
      },
      "no_exact_item": {
-      "names": 264,
-      "mentions": 503,
-      "one_word_names": 100,
-      "single_mention_names": 185,
-      "share_of_mentions": 0.0154
+      "names": 540,
+      "mentions": 853,
+      "one_word_names": 151,
+      "single_mention_names": 440,
+      "share_of_mentions": 0.0147
      },
      "name_only": {
-      "names": 76,
-      "mentions": 148,
-      "one_word_names": 70,
-      "single_mention_names": 48,
-      "share_of_mentions": 0.0045
+      "names": 105,
+      "mentions": 178,
+      "one_word_names": 95,
+      "single_mention_names": 74,
+      "share_of_mentions": 0.0031
      },
      "name_or_thing": {
-      "names": 209,
-      "mentions": 484,
-      "one_word_names": 201,
-      "single_mention_names": 135,
-      "share_of_mentions": 0.0148
+      "names": 310,
+      "mentions": 651,
+      "one_word_names": 289,
+      "single_mention_names": 216,
+      "share_of_mentions": 0.0112
      },
      "not_a_person": {
-      "names": 435,
-      "mentions": 1200,
-      "one_word_names": 298,
-      "single_mention_names": 283,
-      "share_of_mentions": 0.0367
+      "names": 883,
+      "mentions": 1985,
+      "one_word_names": 550,
+      "single_mention_names": 613,
+      "share_of_mentions": 0.0342
      }
     },
-    "statement": "2,713 person names (5,600 of 32,669 mentions) resolve to no one. Exact matches held for a person's check: 17 (25 mentions). Linking failures with the person in the gallery, by rule: 139 (499 mentions). One-word names the resolver refuses: 36 (89 mentions). No Wikidata item by that name: 1,537 (2,652 mentions), and items that begin with it but are not it: 264 (503 mentions) -- people Wikidata does not have, or forms its search cannot match. Exactly a name item, a surname or first name alone: 76 (148 mentions); exactly something that is no person: 435 (1,200 mentions); both: 209 (484 mentions)"
+    "statement": "7,075 person names (11,447 of 58,032 mentions) resolve to no one. Exact matches held for a person's check: 637 (721 mentions). Linking failures with the person in the gallery, by rule: 219 (705 mentions). One-word names the resolver refuses: 44 (474 mentions). No Wikidata item by that name: 4,337 (5,880 mentions), and items that begin with it but are not it: 540 (853 mentions) -- people Wikidata does not have, or forms its search cannot match. Exactly a name item, a surname or first name alone: 105 (178 mentions); exactly something that is no person: 883 (1,985 mentions); both: 310 (651 mentions)"
    }
   },
   "adjudicated": {
@@ -1165,8 +2174,8 @@
     "floor": 0.3811,
     "confirmed_right": {
      "names": 35,
-     "recognised": 31,
-     "recognition_failures": 2,
+     "recognised": 33,
+     "recognition_failures": 0,
      "coverage": {
       "no_usable_reference": 1,
       "no_usable_face": 1
@@ -1179,28 +2188,21 @@
     },
     "label_noise": {
      "wrong_to_right": {
-      "at_or_above_floor": 2,
-      "below_floor": 2
+      "at_or_above_floor": 4
      }
     },
     "faces": {
      "recognised": {
-      "median_face_side": 96.3,
-      "median_eye_span": 43.9,
-      "median_eye_mouth": 48.0,
-      "median_nose_offset": 0.12,
-      "side_on": 2
+      "median_face_side": 96.2,
+      "median_eye_span": 39.4,
+      "median_eye_mouth": 44.7,
+      "median_nose_offset": 0.14,
+      "side_on": 4
      },
-     "recognition_failures": {
-      "median_face_side": 41.2,
-      "median_eye_span": 5.3,
-      "median_eye_mouth": 21.9,
-      "median_nose_offset": 1.13,
-      "side_on": 2
-     }
+     "recognition_failures": null
     },
     "recognition_failures_by_cause": {
-     "pose": 2,
+     "pose": 0,
      "size": 0,
      "both": 0,
      "neither": 0,
@@ -1213,86 +2215,107 @@
       "size": "none in the gallery: under the 20 px floor verify answers no_usable_face, and only a larger image helps"
      }
     },
-    "statement": "A person confirmed 35 names right. The gallery scores 31 at or above its floor of 0.381; 2 below it, among different people's faces -- recognition failures, not label errors: they lower TAR, and they are the recognizer's limit on these images (pose: 2, size: 0, both: 0, neither: 0); 2 it cannot score -- coverage, never a true accept. 4 decisions changed a label (label noise): wrong to right: 4 (2 at or above the floor, 2 below it, 0 unscorable)"
+    "statement": "A person confirmed 35 names right. The gallery scores 33 at or above its floor of 0.381; 0 below it, among different people's faces -- recognition failures, not label errors: they lower TAR, and they are the recognizer's limit on these images (pose: 0, size: 0, both: 0, neither: 0); 2 it cannot score -- coverage, never a true accept. 4 decisions changed a label (label noise): wrong to right: 4 (4 at or above the floor, 0 below it, 0 unscorable)"
    },
    "trials": {
-    "total": 44,
-    "headline": 44,
-    "excluded_same_photo": 0,
+    "total": 284,
+    "headline": 282,
+    "excluded_same_photo": 2,
     "forced_lines": 0,
     "by_label": {
-     "right": 35,
-     "wrong": 8,
-     "unlinked": 1
+     "right": 183,
+     "wrong": 88,
+     "unlinked": 11
     },
     "unscorable": {
-     "no_usable_reference": 1,
-     "name_unlinked": 1,
-     "no_usable_face": 1
+     "no_usable_face": 28,
+     "no_usable_reference": 4,
+     "no_face_in_image": 17,
+     "name_unlinked": 11,
+     "ambiguous_name": 2
     }
    },
    "vlm_precision": {
-    "qid": 0.7955,
-    "names": 44,
-    "right": 35,
-    "excluding_unlinked": 0.814,
+    "qid": 0.6489,
+    "names": 282,
+    "right": 183,
+    "excluding_unlinked": 0.6753,
     "rule": "right when the name resolves, by QID, to anyone the image's claims name: the probe's listed figures and claim NER's people. A claim name that resolves to several people decides nothing",
-    "single_figure_rule": 0.5455,
-    "token_rule_on_probe_list_images": 0.561,
+    "single_figure_rule": 0.5426,
+    "token_rule_on_probe_list_images": 0.6566,
     "note": "The earlier figures carried a defect in this measurement: the pilot's 47.8% and the first QID-based figure (0.5455, the 2026-10-21 sample pass) scored a name against one figure per image, so a person the claims name beside that figure, correctly named, counted as wrong. Both were understated. single_figure_rule is that defective figure recomputed on these trials. The token rule is the pilot's own method on the same images: its loose token pattern, with the same defect. The pilot's 47.8% is also APPROXIMATE for that token pattern"
    },
    "bar": {
     "accepted_name_precision": 0.9,
-    "max_fmr_over_tar": 0.4322,
+    "max_fmr_over_tar": 0.2054,
     "rule": "p*TAR / (p*TAR + (1-p)*FMR) >= 0.90, i.e. FMR/TAR <= p / (9 (1 - p))"
    },
    "threshold": {
     "chosen": null,
     "certified": false,
-    "chosen_by": "unset: only a calibration over the complete Factify2 run sets the threshold, and this ledger holds 2,828 of 45,186 images. The candidate, and every figure at it, are reported and never adopted",
-    "candidate": 0.4383,
-    "candidate_by": "one-sided 95% lower bound of accepted-name precision >= 0.90",
-    "bound_shortfall": null,
-    "by_bound": 0.4383,
-    "by_point_estimate": 0.2811
+    "chosen_by": "unset: no threshold reaches the one-sided 95% lower bound of 0.90, and a point estimate is never adopted, so the gallery does not decide at this confidence. Short of the bound: the highest lower bound of accepted-name precision is 0.8827, at 0.5214: 131 of 141 accepted names right (0.9291). That clears 0.90 as a point estimate, on too few trials to certify it: at that precision about 333 accepted names would",
+    "candidate": 0.5214,
+    "candidate_by": "closest to the bound and short of it: the highest lower bound of accepted-name precision is 0.8827, at 0.5214: 131 of 141 accepted names right (0.9291). That clears 0.90 as a point estimate, on too few trials to certify it: at that precision about 333 accepted names would",
+    "bound_shortfall": {
+     "threshold": 0.5214,
+     "at": {
+      "threshold": 0.5214,
+      "right": 183,
+      "wrong": 99,
+      "accepted_right": 131,
+      "accepted_wrong": 10,
+      "tar": 0.7158,
+      "fmr": 0.101,
+      "fmr_upper_95": 0.1653,
+      "precision": 0.9291,
+      "precision_lower_95": 0.8827
+     },
+     "accepted_names": 141,
+     "reason": "too_few_trials",
+     "accepted_names_needed": 333,
+     "statement": "the highest lower bound of accepted-name precision is 0.8827, at 0.5214: 131 of 141 accepted names right (0.9291). That clears 0.90 as a point estimate, on too few trials to certify it: at that precision about 333 accepted names would"
+    },
+    "by_bound": null,
+    "by_point_estimate": 0.4306
    },
    "at_threshold": {
-    "threshold": 0.4383,
-    "right": 35,
-    "wrong": 9,
-    "accepted_right": 31,
-    "accepted_wrong": 0,
-    "tar": 0.8857,
-    "fmr": 0.0,
-    "fmr_upper_95": 0.2831,
-    "precision": 1.0,
-    "precision_lower_95": 0.9079
+    "threshold": 0.5214,
+    "right": 183,
+    "wrong": 99,
+    "accepted_right": 131,
+    "accepted_wrong": 10,
+    "tar": 0.7158,
+    "fmr": 0.101,
+    "fmr_upper_95": 0.1653,
+    "precision": 0.9291,
+    "precision_lower_95": 0.8827
    },
-   "fmr_over_tar": 0.0,
+   "fmr_over_tar": 0.1411,
    "cost_in_true_accepts": {
-    "right_names": 35,
-    "rejected": 4,
+    "right_names": 183,
+    "rejected": 52,
     "rejected_unscorable": {
+     "no_usable_face": 17,
      "no_usable_reference": 1,
-     "no_usable_face": 1
+     "no_face_in_image": 11
     },
-    "rejected_below_threshold": 2,
-    "right_names_scorable": 33,
-    "tar_scorable": 0.9394,
+    "rejected_below_threshold": 23,
+    "right_names_scorable": 154,
+    "tar_scorable": 0.8506,
     "note": "TAR is (right names the gallery can score / right names) x tar_scorable: a name it cannot score is coverage, and tar_scorable is the recognizer's own rate without it"
    },
    "bootstrap_95": {
     "tar": [
-     0.7778,
-     1.0
+     0.639,
+     0.7849
     ],
     "fmr": [
-     0.0,
-     0.0
+     0.0444,
+     0.1667
     ],
     "precision": [
-     1.0,
-     1.0
+     0.8819,
+     0.9692
     ]
    },
    "cross_validated": {
@@ -1314,94 +2337,94 @@
     "point": {
      "rule": "point",
      "fold_thresholds": [
-      0.2811,
-      0.2285,
-      0.2784,
-      0.2878,
-      0.2878
+      0.4306,
+      0.4383,
+      0.4216,
+      0.4216,
+      0.4216
      ],
-     "accepted_right": 33,
-     "accepted_wrong": 4,
-     "tar": 0.9429,
-     "fmr": 0.4444,
-     "precision": 0.8919
+     "accepted_right": 143,
+     "accepted_wrong": 15,
+     "tar": 0.7814,
+     "fmr": 0.1515,
+     "precision": 0.9051
     }
    },
    "figure_stratified": {
     "what": "every figure weighs the same: each trial counts 1 / its figure's trials; 95% intervals by resampling figures",
-    "figures": 17,
-    "threshold": 0.4383,
-    "vlm_precision": 0.7638,
-    "tar": 0.9417,
-    "fmr": 0.0,
-    "precision": 1.0,
-    "precision_lower_95": 1.0,
+    "figures": 61,
+    "threshold": 0.5214,
+    "vlm_precision": 0.5298,
+    "tar": 0.8092,
+    "fmr": 0.0474,
+    "precision": 0.9506,
+    "precision_lower_95": 0.8828,
     "bootstrap_95": {
      "vlm_precision": [
-      0.598,
-      0.902
+      0.4133,
+      0.6421
      ],
      "tar": [
-      0.8629,
-      1.0
+      0.6834,
+      0.9184
      ],
      "fmr": [
-      0.0,
-      0.0
+      0.0036,
+      0.1325
      ],
      "precision": [
-      1.0,
-      1.0
+      0.8663,
+      0.9959
      ]
     },
-    "threshold_by_figure_bound": 0.3889,
+    "threshold_by_figure_bound": 0.7661,
     "note": "the threshold at which the one-sided 95% lower bound of figure-weighted precision reaches 0.90; when it is above the pooled one, the pooled threshold leans on the most-tried figures",
     "pooled_without_top_two_figures": {
-     "threshold": 0.4383,
-     "right": 20,
-     "wrong": 7,
-     "accepted_right": 17,
-     "accepted_wrong": 0,
-     "tar": 0.85,
-     "fmr": 0.0,
-     "fmr_upper_95": 0.3482,
-     "precision": 1.0,
-     "precision_lower_95": 0.8384
+     "threshold": 0.5214,
+     "right": 79,
+     "wrong": 68,
+     "accepted_right": 61,
+     "accepted_wrong": 4,
+     "tar": 0.7722,
+     "fmr": 0.0588,
+     "fmr_upper_95": 0.1296,
+     "precision": 0.9385,
+     "precision_lower_95": 0.8647
     }
    },
    "look_alike_finding": {
     "what": "the VLM's wrong names against random strangers: the right names' faces, each scored against a random other person in the gallery (seeded). A contrast, never an input",
     "random_strangers": {
-     "pairs": 32,
-     "max_score": 0.3457,
-     "median_score": 0.148,
+     "pairs": 146,
+     "max_score": 0.4154,
+     "median_score": 0.1513,
      "accepted_at_threshold": 0
     },
     "vlm_wrong_names": {
-     "wrong": 9,
-     "scorable": 8,
-     "median_score": 0.2535,
-     "above_every_stranger": 1,
-     "accepted_at_threshold": 0
+     "wrong": 99,
+     "scorable": 66,
+     "median_score": 0.2971,
+     "above_every_stranger": 16,
+     "accepted_at_threshold": 10
     },
-    "right_names_median_score": 0.6151,
+    "right_names_median_score": 0.6252,
     "if_calibrated_on_random_pairs": {
-     "threshold": 0.181,
+     "threshold": 0.2385,
      "rule": "the lowest threshold at which p*TAR / (p*TAR + (1-p)*FMR) >= 0.90 with FMR measured on random strangers (point estimate), p the VLM's QID precision",
      "on_the_vlms_own_names": {
-      "threshold": 0.181,
-      "right": 35,
-      "wrong": 9,
-      "accepted_right": 33,
-      "accepted_wrong": 6,
-      "tar": 0.9429,
-      "fmr": 0.6667,
-      "fmr_upper_95": 0.9023,
-      "precision": 0.8462,
-      "precision_lower_95": 0.7188
+      "threshold": 0.2385,
+      "right": 183,
+      "wrong": 99,
+      "accepted_right": 151,
+      "accepted_wrong": 44,
+      "tar": 0.8251,
+      "fmr": 0.4444,
+      "fmr_upper_95": 0.532,
+      "precision": 0.7744,
+      "precision_lower_95": 0.7196
      }
     },
-    "finding": "Scored against a random other person, the right names' faces reach at most 0.346 (median 0.148); 1 of the 8 scorable wrong names the VLM gave score above every stranger. A threshold calibrated on random pairs would sit at 0.181; on the VLM's own names it accepts 6 of 9 wrong names, an accepted-name precision of 0.8462 against the 0.9 required. A random-pair false-match rate measures strangers; the names a gallery must refuse are the look-alikes the VLM chose, so the threshold is calibrated on those."
+    "finding": "Scored against a random other person, the right names' faces reach at most 0.415 (median 0.151); 16 of the 66 scorable wrong names the VLM gave score above every stranger. A threshold calibrated on random pairs would sit at 0.239; on the VLM's own names it accepts 44 of 99 wrong names, an accepted-name precision of 0.7744 against the 0.9 required. A random-pair false-match rate measures strangers; the names a gallery must refuse are the look-alikes the VLM chose, so the threshold is calibrated on those."
    }
   }
  }

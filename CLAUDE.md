@@ -671,6 +671,21 @@ Wikidata items with reference images from Wikimedia Commons. It is how the
       decided (37, 2026-10-22) it stays at 0.4383, and TAR at it falls from
       0.9394 to 0.8857: the second sheet's two relabels are faces the gallery
       fails to recognise.
+    - **The full calibration** (complete ledger, the server, 2026-10-23)
+      leaves the threshold unset, as a stated result. The write-up is
+      `docs/gallery_calibration.md`.
+      - At the candidate 0.5214, 131 of 141 accepted names are right
+        (adjudicated: 0.9291, lower bound 0.8827). Certifying needs about 333
+        accepted names, or 1,183 on raw labels.
+      - 113 of the 141 have not been checked by a person. The bound reaches
+        0.90 at 134 of 141, so the review sheet (157 rows) comes before any
+        widening.
+      - The look-alike finding holds at scale and across 200 draws of
+        strangers: random-pair calibration gives precision 0.73 to 0.79,
+        never 0.90.
+      - Accuracy differs by figure: rank 1 is 0.97 [0.89, 1.00], rank 2 is
+        0.60 [0.26, 0.88]. Rank 2's 4 accepted wrong labels are unchecked.
+      - A second machine reproduced the report in every value.
   - **`verify` decides only at a certified threshold** (`certified_threshold`).
     - Without one it refuses: `match` stays null, and it returns the score and
       the matched reference for a person to check. It never defaults to
@@ -715,6 +730,18 @@ Wikidata items with reference images from Wikimedia Commons. It is how the
     several people hold, and a face under the size floor.
     `cost_in_true_accepts.tar_scorable` is TAR without them, the recognizer's
     own rate: 0.9394 on the adjudicated sample.
+  - **A known limit, stated beside every calibration: lone P18 references**
+    (recorded 2026-10-24, the person's decision).
+    - 685 people's only single-face reference is a lone P18 image. No check
+      can test it, since a lone reference is its own medoid.
+    - By title, at least 3 of those are not photographs (two stamps and a
+      bust).
+    - Title keywords mark 30 usable P18 references in all, some wrongly;
+      that is an agent's reading of titles, not a person's check.
+    - The calibration comes first. If the certified threshold lands, it
+      shows how much this matters; if it does not, the problem lies
+      elsewhere. A sheet waits until the number proves load-bearing.
+    - `calibrate` does not compute this: the figures are from 2026-10-24.
   - **A face under 20 px from eyes to mouth is never scored** (`MIN_EYE_MOUTH`,
     decided 2026-10-23).
     - The floor is measured: it is the smallest face the gallery recognised

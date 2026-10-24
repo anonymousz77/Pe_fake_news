@@ -18,6 +18,7 @@ and must never be confused in practice.
 | [provenance.md](provenance.md) | Where each corpus came from, licence terms, and what was verified by hand |
 | [counts_ledger.md](counts_ledger.md) | Row and file counts at each pipeline stage — the arithmetic that has to reconcile |
 | [evidence_store.md](evidence_store.md) | Design and contents of `data/bible/` |
+| [gallery_calibration.md](gallery_calibration.md) | The entity gallery's full calibration: the unset threshold, the look-alike finding, accuracy by figure, what widening would cost |
 
 ## Conventions
 
