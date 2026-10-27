@@ -677,16 +677,18 @@ Wikidata items with reference images from Wikimedia Commons. It is how the
       `docs/gallery_calibration.md`.
       - A person checked every name the threshold accepts. The 113 unchecked
         ones were put on a sheet (`review --accepted`: the 10 labelled wrong
-        first) and all decided, 2026-10-24.
+        first), and the person decided all of them (written 2026-10-27).
       - 141 of 141 are right: precision 1.0, one-sided lower bound 0.979.
         FMR is 0 of 89 and TAR 0.73 (0.86 on names the gallery can score).
       - Of 150 decisions, 14 turned a wrong label right, all of them
         bystanders the claims did not name. None turned a right label wrong.
         On claim labels alone the threshold stays unset (129 of 141).
       - **A threshold certifies only where a person has checked every name it
-        accepts** (`choose_threshold(..., checked=True)`; the person's rule,
-        enforced 2026-10-27). The bound alone reaches 0.3959, but 16 of the
-        162 names it accepts are unchecked (`by_bound_unchecked`).
+        accepts** (`choose_threshold(..., checked=True)`, enforced
+        2026-10-27). It is the review sheet's rule in code: a bound that holds
+        only because no one looked is not a bound. The bound alone reaches
+        0.3959, but 16 of the 162 names it accepts are unchecked
+        (`by_bound_unchecked`).
         - Checking those 16 could lower the threshold and raise TAR to about
           0.79. This is open work.
         - `verify` reads the threshold of the checked labels
