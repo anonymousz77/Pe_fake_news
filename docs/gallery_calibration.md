@@ -1,61 +1,83 @@
 # Entity gallery: calibration report
 
-**2026-10-24. The full calibration, on the complete Factify2 ledger** (run
-`93cd9d679720`, 45,186 images). Every figure below is read from
-`data/reports/gallery_calibration.json`, written by `calibrate` on the server on
-2026-10-23 (face configuration `b6abc4a9f987`: YuNet finds faces, SFace embeds
-them; consistency threshold pinned at 0.3811). A second run on another machine
-reproduced that report in every value (section 6).
+**2026-10-27. The gallery's threshold is certified: 0.5214, on names a person
+has checked, every one it accepts.** It was calibrated on the complete Factify2
+ledger (run `93cd9d679720`, 45,186 images).
 
-Figures marked *derived* are computed from the local trials
+Every figure below is read from `data/reports/gallery_calibration.json`.
+- The server wrote the first version on 2026-10-23: face configuration
+  `b6abc4a9f987`, where YuNet finds faces and SFace embeds them, with the
+  consistency threshold pinned at 0.3811.
+- A second machine reproduced that report in every value, and wrote the final
+  version on 2026-10-27 (section 6).
+
+Figures marked *derived* come from the local trials
 (`data/interim/gallery/calibration/sface_trials.jsonl`, ignored because it
 carries names and record ids), by the method given beside them. Figures are
 reported by rank, never by name, as the published per-figure rule requires.
 
-The question the gallery answers is 1:1: does this image show the person a
-name, proposed by the VLM from the face alone, resolves to? A trial is one such
-name on one Factify2 TRAIN claim image. It is labelled right when the name
-resolves, by QID, to anyone the image's claims name.
+The question the gallery answers is 1:1: does this image show the person that a
+name, proposed by the VLM from the face alone, resolves to?
+- A trial is one such name on one Factify2 TRAIN claim image, keyed by image
+  and name. Two names on one image are two trials and two decisions; 7 images
+  carry two or three.
+- A trial is labelled right when the name resolves, by QID, to anyone the
+  image's claims name. A person's decision, where there is one, replaces that
+  label.
 
-## 1. The result: the threshold stays unset
+## 1. The result: certified at 0.5214
 
-No threshold reaches the bar, so the gallery does not decide at this confidence.
-That is the result, stated as one: it is not a failure to report one. The bar is
-accepted-name precision whose one-sided 95% lower bound (Clopper-Pearson) is at
-least 0.90. A point estimate is never adopted.
-
-| At the candidate threshold, 0.5214 | Raw labels | Adjudicated |
+| At 0.5214 | Claim labels | Checked by a person |
 | --- | ---: | ---: |
-| VLM precision (QID rule), over 282 trials | 0.6348 | 0.6489 |
-| Accepted names, right of all | 129 of 141 | 131 of 141 |
-| Accepted-name precision (one-sided 95% lower bound) | 0.9149 (0.8658) | 0.9291 (0.8827) |
-| TAR / FMR | 0.7207 / 0.1165 | 0.7158 / 0.1010 |
-| Accepted names needed to certify at that precision | about 1,183 | about 333 |
-| Figure-stratified precision (one-sided 95% lower bound) | 0.9126 (0.821) | 0.9506 (0.8828) |
+| Accepted names, right of all | 129 of 141 | 141 of 141 |
+| Accepted-name precision (one-sided 95% lower bound) | 0.915 (0.866) | 1.000 (0.979) |
+| True accepts (TAR) | 0.721 | 0.731 (141 of 193) |
+| False accepts (FMR) | 12 of 103 | 0 of 89 (upper bound 0.033) |
+| VLM precision, over 282 trials | 0.635 | 0.684 |
+| Threshold | unset | **certified** |
 
-- **Why it falls short: too few trials, not overlap.** The point estimate
-  clears 0.90 and the bound does not. With 5-fold cross-validation, the bound
-  rule finds no threshold in any fold.
-- **Adjudication is partial.** The adjudicated column applies the 37 decisions a
-  person made on the sample's sheets (2026-10-22): 35 confirmed the VLM's name,
-  2 found someone else, and 4 of them turned a wrong label right.
-  - Only 28 of the 141 accepted names are among them. The other 113 rest on
-    the claim-based labels alone.
-  - An accepted name nobody looked at is where an unseen false accept would
-    sit, so these labels are not yet a bound.
-- **How close it is.** On 141 accepted names the bound reaches 0.90 at 134
-  right (133 right gives 0.89996). The count is 131 now.
-  - A review that turns 3 of the 10 wrong labels right, and finds none of the
-    131 right labels wrong, certifies 0.5214 on these trials.
-  - A review that finds right labels wrong moves certification further away.
-  - This is arithmetic, not a forecast.
+**The rule.** A threshold certifies only where the one-sided 95% lower bound of
+accepted-name precision (Clopper-Pearson) reaches 0.90, and only where a person
+has checked every name it accepts.
+- An accepted name nobody looked at is where an unseen false accept would sit.
+  A bound that holds only because no one looked is not a bound.
+- The code enforces this since 2026-10-27: `choose_threshold(..., checked=True)`,
+  and `verify` decides at the threshold of the checked labels.
+- A point estimate is never adopted, and the threshold is set only on the
+  complete ledger.
 
-*Derived* (`accepted_names_needed`): how many accepted names a precision, held,
-needs before its bound reaches 0.90.
+**The review.** A person made 150 decisions: 37 on the sample's sheets, and 113
+on every accepted name not yet checked.
+- 148 found the face to be the person the VLM named, and 2 found someone else.
+- 14 decisions changed a label, all of them from wrong to right. Each was a
+  bystander the claims did not name, whom the VLM named correctly.
+- No right label turned wrong.
 
-| Accepted-name precision | 0.92 | 0.9291 | 0.94 | 0.95 | 0.96 | 0.97 |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Accepted names needed | 671 | 333 | 191 | 129 | 89 | 61 |
+**The bound alone reaches lower, and is not taken.**
+- At 0.3959 it accepts 162 names, 153 of them right: 0.944, lower bound 0.905,
+  TAR 0.79.
+- But a person has checked only 146 of those 162; 16 are unchecked.
+- Checking those 16 could lower the certified threshold and raise TAR from
+  0.73 to about 0.79. This is open work, not a result.
+
+**Two caveats, stated beside it.**
+- **The precision rests on labels a person has checked for 141 of 141 accepted
+  names.** The rule requires it, and the figure is only as good as that review.
+- **A low score is weak evidence that the person is absent.**
+  - TAR is 0.73: 52 of 193 right names are rejected. 29 of them cannot be
+    scored at all, and 23 score below the threshold.
+  - Two official photographs a person confirmed as one man score 0.167
+    against each other.
+  - So a rejection says the gallery could not confirm the name. It does not
+    say the face is someone else. The threshold certifies accepts; it does
+    not certify "this is not X".
+
+**Validation.**
+- Bootstrap over trials on the checked labels: TAR 0.66 to 0.80, precision
+  1.00 to 1.00.
+- 5-fold cross-validation over images, with the bound rule alone: fold
+  thresholds 0.39 to 0.42, and held-out precision 0.944. That rule does not
+  require checked names.
 
 ## 2. The VLM's wrong names are look-alikes, not random strangers
 
@@ -66,180 +88,164 @@ random people. They are the people it mistook the face for.
 
 **Method.**
 - Each right name the gallery can score has its query face scored against a
-  random other gallery person (seeded). This is what a random-pair calibration
+  random other gallery person (seeded). That is what a random-pair calibration
   measures.
 - A wrong name is scored as verify scores it: the face against the references
   of the person the VLM named.
 - The random-pair threshold is the lowest at which
   p·TAR / (p·TAR + (1−p)·FMR) ≥ 0.90, with FMR measured on the strangers and p
   the VLM's precision.
+- The contrast is measured over 200 seeded draws of strangers
+  (`look_alike_finding.over_draws` in the report). Each draw gives every right
+  name one stranger.
 
-**Result, on the run's own draw of strangers:**
-
-| | Raw labels | Adjudicated |
+| | Claim labels | Checked labels |
 | --- | ---: | ---: |
-| Wrong names (of them scorable) | 103 (70) | 99 (66) |
-| Median score: right names / wrong names / strangers | 0.627 / 0.308 / 0.148 | 0.625 / 0.297 / 0.151 |
-| Threshold a random-pair calibration would set | 0.233 | 0.239 |
-| Wrong names that threshold accepts | 49 of 103 | 44 of 99 |
-| Accepted-name precision there (one-sided 95% lower bound) | 0.75 (0.69) | 0.77 (0.72) |
-| Scorable wrong names above every stranger | 33 of 70 | 16 of 66 |
+| Wrong names (of them scorable) | 103 (70) | 89 (56) |
+| Median score: right names / wrong names / strangers | 0.627 / 0.308 / 0.148 | 0.630 / 0.279 / 0.169 |
+| Threshold a random-pair calibration would set: median (range over draws) | 0.242 (0.216 to 0.269) | 0.230 (0.204 to 0.260) |
+| Accepted-name precision there, on the VLM's own names: median (range) | 0.754 (0.728 to 0.767) | 0.817 (0.785 to 0.838) |
+| Draws in which that precision reaches 0.90 | 0 of 200 | 0 of 200 |
+| Scorable wrong names above the 99th percentile of every stranger score | 30 of 70 | 17 of 56 |
+| How often a wrong name outscores a random stranger | 0.869 | 0.832 |
+| How often a right name outscores a wrong one | 0.849 | 0.959 |
 
-**Robustness** (*derived*: the pipeline's own procedure, `random_pair_scores`
-then `look_alike_finding`, over 200 seeds, with nothing but the seed varied):
-- **Random-pair calibration gives accepted-name precision of 0.73 to 0.77 on
-  raw labels (median 0.754) and 0.74 to 0.79 adjudicated (median 0.774).** Not
-  one of the 200 draws reaches 0.90.
-- **"Above every stranger" is the maximum of one draw, and it moves with the
-  draw.** It runs from 3 to 35 (median 26) on raw labels and from 8 to 31
-  (median 22) adjudicated. That is why it halved under adjudication: 4
-  relabels changed which strangers were drawn.
-  - The stable form: 30 of 70 wrong names (raw) and 27 of 66 (adjudicated)
-    score above the 99th percentile of the stranger scores pooled over the 200
-    draws (28,863 and 29,597 scores; percentiles 0.356 and 0.353).
-- **A wrong VLM name outscores a random stranger with probability 0.87** (0.86
-  adjudicated). A right name outscores a wrong one with probability 0.85 (0.86).
+On the run's own first draw, a random-pair calibration sets 0.233, accepts 49 of
+103 wrong names, and gives precision 0.75 (lower bound 0.69). On the checked
+labels it sets 0.229, accepts 37 of 89, and gives 0.81 (0.76).
+
+**Why these statistics, and not the count above every stranger.**
+- The first version of this finding counted the wrong names that score above
+  *every* stranger: 33 of 70. That count is the maximum of one random draw, and
+  a maximum moves with whichever stranger happens to score highest.
+- Across the 200 draws it ran from 9 to 37 on claim labels and from 0 to 21 on
+  the checked labels. An earlier, independent set of 200 draws gave 3 to 35.
+- On the run's own draw it read 33, then 16 after the first 37 decisions, then
+  7 after all 150. The labels changed which strangers were drawn, not how the
+  VLM's names score.
+- A statistic that one draw can move tenfold is not a measurement. The published
+  statistics are the ones that hold whichever strangers are drawn:
+  - the accepted-name precision a random-pair threshold gives, with its range
+    over draws;
+  - the share of wrong names above a percentile of every stranger score
+    pooled;
+  - how often a wrong name outscores a stranger.
+- The count above every stranger stays in the report only with its range, to
+  show why it is not used.
 
 **What it means.**
 - A false-match rate measured on random pairs understates the false accepts of
   names a VLM proposes, because the VLM proposes look-alikes. Its wrong names
-  score about twice as high as random strangers (medians 0.31 and 0.15).
+  score about twice as high as random strangers.
 - Calibrated on random pairs, the gallery would accept roughly one wrong name in
-  four: precision about 0.75, against the 0.90 required.
-- Calibrated on the VLM's own names, the candidate is 0.52, more than twice the
-  random-pair threshold. A verifier must be calibrated on the names it will
-  actually be asked to verify.
+  four or five: precision 0.75 on claim labels, 0.82 on checked ones, against
+  the 0.90 required.
+- The certified threshold, 0.52, is more than twice the random-pair one. A
+  verifier must be calibrated on the names it will actually be asked to verify.
+- The review sharpened the separation between right and wrong names (0.85 to
+  0.96): part of the apparent overlap was label noise. It did not remove the
+  look-alike effect.
 
 **History.** The 6% sample pointed the same way on 44 trials: random-pair
-precision 0.63 as first labelled, 0.85 adjudicated. The full run measures it on
-282 trials, and its raw and adjudicated figures agree.
+precision 0.63 as first labelled, 0.85 adjudicated.
 
 **Limits.**
-- One recognizer (SFace) and one population (Factify2 train under the claim
-  rule, section 4).
+- One recognizer (SFace), and one population (Factify2 train under the claim
+  rule).
 - The strangers come from the 3,184 gallery people with a usable reference face.
-- Labels are partly adjudicated: 37 of 282 trials.
-- 33 of the 103 raw wrong names cannot be scored and are outside the score
-  comparison.
+- 33 of the 103 wrong names on claim labels cannot be scored, and are outside
+  the score comparison.
 
-## 3. Accuracy depends on who is being verified
+## 3. Accuracy depends on who is being verified: in recall, not in precision
 
-The gallery's precision and recall differ with the person being verified, and
-the pooled figures are mostly about two people.
-- 61 figures (each image's stratum, the one figure its claims name) carry the
-  282 trials.
-- The two most-tried carry 47.9% of them, and the first alone 36.9%. The
-  effective number of figures is 6.2, and 36 figures have a single trial.
+**Precision does not depend on the person.**
+- Before the review, precision seemed to: the second most-tried figure had 6 of
+  10 accepted names right.
+- After it, every accepted name of every figure is right. The difference was
+  noise in the claim labels: 14 wrong labels were correctly named bystanders,
+  4 of them in that figure's images.
 
-*Derived*: adjudicated labels, names accepted at the candidate (0.5214), and
-two-sided 95% Clopper-Pearson intervals.
+**Recall does depend on the person.**
+- 61 figures carry the 282 trials, and the two most-tried carry 47.9% of them.
+- *Derived* table: checked labels, names accepted at the certified threshold,
+  two-sided 95% Clopper-Pearson intervals.
 
-| Figure | Trials | Accepted, right of all | Precision [95% CI] | Right names accepted (TAR) [95% CI] | Accepted names a person has checked |
+| Figure | Trials | Accepted, right of all | Precision [95% CI] | Right names accepted (TAR) [95% CI] | Right names it cannot score |
 | --- | ---: | ---: | --- | --- | ---: |
-| rank 1 | 104 | 64 of 66 | 0.97 [0.89, 1.00] | 64/85 = 0.75 [0.65, 0.84] | 8 of 66 |
-| rank 2 | 31 | 6 of 10 | 0.60 [0.26, 0.88] | 6/19 = 0.32 [0.13, 0.57] | 2 of 10 |
-| rank 3 | 23 | 10 of 12 (raw 9) | 0.83 [0.52, 0.98] | 10/15 = 0.67 [0.38, 0.88] | 5 of 12 |
-| rank 4 | 10 | 3 of 3 | 1.00 [0.29, 1.00] | 3/4 = 0.75 [0.19, 0.99] | 1 of 3 |
-| rank 5 | 8 | 2 of 3 | 0.67 [0.09, 0.99] | 2/4 = 0.50 [0.07, 0.93] | 0 of 3 |
-| rank 6 | 7 | 5 of 5 | 1.00 [0.48, 1.00] | 5/5 = 1.00 [0.48, 1.00] | 1 of 5 |
-| rank 7 | 7 | 5 of 5 | 1.00 [0.48, 1.00] | 5/5 = 1.00 [0.48, 1.00] | 2 of 5 |
-| rank 8 | 7 | 3 of 3 | 1.00 [0.29, 1.00] | 3/4 = 0.75 [0.19, 0.99] | 2 of 3 |
+| rank 1 | 104 | 66 of 66 (2 labelled wrong before review) | 1.00 [0.95, 1.00] | 66/87 = 0.76 [0.65, 0.84] | 16 |
+| rank 2 | 31 | 10 of 10 (4 labelled wrong before review) | 1.00 [0.69, 1.00] | 10/23 = 0.43 [0.23, 0.66] | 7 |
+| rank 3 | 23 | 12 of 12 (3 labelled wrong before review) | 1.00 [0.74, 1.00] | 12/17 = 0.71 [0.44, 0.90] | 1 |
+| rank 4 | 10 | 3 of 3 | 1.00 [0.29, 1.00] | 3/4 = 0.75 [0.19, 0.99] | 1 |
+| rank 5 | 8 | 3 of 3 (1 labelled wrong before review) | 1.00 [0.29, 1.00] | 3/5 = 0.60 [0.15, 0.95] | 0 |
+| rank 6 | 7 | 5 of 5 | 1.00 [0.48, 1.00] | 5/5 = 1.00 [0.48, 1.00] | 0 |
+| rank 7 | 7 | 5 of 5 | 1.00 [0.48, 1.00] | 5/5 = 1.00 [0.48, 1.00] | 0 |
+| rank 8 | 7 | 3 of 3 | 1.00 [0.29, 1.00] | 3/4 = 0.75 [0.19, 0.99] | 0 |
 | rank 9 | 6 | none | — | no right name | — |
-| the other 52 (fewer than 5 trials each) | 79 | 33 of 34 | 0.97 [0.85, 1.00] | 33/42 = 0.79 [0.63, 0.90] | 7 of 34 |
+| the other 52 (fewer than 5 trials each) | 79 | 34 of 34 (2 labelled wrong before review) | 1.00 [0.90, 1.00] | 34/43 = 0.79 [0.64, 0.90] | 4 |
 
 **Reading it.**
-- **Rank 1:** 64 of its 66 accepted names are right (0.97).
-- **Rank 2:** 6 of 10 (0.60). Even the top of its interval is under 0.90.
-  - Its TAR is 0.32. Of its 19 right names, 7 cannot be scored (5 faces under
-    the 20 px floor, 2 images with no face found), and 6 score below the
-    candidate.
-- **Weighting every figure the same** (figure-stratified, adjudicated):
-  precision 0.95 (one-sided lower bound 0.88) and TAR 0.81.
-  - Without the two most-tried figures, the pooled count is 61 of 65 (0.94,
-    lower bound 0.86).
-  - The threshold at which figure-weighted precision's bound reaches 0.90
-    would be 0.766, against the pooled candidate 0.521: the pooled threshold
-    leans on the most-tried figures.
+- Recall ranges from 0.43 to 0.76 among the three most-tried figures.
+- The second figure's right names are lost to coverage (7 cannot be scored) and
+  to recognition (6 score below the threshold).
+- What its images carry decides much of it (section 5):
+  - crowding: TAR 0.60 with several faces in the image, 0.93 with one;
+  - masks: 0.29 masked, 0.88 not;
+  - faces under the 20 px floor.
+- Weighting every figure the same (figure-stratified, checked labels):
+  precision 1.00 and TAR 0.82. Without the two most-tried figures: 65 of 65
+  accepted names right (lower bound 0.955), and TAR 0.78.
 
-**The caveat that decides how large the spread is.**
-- Rank 2's precision rests on 4 accepted names that the claim rule labels
-  wrong and no person has checked.
-- They score 0.61 to 0.74, well above the candidate. They name other people in
-  images whose claims name rank 2's figure and not them.
-- A person has turned that kind of label from wrong to right 4 times before:
-  the claims named the figure, and not the bystander the VLM named correctly.
-- Until they are checked, rank 2's 0.60 is a measurement on unverified labels.
-  Its TAR of 0.32 does not depend on them: it is coverage and recognition.
+**Stated plainly.** The method's accuracy depends on who is being verified. On
+these trials, an accepted name is right whoever it names. How often a right name
+is accepted at all depends on the person, through the faces their images carry.
+Every result is reported per figure, with the figure-stratified estimate beside
+the pooled one.
 
-**Stated plainly.** The method's accuracy depends on who is being verified:
-- through the faces their images carry (size, pose, crowding);
-- through the look-alikes the VLM proposes for them.
+## 4. Widening the population: not needed
 
-So every result is reported per figure, with the figure-stratified estimate
-beside the pooled one.
+At the precision measured before this review (0.929, with the sample's 37
+decisions), certifying would have needed about 333 accepted names (1,183 on
+claim labels alone), and the population gives 141. The review the method
+requires anyway, of the 113 unchecked accepted names, certified 0.5214 on those
+141 with no widening.
 
-## 4. Reaching 333 accepted names: what widening would cost
+For the record, here is what widening would have cost (*derived* counts from the
+ledger; projected accepted names apply the yield of the time, 51%):
 
-At the adjudicated precision (0.9291), certifying needs about 333 accepted
-names; at the raw precision, about 1,183. The population gives 141.
-
-**First, the review the method requires anyway.**
-- 113 of the 141 accepted names are unchecked. A local sheet holds them, 157
-  rows in all (`review --backend sface`).
-- If 3 wrong labels turn right and no right label turns wrong, 0.5214
-  certifies at 134 of 141, with no widening. Section 1 has the arithmetic, and
-  either outcome is open.
-
-**Then widening.** *Derived* counts, from the ledger: the VLM's appearance-only
-person names that resolve to one gallery person with a usable reference face.
-Projected accepted names apply today's yield (141 of 278 such names, 51%), and
-are projections, not measurements.
-
-| Population | Images | Scorable VLM names | Projected accepted | What it costs |
+| Population | Images | Scorable VLM names | Projected accepted | Cost |
 | --- | ---: | ---: | ---: | --- |
-| Factify2 train, the claim rule (now) | 510 | 278 | 141, measured | — |
-| … a "pictured" word, any number of people named | 698 | 387 | about 196 | still short |
-| … one figure named, no "pictured" word | 4,994 | 2,860 | about 1,450 | weaker labels (below) |
-| … anyone named, no "pictured" word | 6,641 | 3,958 | about 2,000 | weaker labels, and several people per claim |
-| … every train image, labelled by a person alone | 19,546 | 6,590 | about 3,340 | no claim label at all: every accepted name is a person's call |
-| Factify2 val, the claim rule | 63 | 31 | about 16 | spends the split model selection uses |
-| AVerImaTeC, the claim rule | 147 | 29 | about 15 | evaluation-only in this project: spends it |
-| AVerImaTeC, every image | 1,345 | 200 | about 100 | evaluation-only; still short |
+| Factify2 train, the claim rule (used) | 510 | 278 | 141, measured | — |
+| … no "pictured" word, one figure named | 4,994 | 2,860 | about 1,450 | weaker labels: a person checks every accepted name |
+| … every train image, labelled by a person alone | 19,546 | 6,590 | about 3,340 | every accepted name a person's call |
+| Factify2 val / AVerImaTeC, the claim rule | 63 / 147 | 31 / 29 | about 16 / 15 | spends held-out data |
 | VERITE | — | — | — | off-limits: never read for any threshold |
 
-**What the looser rules cost in label quality.**
-- Under the claim rule, a claim names one figure and uses a word for a picture
-  ("photo", "image", "video"), and a name is right when the claims name that
-  person. Even so, a person turned 4 of 37 checked labels from wrong to right:
-  bystanders the claims did not name.
-- Without the "pictured" word, a claim need not be about the image at all. A
-  right label then says only that the claim mentions the person, and a wrong
-  one that it does not.
-- The share of scorable names labelled right falls from 66% to 59%.
-- How much of that is label noise rather than VLM error is unmeasured
-  (UNVERIFIED). Only a person checking a sample can measure it.
-
-**The honest route.**
-- Any widening that reaches 333 needs a person to check its accepted names. A
-  bound that holds only because no one looked is not a bound.
-- At 0.93 precision that is about 333 checked names, and at 0.92 about 671. The
-  constraint is a person's time, not data: Factify2 train without the
-  "pictured" word, with every accepted name reviewed on the sheet, holds
-  enough.
-- AVerImaTeC and val would spend held-out data for too few names, and VERITE
-  is off-limits.
-- If that review is not done, the threshold stays unset as a stated result.
-  The gallery then returns a score and the matched reference for a person to
-  check, and never decides.
+Raising TAR is open work. Checking the 16 unchecked names at 0.3959 is the
+cheapest step.
 
 ## 5. Known limits, stated beside the calibration
 
 - **Coverage ceiling.** 1,592 of the gallery's 4,776 people have no usable
   reference face, and 1,430 of them have no Commons reference at all.
-  - Of the 183 right names (adjudicated), 29 cannot be scored: 17 faces under
-    the 20 px floor, 11 images with no face found, and 1 person with no
-    usable reference.
+  - Of the 193 right names, 29 cannot be scored: 17 faces under the 20 px
+    floor, 11 images with no face found, and 1 person with no usable
+    reference.
   - They count against TAR, never as accepts.
+- **Masked faces** (measured 2026-10-27; measured, never refused).
+  - 9 of the 220 faces the gallery scores are masked over nose and mouth: an
+    agent's reading of the crops, not a person's check.
+  - Masks cost recall, not precision. 2 of 7 masked right names are accepted
+    (TAR 0.29, against 0.88 unmasked); both accepted names are right, and
+    both masked wrong names are rejected.
+  - Detection is cheap. On the aligned crop the recognizer embeds, the mouth
+    region's skin share falling 0.6 or more below the eyes' band marked
+    exactly those 9, and no other face. A face's detection score did not
+    separate them.
+  - The calibration now reports masked and unmasked faces as strata. A hand
+    over the mouth, being skin, is not read. 5 faces are too grey or dark to
+    read at all.
+- **Crowded images.** TAR is 0.60 when the image holds several faces, against
+  0.93 with one, at no cost in precision.
 - **Lone P18 references.**
   - 685 people's only single-face reference is a lone Wikidata (P18) image,
     which no consistency check can test.
@@ -247,13 +253,10 @@ are projections, not measurements.
     bust.
   - Title keywords mark 30 usable P18 references in all, some of them wrongly.
     That is an agent's reading of titles, not a person's check.
-  - Whether this is load-bearing waits on the review above.
 - **How far apart SFace puts one face.** Two official photographs a person
-  confirmed show the same man score 0.167 against each other.
-  - In all, 10 pairs a person confirmed as one face score under the 0.3811
-    threshold, at 0.167 to 0.362.
-  - Genuine pairs across pose, lighting and headwear can score this low,
-    which bounds the TAR this recognizer can reach.
+  confirmed show the same man score 0.167 against each other. In all, 10 pairs
+  a person confirmed as one face score under the 0.3811 consistency threshold,
+  at 0.167 to 0.362.
 - **Names that refuse rather than guess.** 459 names that would have resolved
   to one person refuse instead (7.3% of mentions), because the word is several
   people's or only a nickname. In this run, 2 trials are unscorable as a name
@@ -263,13 +266,16 @@ are projections, not measurements.
 
 ## 6. Reproducibility
 
-- A second run on another machine produced the same report in every value,
-  apart from the time it was written. It used the same ledger, gallery,
-  decisions and code (snapshot `e579766`).
-- Two decisions of 2026-10-23 are why it can: similarities are computed in
-  float64, and the medoid of two references is broken by rule (the P18, else
-  the first). Before them, float rounding could break a near-tie differently
-  on each machine.
+- A second machine, with the same ledger, gallery, decisions and code
+  (snapshot `e579766`), produced the server's report in every value, apart
+  from the time it was written.
+- The final report was written there, after the person's 113 decisions. It adds
+  the look-alike contrast over 200 draws, the rule that certifies only checked
+  names, and the masked-face strata. The claim-label figures are the server's.
+- Two decisions of 2026-10-23 are why runs agree across machines:
+  similarities are computed in float64, and the medoid of two references is
+  broken by rule (the P18, else the first). Before them, float rounding could
+  break a near-tie differently on each machine.
 - To reproduce:
   `python scripts/gallery.py calibrate --backend sface --ledger-dir data/interim/image_text/93cd9d679720`.
   Its prerequisites are in CLAUDE.md under "Entity gallery: standing rules".

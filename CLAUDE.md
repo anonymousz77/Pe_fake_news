@@ -671,21 +671,45 @@ Wikidata items with reference images from Wikimedia Commons. It is how the
       decided (37, 2026-10-22) it stays at 0.4383, and TAR at it falls from
       0.9394 to 0.8857: the second sheet's two relabels are faces the gallery
       fails to recognise.
-    - **The full calibration** (complete ledger, the server, 2026-10-23)
-      leaves the threshold unset, as a stated result. The write-up is
+    - **The threshold is certified: 0.5214** (the full calibration, complete
+      ledger; first run on the server 2026-10-23, the final one 2026-10-27).
+      The gallery block is closed. The write-up is
       `docs/gallery_calibration.md`.
-      - At the candidate 0.5214, 131 of 141 accepted names are right
-        (adjudicated: 0.9291, lower bound 0.8827). Certifying needs about 333
-        accepted names, or 1,183 on raw labels.
-      - 113 of the 141 have not been checked by a person. The bound reaches
-        0.90 at 134 of 141, so the review sheet (157 rows) comes before any
-        widening.
-      - The look-alike finding holds at scale and across 200 draws of
-        strangers: random-pair calibration gives precision 0.73 to 0.79,
-        never 0.90.
-      - Accuracy differs by figure: rank 1 is 0.97 [0.89, 1.00], rank 2 is
-        0.60 [0.26, 0.88]. Rank 2's 4 accepted wrong labels are unchecked.
-      - A second machine reproduced the report in every value.
+      - A person checked every name the threshold accepts. The 113 unchecked
+        ones were put on a sheet (`review --accepted`: the 10 labelled wrong
+        first) and all decided, 2026-10-24.
+      - 141 of 141 are right: precision 1.0, one-sided lower bound 0.979.
+        FMR is 0 of 89 and TAR 0.73 (0.86 on names the gallery can score).
+      - Of 150 decisions, 14 turned a wrong label right, all of them
+        bystanders the claims did not name. None turned a right label wrong.
+        On claim labels alone the threshold stays unset (129 of 141).
+      - **A threshold certifies only where a person has checked every name it
+        accepts** (`choose_threshold(..., checked=True)`; the person's rule,
+        enforced 2026-10-27). The bound alone reaches 0.3959, but 16 of the
+        162 names it accepts are unchecked (`by_bound_unchecked`).
+        - Checking those 16 could lower the threshold and raise TAR to about
+          0.79. This is open work.
+        - `verify` reads the threshold of the checked labels
+          (`certified_threshold`).
+      - **Two caveats, stated beside it.** The precision rests on labels a
+        person checked for 141 of 141 accepted names. A low score is weak
+        evidence of absence: TAR is 0.73, and two confirmed photos of one man
+        score 0.167. The threshold certifies accepts, never "this is not X".
+      - Precision no longer differs by figure: every accepted name of every
+        figure is right. The earlier spread (rank 2: 6 of 10) was claim-label
+        noise. Recall still differs: TAR is 0.43 for rank 2 against 0.76 for
+        rank 1, and 0.60 on crowded images against 0.93 on single-face ones.
+      - The look-alike finding holds at scale, over 200 draws of strangers
+        (`look_alike_finding.over_draws`). Random-pair calibration gives
+        precision 0.728 to 0.767 on claim labels and 0.785 to 0.838 on checked
+        ones, never 0.90.
+      - Trials are keyed by image and name (`trial_id`; 284 trials, 284 ids,
+        no collision in the 12-character image prefixes). Two names on one
+        image are two trials and two decisions.
+      - Per-figure results stay by rank in the write-up (the person's
+        decision, 2026-10-24). The names stay in the local report for our
+        own checking.
+      - A second machine reproduced the server's report in every value.
   - **`verify` decides only at a certified threshold** (`certified_threshold`).
     - Without one it refuses: `match` stays null, and it returns the score and
       the matched reference for a person to check. It never defaults to
@@ -720,6 +744,18 @@ Wikidata items with reference images from Wikimedia Commons. It is how the
     - The point survives: random-pair calibration still fails 0.90, so the
       threshold is calibrated on the VLM's own names. `calibrate` measures
       this every run (`look_alike_finding`), raw and adjudicated.
+    - **One draw's maximum is not a statistic** (2026-10-24). The counts
+      above every stranger, here and in the full run's first version (33 of
+      70), are the maximum of one random draw of strangers.
+      - Over 200 draws, the full run's count ran from 9 to 37 (an earlier set
+        of 200 gave 3 to 35), and adjudication halved it only by changing
+        the draw.
+      - `calibrate` now measures the contrast over `LOOK_ALIKE_DRAWS` (200)
+        and publishes what holds whichever strangers are drawn: the
+        random-pair precision with its range, the wrong names above the
+        pooled strangers' 99th percentile, and how often a wrong name
+        outscores a stranger.
+      - The count above every stranger stays only with its range.
   - **Coverage ceiling, stated beside every calibration.** 1,592 of the
     gallery's 4,776 people have no usable reference face (2026-10-23, after
     the release fetch; 1,166 of 3,556 before the full-ledger top-up); 1,430
@@ -865,6 +901,23 @@ Wikidata items with reference images from Wikimedia Commons. It is how the
       sample, the face-on face 37 px wide (18 px from eyes to mouth) was a size
       failure before the floor existed. It is now coverage, beside the person
       who has no usable reference face.
+    - **Occlusion:** a mask over nose and mouth (`face_occlusion`,
+      `OCCLUSION_SKIN_DROP`; measured 2026-10-27, the person's request).
+      - Measured and reported, never a reason to refuse a face.
+        `calibrate` marks each scored face (`occluded`) and reports masked and
+        unmasked faces as strata. `review_findings` counts it as a third
+        cause beside pose and size.
+      - On the full calibration, 9 of the 220 scored faces are masked: an
+        agent's reading of the crops, which the signal matches exactly.
+        - Masks cost recall, not precision. 2 of 7 masked right names are
+          accepted (TAR 0.29, against 0.88 unmasked), both of them right, and
+          both masked wrong names are rejected.
+        - The signal is the mouth region's skin share falling 0.6 or more
+          below the eyes' band, on the aligned crop. A detection score did not
+          separate the masks.
+      - Making masked faces unscorable would discard correct accepts, and
+        nothing measured supports it.
+      - A hand over the mouth, being skin, is not read.
 
     A decision that changed a label is counted by where its name falls
     (`label_noise`): the gallery had matched two of the four wrong-to-right
@@ -1116,6 +1169,7 @@ python scripts/gallery.py embed --backend sface --pin-consistency   # faces; CPU
 python scripts/gallery.py embed --backend sface           # faces; CPU, offline
 python scripts/gallery.py calibrate --backend sface       # Factify2 train only
 python scripts/gallery.py review --backend sface          # a local sheet for a person to check
+python scripts/gallery.py review --backend sface --accepted   # only the names the candidate accepts, those labelled wrong first
 python scripts/gallery.py sample-report                   # data/reports/gallery_sample.json
 python scripts/gallery.py verify --image P --name "N"     # one 1:1 verification; no certified threshold, no decision
 python scripts/gallery.py side-views --backend sface      # side views on Commons, top 50: a measurement (network)

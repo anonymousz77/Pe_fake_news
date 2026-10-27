@@ -2391,6 +2391,31 @@ def face_geometry(face: dict[str, Any]) -> dict[str, float | None]:
             "nose_offset": round(((nx - mx) * ex + (ny - my) * ey) / span ** 2, 2) if span else None}
 
 
+#: A face whose mouth region has lost the skin its eyes' band keeps -- the
+#: skin share falls by this much or more -- is read as covered: a mask over
+#: nose and mouth. Measured 2026-10-27 on the 220 faces the full calibration
+#: scores: at this drop it marked the 9 masks a person sees there, and nothing
+#: else; a face's detection score did not tell them apart.
+OCCLUSION_SKIN_DROP = 0.6
+
+
+def face_occlusion(aligned: Any) -> float | None:
+    """How much skin the mouth region of an aligned 112x112 face crop (BGR,
+    the crop the recognizer embeds) has lost against the band of the eyes, by
+    the YCrCb skin rule (Chai and Ngan): a mask over nose and mouth keeps the
+    eyes' skin and takes the mouth's. None when the eyes' band shows too little
+    skin to compare, as in a grey or a dark image. A hand, being skin, is not
+    read."""
+    import numpy as np
+    from PIL import Image
+
+    ycbcr = np.asarray(Image.fromarray(np.ascontiguousarray(aligned[:, :, ::-1])).convert("YCbCr"))
+    cb, cr = ycbcr[..., 1], ycbcr[..., 2]
+    skin = (cr >= 133) & (cr <= 173) & (cb >= 77) & (cb <= 127)
+    upper, lower = float(skin[30:62, 22:90].mean()), float(skin[80:106, 32:80].mean())
+    return None if upper < 0.3 else round(upper - lower, 3)
+
+
 def side_on(geometry: dict[str, Any]) -> bool:
     return geometry.get("eye_span") == 0 or abs(geometry.get("nose_offset") or 0.0) >= SIDE_ON
 
@@ -2714,6 +2739,28 @@ def flagged_references(gallery: Gallery, trials: Sequence[dict[str, Any]]) -> di
                                               if flag in (ref.get("flags") or [])),
                      "trials_matched": len(hit), "by_label": dict(Counter(x["label"] for x in hit))}
     return out
+
+
+def mark_occlusion(trials: Sequence[dict[str, Any]], gallery: Gallery, query_faces: dict[str, Any],
+                   backend: FaceBackend) -> None:
+    """Each scored trial's face, read for a mask over nose and mouth on the crop
+    the recognizer embeds (face_occlusion): ``skin_drop`` and ``occluded``,
+    None where the image is not to hand or too grey to read. Measured beside
+    pose and size, never a reason to refuse a face."""
+    import numpy as np
+
+    by_sha: dict[str, str] = {}
+    for path, row in images.load_index("factify2").items():
+        if row.get("sha256"):
+            by_sha.setdefault(row["sha256"], path)
+    for x in trials:
+        if not x["scorable"] or x["sha256"] not in by_sha:
+            continue
+        faces = query_faces[x["sha256"]]["faces"]
+        face = faces[gallery.best(faces, x["qid"])["query_face"]]
+        row = np.array([*face["box"], *[v for p in face["landmarks"] for v in p], face["score"]], dtype=np.float32)
+        drop = face_occlusion(backend.align(load_bgr(image_text.read_bytes(by_sha[x["sha256"]])), row))
+        x.update(skin_drop=drop, occluded=None if drop is None else drop >= OCCLUSION_SKIN_DROP)
 
 
 def verification_coverage(gallery: Gallery) -> dict[str, Any]:
@@ -3119,12 +3166,18 @@ def operating_point(trials: Sequence[dict[str, Any]], t: float | None) -> dict[s
             "precision_lower_95": None if not accepted else round(clopper_pearson_lower(acc_r, accepted), 4)}
 
 
-def choose_threshold(trials: Sequence[dict[str, Any]], rule: str) -> float | None:
+def choose_threshold(trials: Sequence[dict[str, Any]], rule: str, checked: bool = False) -> float | None:
     """The lowest threshold -- the most right names kept -- at which the names
     the gallery accepts are right TARGET_PRECISION of the time: by the one-sided
-    95% lower bound (``bound``), or by the point estimate (``point``)."""
+    95% lower bound (``bound``), or by the point estimate (``point``). With
+    ``checked``, only a threshold every name of which it accepts a person has
+    decided (``adjudicated``): an accepted name nobody looked at is where an
+    unseen false accept would sit, and a bound that holds only because no one
+    looked is not a bound."""
     scores = sorted({x["score"] for x in trials if x["scorable"]})
     for t in scores:
+        if checked and any(x["scorable"] and x["score"] >= t and not x.get("adjudicated") for x in trials):
+            continue
         p = operating_point(trials, t)
         value = p["precision_lower_95"] if rule == "bound" else p["precision"]
         if value is not None and value >= TARGET_PRECISION:
@@ -3191,12 +3244,14 @@ def bound_shortfall(trials: Sequence[dict[str, Any]]) -> tuple[float | None, dic
 
 def certified_threshold(report: dict[str, Any] | None, cid: str) -> float | None:
     """The threshold verify may decide at: one a calibration of THIS face
-    configuration certified, by the one-sided 95% bound on the complete run.
-    Anything else -- no report, another configuration, a candidate, an older
-    report without the flag -- is no threshold, and verify then refuses."""
+    configuration certified, by the one-sided 95% bound on the complete run,
+    on names a person has checked, every one it accepts -- so the adjudicated
+    report's, where a person's decisions are the labels. Anything else -- no
+    report, another configuration, a candidate, an older report without the
+    flag -- is no threshold, and verify then refuses."""
     if not report or report.get("face_config") != cid:
         return None
-    t = report.get("threshold") or {}
+    t = (report.get("adjudicated") or report).get("threshold") or {}
     return t.get("chosen") if t.get("certified") is True and t.get("chosen") is not None else None
 
 
@@ -3323,6 +3378,85 @@ def look_alike_finding(trials: Sequence[dict[str, Any]], random_scores: Sequence
                      "on random strangers (point estimate), p the VLM's QID precision"),
             "on_the_vlms_own_names": on_vlm},
         "finding": finding}
+
+
+#: Draws of random strangers the look-alike contrast is measured over. One
+#: draw's maximum is not a statistic: over 200 draws the count of wrong names
+#: above every stranger ran from 3 to 35 (2026-10-24), so what is published is
+#: what holds whichever strangers are drawn.
+LOOK_ALIKE_DRAWS = 200
+
+
+def look_alike_contrast(trials: Sequence[dict[str, Any]], gallery: Gallery, query_faces: dict[str, Any],
+                        t: float | None, p: float | None, draws: int = LOOK_ALIKE_DRAWS) -> dict[str, Any] | None:
+    """look_alike_finding over ``draws`` seeded draws of random strangers (the
+    first is the draw it reports), led by what holds whichever strangers are
+    drawn: per draw, the threshold a random-pair calibration would set and the
+    accepted-name precision it gives the VLM's own names; over every draw
+    pooled, the scorable wrong names above the strangers' 99th percentile, and
+    how often a wrong name outscores a stranger and a right name a wrong one.
+    The count above every stranger is one draw's maximum: it is reported with
+    its range, to show why it is not used."""
+    import numpy as np
+
+    runs, pooled = [], []
+    for k in range(draws):
+        scores = random_pair_scores(trials, gallery, query_faces, seed=SEED + k)
+        found = look_alike_finding(trials, scores, t, p)
+        if found is None:
+            return None
+        runs.append(found)
+        pooled += scores
+    wrong = np.array([x["score"] for x in trials if x["label"] != "right" and x["scorable"]])
+    right = np.array([x["score"] for x in trials if x["label"] == "right" and x["scorable"]])
+    strangers = np.array(pooled)
+    p99 = float(np.quantile(strangers, 0.99))
+
+    def outscores(hi: Any, lo: Any) -> float | None:  # how often one from hi beats one from lo, ties half
+        if not len(hi) or not len(lo):
+            return None
+        return round(float((hi[:, None] > lo[None, :]).mean() + 0.5 * (hi[:, None] == lo[None, :]).mean()), 4)
+
+    def spread(values: Sequence[float | None]) -> dict[str, float] | None:
+        v = [x for x in values if x is not None]
+        if not v:
+            return None
+        return {"min": round(min(v), 4), "median": round(float(np.median(v)), 4), "max": round(max(v), 4)}
+
+    on_vlm = [r["if_calibrated_on_random_pairs"]["on_the_vlms_own_names"]["precision"] for r in runs]
+    threshold = spread([r["if_calibrated_on_random_pairs"]["threshold"] for r in runs])
+    precision = spread(on_vlm)
+    above = spread([r["vlm_wrong_names"]["above_every_stranger"] for r in runs])
+    reaching = sum(1 for v in on_vlm if v is not None and v >= TARGET_PRECISION)
+    over = {"draws": draws, "pooled_stranger_scores": len(pooled), "random_pair_threshold": threshold,
+            "precision_on_the_vlms_own_names": precision and {**precision, "draws_reaching_the_bar": reaching},
+            "stranger_p99": round(p99, 4), "wrong_scorable": int(len(wrong)),
+            "wrong_above_stranger_p99": int((wrong > p99).sum()),
+            "p_wrong_outscores_stranger": outscores(wrong, strangers),
+            "p_right_outscores_wrong": outscores(right, wrong),
+            "above_every_stranger": {**(above or {}), "this_draw": runs[0]["vlm_wrong_names"]["above_every_stranger"],
+                                     "not_used": "one draw's maximum: it moves with the draw"}}
+    finding = (
+        ("No threshold reaches the bar even on random strangers. " if threshold is None or precision is None else
+         f"Calibrated on random pairs, the threshold would sit at {threshold['median']:.3f} ({threshold['min']:.3f} "
+         f"to {threshold['max']:.3f} over {draws} draws of strangers) and give the VLM's own names an accepted-name "
+         f"precision of {precision['median']:.3f} ({precision['min']:.3f} to {precision['max']:.3f}), against "
+         f"the {TARGET_PRECISION} required: {reaching} of the {draws} draws reach it. ")
+        + f"{over['wrong_above_stranger_p99']} of the {len(wrong)} scorable wrong names score above the 99th "
+          f"percentile of {len(pooled):,} stranger scores ({p99:.3f}); a wrong name outscores a random stranger "
+          f"with probability {over['p_wrong_outscores_stranger']}, and a right name a wrong one with probability "
+          f"{over['p_right_outscores_wrong']}. "
+        + (f"The count of wrong names above every stranger is one draw's maximum, and it ran from {above['min']} "
+           f"to {above['max']} over the draws: not a statistic, so not used. " if above else "")
+        + ("A random-pair false-match rate measures strangers; the names a gallery must refuse are the "
+           "look-alikes the VLM chose, so the threshold is calibrated on those."
+           if not reaching * 2 > draws else
+           "On this population a random-pair threshold would also hold the bar in most draws; the VLM's own "
+           "wrong names remain the measure."))
+    return {**runs[0], "what": ("the VLM's wrong names against random strangers: the right names' faces, each "
+                                f"scored against a random other person in the gallery, over {draws} seeded draws "
+                                "(the first is the one reported field by field). A contrast, never an input"),
+            "over_draws": over, "finding": finding}
 
 
 #: When the two most-tried figures carry more than this share of the trials,
@@ -3452,11 +3586,24 @@ def calibrate(trials: Sequence[dict[str, Any]], tally: Counter, gallery: Gallery
     right = sum(1 for x in headline if x["label"] == "right")
     p = image_text._ratio(right, len(headline), 4)
     r_max = None if p is None else image_text.max_false_accept_ratio(p)
-    t_bound = choose_threshold(headline, "bound")
+    t_bound = choose_threshold(headline, "bound", checked=True)
+    t_any = choose_threshold(headline, "bound")
     t_point = choose_threshold(headline, "point")
-    candidate, shortfall = (t_bound, None) if t_bound is not None else bound_shortfall(headline)
-    candidate_by = ("one-sided 95% lower bound of accepted-name precision >= 0.90" if t_bound is not None else
-                    f"closest to the bound and short of it: {shortfall['statement']}")
+    unchecked = (None if t_any is None else
+                 sum(1 for x in headline if x["scorable"] and x["score"] >= t_any and not x.get("adjudicated")))
+    if t_bound is not None:
+        candidate, shortfall = t_bound, None
+        candidate_by = ("one-sided 95% lower bound of accepted-name precision >= 0.90, on names a person has "
+                        "checked, every one it accepts")
+    elif t_any is not None:
+        candidate = t_any
+        shortfall = {"threshold": round(t_any, 4), "reason": "unchecked", "unchecked_accepted": unchecked,
+                     "statement": (f"the bound is reached at {t_any:.4f}, but a person has not checked {unchecked} "
+                                   f"of the names it accepts; checking them could certify it")}
+        candidate_by = f"the bound alone, not yet certified: {shortfall['statement']}"
+    else:
+        candidate, shortfall = bound_shortfall(headline)
+        candidate_by = f"closest to the bound and short of it: {shortfall['statement']}"
     chosen = t_bound if ledger.get("complete") else None
     of = f"{ledger['worklist']:,}" if ledger.get("worklist") else "an unknown number of"
     at = operating_point(headline, candidate)
@@ -3469,7 +3616,9 @@ def calibrate(trials: Sequence[dict[str, Any]], tally: Counter, gallery: Gallery
                        ("figure_from_probe_list", lambda x: x["figure_source"] == "probe_list"),
                        ("figure_from_claim_ner", lambda x: x["figure_source"] == "claim_ner"),
                        ("ambiguous_link", lambda x: x["ambiguous_link"]),
-                       ("figure_link_ambiguous", lambda x: x.get("figure_ambiguous"))):
+                       ("figure_link_ambiguous", lambda x: x.get("figure_ambiguous")),
+                       ("occluded", lambda x: x.get("occluded") is True),
+                       ("not_occluded", lambda x: x.get("occluded") is False)):
         subset = [x for x in headline if test(x)]
         if subset:
             strata[name] = operating_point(subset, candidate)
@@ -3520,13 +3669,20 @@ def calibrate(trials: Sequence[dict[str, Any]], tally: Counter, gallery: Gallery
                                     f"threshold, and this ledger holds {ledger.get('images', 0):,} of {of} "
                                     "images. The candidate, and every figure at it, are reported and "
                                     "never adopted" if not ledger.get("complete") else
+                                    "unset: the one-sided 95% lower bound of 0.90 is reached only where a "
+                                    "person has not checked every name accepted, so the gallery does not "
+                                    f"decide yet: {shortfall['statement']}"
+                                    if shortfall.get("reason") == "unchecked" else
                                     "unset: no threshold reaches the one-sided 95% lower bound of 0.90, "
                                     "and a point estimate is never adopted, so the gallery does not decide "
                                     f"at this confidence. Short of the bound: {shortfall['statement']}"),
                       "candidate": None if candidate is None else round(candidate, 4),
+                      "candidate_score": candidate,
                       "candidate_by": candidate_by,
                       "bound_shortfall": shortfall,
                       "by_bound": None if t_bound is None else round(t_bound, 4),
+                      "by_bound_unchecked": (None if t_any is None or t_any == t_bound else
+                                             {"threshold": round(t_any, 4), "unchecked_accepted": unchecked}),
                       "by_point_estimate": None if t_point is None else round(t_point, 4)},
         "at_threshold": at,
         "fmr_over_tar": (None if not at["tar"] or at["fmr"] is None else round(at["fmr"] / at["tar"], 4)),
@@ -3550,8 +3706,7 @@ def calibrate(trials: Sequence[dict[str, Any]], tally: Counter, gallery: Gallery
         "figure_stratified": {**(figure_stratified(headline, candidate) or {}),
                               "pooled_without_top_two_figures": operating_point(
                                   [x for x in headline if x["figure_qid"] not in top_two], candidate)},
-        "look_alike_finding": look_alike_finding(
-            headline, random_pair_scores(headline, gallery, query_faces), candidate, p),
+        "look_alike_finding": look_alike_contrast(headline, gallery, query_faces, candidate, p),
         "verite": "not read: calibration reads Factify2 train only",
     }
 
@@ -4067,6 +4222,7 @@ def cmd_calibrate(args) -> int:
     links = latest(read_jsonl(LINKS_PATH), lambda r: (r["type"], r["key"]))
     query_faces = latest(read_jsonl(QUERY_FACES_DIR / cid / "factify2.jsonl"), lambda r: r["sha256"])
     trials, more = build_trials(population, links, query_faces, gallery)
+    mark_occlusion(trials, gallery, query_faces, backend)
     worklist = worklist_sizes(run_dir).get("factify2")
     ledger = {
         "run": run_dir.name, "images": len(read.images), "worklist": worklist,
@@ -4110,7 +4266,7 @@ def cmd_calibrate(args) -> int:
             **{k: v for k, v in calibrate(relabelled, tally + more, gallery, query_faces,
                                           args.backend, ledger).items()
                if k in ("trials", "vlm_precision", "bar", "threshold", "at_threshold", "fmr_over_tar",
-                        "cost_in_true_accepts", "bootstrap_95", "cross_validated", "figure_stratified",
+                        "cost_in_true_accepts", "bootstrap_95", "cross_validated", "strata", "figure_stratified",
                         "look_alike_finding")}}
     write_json(CALIBRATION_DIR / f"{args.backend}.json", report)
     write_jsonl(CALIBRATION_DIR / f"{args.backend}_trials.jsonl", trials)
@@ -4570,9 +4726,11 @@ def review_findings(trials: Sequence[dict[str, Any]], relabelled: Sequence[dict[
     - size: eyes to mouth, the face is smaller than every face the gallery
       recognised. A floor no reference lifts: under MIN_EYE_MOUTH a face is
       never scored at all, and a confirmed name there is coverage
-      (no_usable_face).
+      (no_usable_face);
+    - occlusion: a mask over nose and mouth (face_occlusion). Measured, never
+      refused: on the full calibration masks cost true accepts, not false ones.
 
-    A face can have both, or neither."""
+    A face can have more than one, or none."""
     before = {trial_id(x): x["label"] for x in trials}
     decided = [x for x in relabelled if x.get("adjudicated")]
 
@@ -4600,12 +4758,14 @@ def review_findings(trials: Sequence[dict[str, Any]], relabelled: Sequence[dict[
 
     def causes(x: dict[str, Any]) -> list[str]:
         small = smallest is not None and x.get("eye_mouth") is not None and x["eye_mouth"] < smallest
-        return [c for c, on in (("pose", side_on(x)), ("size", small)) if on]
+        return [c for c, on in (("pose", side_on(x)), ("size", small), ("occlusion", x.get("occluded") is True))
+                if on]
 
     cause_of = {trial_id(x): causes(x) for x in failures}
     by_cause = {"pose": sum("pose" in c for c in cause_of.values()),
                 "size": sum("size" in c for c in cause_of.values()),
-                "both": sum(len(c) == 2 for c in cause_of.values()),
+                "occlusion": sum("occlusion" in c for c in cause_of.values()),
+                "more_than_one": sum(len(c) > 1 for c in cause_of.values()),
                 "neither": sum(not c for c in cause_of.values())}
     noise: dict[str, Counter] = {}
     for x in decided:
@@ -4631,15 +4791,19 @@ def review_findings(trials: Sequence[dict[str, Any]], relabelled: Sequence[dict[
             "rules": {"pose": (f"side-on: the nose {SIDE_ON} eye spans or more from the eyes' midpoint, along "
                                "the eye line -- past the far eye"),
                       "size": ("eyes to mouth, smaller than every face the gallery recognised among the confirmed "
-                               f"names (the smallest: {smallest} px)")},
+                               f"names (the smallest: {smallest} px)"),
+                      "occlusion": (f"the mouth region's skin share {OCCLUSION_SKIN_DROP} or more below the eyes' "
+                                    "band, on the aligned crop: a mask over nose and mouth")},
             "remedies": {"pose": "references in more poses, a side view for a side view",
                          "size": (f"none in the gallery: under the {MIN_EYE_MOUTH:g} px floor verify answers "
-                                  "no_usable_face, and only a larger image helps")}},
+                                  "no_usable_face, and only a larger image helps"),
+                         "occlusion": "none in the gallery: the recognizer scores what the mask leaves"}},
         "statement": (f"A person confirmed {len(right)} names right. The gallery scores {len(recognised)} at or "
                       f"above its floor of {floor:.3f}; {len(failures)} below it, among different people's "
                       "faces -- recognition failures, not label errors: they lower TAR, and they are the "
                       f"recognizer's limit on these images (pose: {by_cause['pose']}, size: {by_cause['size']}, "
-                      f"both: {by_cause['both']}, neither: {by_cause['neither']}); {len(uncovered)} it cannot "
+                      f"occlusion: {by_cause['occlusion']}, more than one: {by_cause['more_than_one']}, neither: "
+                      f"{by_cause['neither']}); {len(uncovered)} it cannot "
                       f"score -- coverage, never a true accept. {sum(sum(c.values()) for c in noise.values())} "
                       f"decisions changed a label (label noise){': ' + changed if changed else ''}"),
         "local": {"recognition_failures": [{"trial": trial_id(x), "score": round(x["score"], 4),
@@ -4651,7 +4815,7 @@ def review_findings(trials: Sequence[dict[str, Any]], relabelled: Sequence[dict[
 
 
 def review_queue(trials: Sequence[dict[str, Any]], decided: Iterable[str], floor: float,
-                 rejected: int) -> list[tuple[str, dict[str, Any]]]:
+                 rejected: int, accepted_at: float | None = None) -> list[tuple[str, dict[str, Any]]]:
     """The trials a person looks at next, none already decided, in three parts.
 
     1. Every trial the gallery scores as plausibly the person (at or above
@@ -4663,9 +4827,21 @@ def review_queue(trials: Sequence[dict[str, Any]], decided: Iterable[str], floor
        accepts. A seeded sample of ``rejected``.
     3. Names labelled wrong that a claim's text on the image carries although
        no claim names them by QID (a handle, a spelling the linker missed):
-       the likely mislabels the label rule cannot see."""
+       the likely mislabels the label rule cannot see.
+
+    With ``accepted_at`` (a threshold, exactly as a trial score) the sheet is
+    only the undecided names it accepts, as calibration counts them (a face
+    that is a reference's own photo is left out): those labelled wrong first,
+    any of which a decision can turn right and so raise the bound, then those
+    labelled right, which a decision can only keep or turn wrong -- each part
+    by falling score."""
     done = set(decided)
     todo = [x for x in trials if x["label"] != "unlinked" and trial_id(x) not in done]
+    if accepted_at is not None:
+        accepted = sorted((x for x in todo if x["scorable"] and x["score"] >= accepted_at and not x.get("same_photo")),
+                          key=lambda x: -x["score"])
+        return ([("accepted_wrong", x) for x in accepted if x["label"] != "right"]
+                + [("accepted_right", x) for x in accepted if x["label"] == "right"])
     high = [x for x in todo if x["scorable"] and x["score"] >= floor]
     low = [x for x in todo if not (x["scorable"] and x["score"] >= floor)]
     rejected_right = sorted((x for x in low if x["label"] == "right"),
@@ -4685,7 +4861,8 @@ def cmd_review(args) -> int:
     backend = make_backend(args.backend)
     gallery = Gallery(face_config_id(backend))
     report = json.loads((CALIBRATION_DIR / f"{args.backend}.json").read_text(encoding="utf-8"))
-    t = report["threshold"]["chosen"]
+    threshold = (report.get("adjudicated") or report)["threshold"]  # a person's decisions are the labels
+    t = threshold["chosen"]
     trials = list(read_jsonl(CALIBRATION_DIR / f"{args.backend}_trials.jsonl"))
     query_faces = latest(read_jsonl(QUERY_FACES_DIR / gallery.cid / "factify2.jsonl"), lambda r: r["sha256"])
     index = images.load_index("factify2")
@@ -4699,7 +4876,12 @@ def cmd_review(args) -> int:
     decisions_file = decisions_path(args.backend)
     decisions = json.loads(decisions_file.read_text(encoding="utf-8")) if decisions_file.is_file() else {}
     decided = [k for k, v in decisions.items() if v is not None]
-    queue = review_queue(trials, decided, floor, args.rejected)
+    accepted_at = None
+    if args.accepted:
+        accepted_at = threshold.get("candidate_score")
+        if accepted_at is None:
+            raise GalleryError("no candidate threshold to scope the sheet by: run calibrate first")
+    queue = review_queue(trials, decided, floor, args.rejected, accepted_at)
 
     def reference_cell(qid: str, faces: Sequence[dict[str, Any]]) -> str:
         best = gallery.best(faces, qid) if gallery.refs.get(qid) else None
@@ -4733,6 +4915,9 @@ def cmd_review(args) -> int:
                               + f", labelled {x['label']}"),
                 "rejected_right": (f"BELOW {floor:.3f}" if x["scorable"] else "UNSCORABLE") + ", labelled right",
                 "named_in_claim_text": "LABELLED WRONG, though a claim's text on the image carries the name",
+                "accepted_wrong": ("ACCEPTED at the candidate, LABELLED WRONG: if the face is the person the VLM "
+                                   "named, the bound rises"),
+                "accepted_right": "ACCEPTED at the candidate, labelled right",
                 }[part]
         # a name several people hold has no one reference: the sheet names them all, shows none
         named = (f"<td>ambiguous, {len(x['qids'])} people:<br>"
@@ -4745,12 +4930,13 @@ def cmd_review(args) -> int:
     written = merge_decision_slots(decisions_file, [trial_id(x) for _part, x in queue])
     parts = Counter(part for part, _x in queue)
     shown = (f"threshold {t}" if t is not None else
-             f"threshold unset (candidate {report['threshold'].get('candidate')}, not adopted)")
+             f"threshold unset (candidate {threshold.get('candidate')}, not adopted)")
     page = ("<!doctype html><meta charset='utf-8'><title>Gallery review</title>"
             "<style>body{font:14px sans-serif;margin:16px}td{vertical-align:top;padding:6px;"
             f"border-bottom:1px solid #ccc}}img{{max-width:{REVIEW_CROP}px}}img.whole{{max-width:480px}}"
             "</style>"
-            f"<h1>Gallery review: {args.backend}, {shown}, {len(queue)} faces</h1>"
+            f"<h1>Gallery review: {args.backend}, {shown}, {len(queue)} faces"
+            f"{', the accepted names only' if accepted_at is not None else ''}</h1>"
             "<p>" + SCORED_FACE_NOTE + " Columns: the face in the Factify2 TRAIN image (open <i>whole "
             "image</i> for context: the face scored is boxed); the reference of the person the VLM named; "
             "the reference of the "
@@ -4765,18 +4951,30 @@ def cmd_review(args) -> int:
             "<li><code>\"unsure\"</code>: you cannot tell (the trial leaves the adjudicated figures).</li>"
             "</ul><p>When the VLM named the figure both columns show them: <code>\"vlm\"</code> if it is "
             "them, <code>\"neither\"</code> if not. A <code>null</code> keeps the label, so part of the "
-            f"sheet is usable. No trial already decided is here ({len(decided)} are). First comes every "
-            f"name the gallery scores at or above {floor:.3f}, its consistency threshold, whatever its "
-            "label: an accepted name is where an unseen false accept would sit. Then names labelled right "
-            "that score below it or cannot be scored, then names labelled wrong that a claim's text on "
-            "the image carries. <code>calibrate</code> reports adjudicated figures beside the raw ones.</p>"
+            f"sheet is usable. No trial already decided is here ({len(decided)} are). "
+            + (f"Only the undecided names the candidate threshold ({accepted_at:.4f}) accepts are here. First "
+               "those labelled wrong: \"vlm\" on one turns it right and raises the bound. Then those labelled "
+               "right, by falling score: a decision on one can only keep it right or turn it wrong. After the "
+               "first part, run <code>calibrate</code>: if no threshold then reaches the bound, the rest of "
+               "this sheet cannot make one reach it, and it can stop there; if one does, every name it accepts "
+               "must be checked before it counts. An <code>\"unsure\"</code> takes a name out of the "
+               "figures: on a name labelled wrong, that raises the bound without showing anything right, and "
+               "the report counts it."
+               if accepted_at is not None else
+               f"First comes every name the gallery scores at or above {floor:.3f}, its consistency "
+               "threshold, whatever its label: an accepted name is where an unseen false accept would sit. "
+               "Then names labelled right that score below it or cannot be scored, then names labelled wrong "
+               "that a claim's text on the image carries.")
+            + " <code>calibrate</code> reports adjudicated figures beside the raw ones.</p>"
             f"<table>{''.join(cells)}</table>")
-    out = REVIEW_DIR / f"{args.backend}.html"
+    out = REVIEW_DIR / f"{args.backend}{'_accepted' if accepted_at is not None else ''}.html"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(page, encoding="utf-8")
-    log(f"{parts['plausible']} undecided names scoring at least {floor:.3f}, {parts['rejected_right']} labelled "
-        f"right below it or unscorable, {parts['named_in_claim_text']} labelled wrong that a claim's text "
-        f"carries ({len(decided)} trials decided already) -> {out}; {written} new trial slots in "
+    log((f"{parts['accepted_wrong']} undecided names accepted at {accepted_at} labelled wrong, then "
+         f"{parts['accepted_right']} labelled right" if accepted_at is not None else
+         f"{parts['plausible']} undecided names scoring at least {floor:.3f}, {parts['rejected_right']} labelled "
+         f"right below it or unscorable, {parts['named_in_claim_text']} labelled wrong that a claim's text "
+         "carries") + f" ({len(decided)} trials decided already) -> {out}; {written} new trial slots in "
         f"{decisions_file}")
     return 0
 
@@ -5470,6 +5668,8 @@ def build_parser() -> argparse.ArgumentParser:
                         "a threshold calibration certified decides, and without one verify refuses")
     r = sub.add_parser("review", help="a local HTML sheet of decisive trials, for a person to check")
     r.add_argument("--rejected", type=int, default=20, help="rejected right names to include")
+    r.add_argument("--accepted", action="store_true",
+                   help="only the undecided names the candidate threshold accepts, those labelled wrong first")
     sub.add_parser("sample-report", help="data/reports/gallery_sample.json from the sample's stages")
     s = sub.add_parser("side-views", help="does Commons hold side views of the most-mentioned people? "
                                           "A measurement; nothing is stored (network)")

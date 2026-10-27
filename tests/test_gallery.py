@@ -1366,6 +1366,42 @@ def test_the_next_sheet_holds_every_plausible_name_whatever_its_label_and_nothin
     assert len(gallery.review_queue(trials, decided, floor=0.38, rejected=1)) == 4, "rejected right names: a sample"
 
 
+def test_a_sheet_of_the_accepted_names_puts_those_that_can_raise_the_bound_first():
+    """Scoped to what the candidate accepts: a name labelled wrong can turn
+    right and raise the bound, so those come first; a decision on one labelled
+    right can only keep it or turn it wrong."""
+    trials = [{**_trial("right", 0.9, "a" * 64), "key": "r9"}, {**_trial("wrong", 0.6, "b" * 64), "key": "w6"},
+              {**_trial("right", 0.7, "c" * 64), "key": "r7"}, {**_trial("wrong", 0.8, "d" * 64), "key": "w8"},
+              {**_trial("right", 0.5, "e" * 64), "key": "below"}, {**_trial("wrong", 0.55, "f" * 64), "key": "decided"},
+              {**_trial("right", None, "1" * 64), "key": "unscorable"},
+              {**_trial("right", 0.95, "2" * 64), "key": "own photo", "same_photo": True}]   # calibration leaves it out
+    decided = [gallery.trial_id(trials[5])]
+    queue = gallery.review_queue(trials, decided, floor=0.38, rejected=20, accepted_at=0.55)
+    assert [(part, x["key"]) for part, x in queue] == [
+        ("accepted_wrong", "w8"), ("accepted_wrong", "w6"), ("accepted_right", "r9"), ("accepted_right", "r7")]
+
+
+def test_the_look_alike_contrast_is_what_holds_over_every_draw_of_strangers(tmp_path):
+    """One draw's maximum is not a statistic: the contrast is reported over
+    many seeded draws, led by what holds whichever strangers are drawn, and
+    the count above every stranger only with its range."""
+    bases, entities, faces = _people()
+    g = _gallery_on_disk(tmp_path, entities, faces, [])
+    trials = ([{**_trial("right", 0.8, f"r{i}"), "key": f"r{i}"} for i in range(12)]
+              + [{**_trial("wrong", 0.6, f"w{i}"), "key": f"w{i}"} for i in range(8)])
+    trials = [{**x, "qid": "Q1", "figure_qid": "Q1"} for x in trials]
+    query = {x["sha256"]: {"faces": [_face(_vec(7000 + i, bases["Q1"]))]} for i, x in enumerate(trials)}
+    out = gallery.look_alike_contrast(trials, g, query, 0.7, p=0.6, draws=5)
+    first = gallery.look_alike_finding(trials, gallery.random_pair_scores(trials, g, query), 0.7, p=0.6)
+    assert out["vlm_wrong_names"] == first["vlm_wrong_names"], "field by field, the first draw is the run's own"
+    over = out["over_draws"]
+    assert over["draws"] == 5 and over["pooled_stranger_scores"] == 5 * 12
+    assert over["wrong_above_stranger_p99"] == 8 and over["p_wrong_outscores_stranger"] == 1.0
+    assert over["precision_on_the_vlms_own_names"]["draws_reaching_the_bar"] == 0
+    assert over["above_every_stranger"]["this_draw"] == first["vlm_wrong_names"]["above_every_stranger"]
+    assert "not a statistic, so not used" in out["finding"] and "calibrated on those" in out["finding"]
+
+
 def test_what_a_persons_decisions_found_keeps_recognition_failures_coverage_and_label_noise_apart():
     def scored(label, score, sha, key, side, span, eye_mouth, nose):
         return {**_trial(label, score, sha * 64), "key": key, "face_side": side, "eye_span": span,
@@ -1392,9 +1428,9 @@ def test_what_a_persons_decisions_found_keeps_recognition_failures_coverage_and_
                                                     "median_eye_mouth": 19.5, "median_nose_offset": 0.7,
                                                     "side_on": 1}
     causes = out["recognition_failures_by_cause"]
-    assert {k: causes[k] for k in ("pose", "size", "both", "neither")} == {"pose": 1, "size": 1, "both": 0,
-                                                                          "neither": 0}, \
-        "side-on and too small are counted apart: their remedies differ"
+    assert {k: causes[k] for k in ("pose", "size", "occlusion", "more_than_one", "neither")} == {
+        "pose": 1, "size": 1, "occlusion": 0, "more_than_one": 0, "neither": 0}, \
+        "side-on, too small and masked are counted apart: their remedies differ"
     assert "21.0 px" in causes["rules"]["size"], "smaller than every face recognised, eyes to mouth"
     assert {f["trial"][:1]: f["causes"] for f in out["local"]["recognition_failures"]} == {"d": ["size"],
                                                                                          "c": ["pose"]}, \
@@ -1407,7 +1443,7 @@ def test_what_a_persons_decisions_found_keeps_recognition_failures_coverage_and_
 def test_a_partial_ledger_reports_a_candidate_and_never_sets_the_threshold(tmp_path):
     bases, entities, faces = _people()
     g = _gallery_on_disk(tmp_path, entities, faces, [])
-    trials = ([{**_trial("right", 0.9, f"r{i}"), "key": f"r{i}"} for i in range(40)]
+    trials = ([{**_trial("right", 0.9, f"r{i}"), "key": f"r{i}", "adjudicated": "vlm"} for i in range(40)]
               + [{**_trial("wrong", 0.85, f"w{i}"), "key": f"w{i}"} for i in range(3)]
               + [{**_trial("wrong", 0.3, f"x{i}"), "key": f"x{i}"} for i in range(40)])
     trials = [{**x, "qid": "Q1", "figure_qid": "Q1"} for x in trials]
@@ -1422,6 +1458,11 @@ def test_a_partial_ledger_reports_a_candidate_and_never_sets_the_threshold(tmp_p
     complete = {"images": 100, "worklist": 100, "complete": True}
     full = gallery.calibrate(trials, Counter(), g, query, "sface", complete)
     assert full["threshold"]["chosen"] == full["threshold"]["candidate"] == 0.9 and full["threshold"]["certified"]
+    unchecked = [{k: v for k, v in x.items() if k != "adjudicated"} for x in trials]
+    out = gallery.calibrate(unchecked, Counter(), g, query, "sface", complete)["threshold"]
+    assert out["chosen"] is None and not out["certified"] and out["candidate"] == 0.9,         "a bound on names nobody checked is not a bound"
+    assert out["bound_shortfall"]["reason"] == "unchecked" and out["bound_shortfall"]["unchecked_accepted"] == 40
+    assert "has not checked" in out["chosen_by"]
 
     # the complete run, short of the bound: a point estimate exists, and is never adopted
     short = [x for x in trials if x["key"] not in {f"r{i}" for i in range(15, 40)}]   # 15 right names left
@@ -1429,6 +1470,27 @@ def test_a_partial_ledger_reports_a_candidate_and_never_sets_the_threshold(tmp_p
     assert out["by_point_estimate"] is not None and out["by_bound"] is None
     assert out["chosen"] is None and not out["certified"] and out["bound_shortfall"]["reason"] == "too_few_trials"
     assert out["candidate"] == 0.9 and "does not decide at this confidence" in out["chosen_by"]
+
+
+def test_the_threshold_certifies_only_where_a_person_checked_every_name_it_accepts(tmp_path):
+    """The bound alone can reach a lower threshold whose accepted names nobody
+    checked; the certified one is the lowest at which every accepted name was
+    checked, and verify decides at it from the adjudicated report."""
+    bases, entities, faces = _people()
+    g = _gallery_on_disk(tmp_path, entities, faces, [])
+    trials = ([{**_trial("right", 0.9, f"r{i}"), "key": f"r{i}", "adjudicated": "vlm"} for i in range(40)]
+              + [{**_trial("right", 0.6, f"u{i}"), "key": f"u{i}"} for i in range(20)]      # nobody looked
+              + [{**_trial("wrong", 0.3, f"x{i}"), "key": f"x{i}"} for i in range(40)])
+    trials = [{**x, "qid": "Q1", "figure_qid": "Q1"} for x in trials]
+    query = {x["sha256"]: {"faces": [_face(_vec(7000 + i, bases["Q1"]))]} for i, x in enumerate(trials)}
+    out = gallery.calibrate(trials, Counter(), g, query, "sface", {"images": 1, "worklist": 1, "complete": True})
+    t = out["threshold"]
+    assert t["chosen"] == 0.9 and t["certified"], "the lowest threshold every accepted name of which was checked"
+    assert t["by_bound_unchecked"] == {"threshold": 0.6, "unchecked_accepted": 20},         "the bound alone would reach 0.6, over 20 names nobody checked"
+    report = {"face_config": g.cid, "threshold": {"chosen": None, "certified": False},
+              "adjudicated": {"threshold": {"chosen": 0.9, "certified": True}}}
+    assert gallery.certified_threshold(report, g.cid) == 0.9, "a person's decisions are the labels"
+    assert gallery.certified_threshold({**report, "adjudicated": None}, g.cid) is None
 
 
 def test_a_right_name_the_gallery_cannot_score_is_coverage_never_a_true_accept(tmp_path):
@@ -1955,6 +2017,34 @@ def test_a_sheet_crop_draws_the_face_it_scored():
     assert any(p[0] > 200 and p[1] < 80 and p[2] < 80 for p in edge), "the box's left edge, red"
     assert eye[1] > 150 and eye[0] < 100, "an eye, green"
     assert img.getpixel((2, 2)) == (255, 255, 255), "the margin itself is untouched"
+
+
+def test_a_mask_over_nose_and_mouth_is_read_as_occlusion_and_counted_never_refused(tmp_path):
+    """On the crop the recognizer embeds, a mask keeps the eyes' skin and takes
+    the mouth's: read as occlusion and reported as its own stratum, beside pose
+    and size. It never makes a face unscorable."""
+    import numpy as np
+
+    skin, white, grey = (140, 172, 224), (255, 255, 255), (128, 128, 128)   # BGR
+    face = np.zeros((112, 112, 3), dtype=np.uint8)
+    face[:] = skin
+    assert gallery.face_occlusion(face) == 0.0, "a bare face keeps its skin below the eyes"
+    masked = face.copy()
+    masked[70:112] = white
+    assert gallery.face_occlusion(masked) >= gallery.OCCLUSION_SKIN_DROP
+    flat = np.zeros_like(face)
+    flat[:] = grey
+    assert gallery.face_occlusion(flat) is None, "too grey to compare: not read"
+    bases, entities, faces = _people()
+    g = _gallery_on_disk(tmp_path, entities, faces, [])
+    trials = ([{**_trial("right", 0.9, f"r{i}"), "key": f"r{i}", "occluded": False} for i in range(30)]
+              + [{**_trial("right", 0.5, f"m{i}"), "key": f"m{i}", "occluded": True} for i in range(4)]
+              + [{**_trial("wrong", 0.3, f"x{i}"), "key": f"x{i}"} for i in range(30)])
+    trials = [{**x, "qid": "Q1", "figure_qid": "Q1"} for x in trials]
+    query = {x["sha256"]: {"faces": [_face(_vec(7000 + i, bases["Q1"]))]} for i, x in enumerate(trials)}
+    strata = gallery.calibrate(trials, Counter(), g, query, "sface", {"images": 1, "worklist": 2})["strata"]
+    assert strata["occluded"]["right"] == 4 and strata["not_occluded"]["right"] == 30
+    assert all(x["scorable"] for x in trials if x.get("occluded")), "measured, never refused"
 
 
 def test_embeddings_are_compared_in_float64():

@@ -1,6 +1,6 @@
 {
  "sface": {
-  "generated_at": "2026-10-23T21:33:32+00:00",
+  "generated_at": "2026-10-27T14:07:39+00:00",
   "backend": "sface",
   "face_config": "b6abc4a9f987",
   "coverage": {
@@ -68,6 +68,7 @@
    "certified": false,
    "chosen_by": "unset: no threshold reaches the one-sided 95% lower bound of 0.90, and a point estimate is never adopted, so the gallery does not decide at this confidence. Short of the bound: the highest lower bound of accepted-name precision is 0.8658, at 0.5214: 129 of 141 accepted names right (0.9149). That clears 0.90 as a point estimate, on too few trials to certify it: at that precision about 1,183 accepted names would",
    "candidate": 0.5214,
+   "candidate_score": 0.521386,
    "candidate_by": "closest to the bound and short of it: the highest lower bound of accepted-name precision is 0.8658, at 0.5214: 129 of 141 accepted names right (0.9149). That clears 0.90 as a point estimate, on too few trials to certify it: at that precision about 1,183 accepted names would",
    "bound_shortfall": {
     "threshold": 0.5214,
@@ -89,6 +90,7 @@
     "statement": "the highest lower bound of accepted-name precision is 0.8658, at 0.5214: 129 of 141 accepted names right (0.9149). That clears 0.90 as a point estimate, on too few trials to certify it: at that precision about 1,183 accepted names would"
    },
    "by_bound": null,
+   "by_bound_unchecked": null,
    "by_point_estimate": 0.4752
   },
   "at_threshold": {
@@ -1029,6 +1031,30 @@
     "fmr_upper_95": 0.95,
     "precision": 1.0,
     "precision_lower_95": 0.05
+   },
+   "occluded": {
+    "threshold": 0.5214,
+    "right": 7,
+    "wrong": 2,
+    "accepted_right": 2,
+    "accepted_wrong": 0,
+    "tar": 0.2857,
+    "fmr": 0.0,
+    "fmr_upper_95": 0.7764,
+    "precision": 1.0,
+    "precision_lower_95": 0.2236
+   },
+   "not_occluded": {
+    "threshold": 0.5214,
+    "right": 140,
+    "wrong": 66,
+    "accepted_right": 124,
+    "accepted_wrong": 12,
+    "tar": 0.8857,
+    "fmr": 0.1818,
+    "fmr_upper_95": 0.2779,
+    "precision": 0.9118,
+    "precision_lower_95": 0.861
    }
   },
   "figures": {
@@ -1888,7 +1914,7 @@
    }
   },
   "look_alike_finding": {
-   "what": "the VLM's wrong names against random strangers: the right names' faces, each scored against a random other person in the gallery (seeded). A contrast, never an input",
+   "what": "the VLM's wrong names against random strangers: the right names' faces, each scored against a random other person in the gallery, over 200 seeded draws (the first is the one reported field by field). A contrast, never an input",
    "random_strangers": {
     "pairs": 146,
     "max_score": 0.3445,
@@ -1919,7 +1945,34 @@
      "precision_lower_95": 0.6939
     }
    },
-   "finding": "Scored against a random other person, the right names' faces reach at most 0.344 (median 0.148); 33 of the 70 scorable wrong names the VLM gave score above every stranger. A threshold calibrated on random pairs would sit at 0.233; on the VLM's own names it accepts 49 of 103 wrong names, an accepted-name precision of 0.75 against the 0.9 required. A random-pair false-match rate measures strangers; the names a gallery must refuse are the look-alikes the VLM chose, so the threshold is calibrated on those."
+   "finding": "Calibrated on random pairs, the threshold would sit at 0.242 (0.216 to 0.269 over 200 draws of strangers) and give the VLM's own names an accepted-name precision of 0.754 (0.728 to 0.767), against the 0.9 required: 0 of the 200 draws reach it. 30 of the 70 scorable wrong names score above the 99th percentile of 28,890 stranger scores (0.354); a wrong name outscores a random stranger with probability 0.8693, and a right name a wrong one with probability 0.8494. The count of wrong names above every stranger is one draw's maximum, and it ran from 9 to 37 over the draws: not a statistic, so not used. A random-pair false-match rate measures strangers; the names a gallery must refuse are the look-alikes the VLM chose, so the threshold is calibrated on those.",
+   "over_draws": {
+    "draws": 200,
+    "pooled_stranger_scores": 28890,
+    "random_pair_threshold": {
+     "min": 0.2163,
+     "median": 0.2419,
+     "max": 0.2692
+    },
+    "precision_on_the_vlms_own_names": {
+     "min": 0.7277,
+     "median": 0.7538,
+     "max": 0.7672,
+     "draws_reaching_the_bar": 0
+    },
+    "stranger_p99": 0.3539,
+    "wrong_scorable": 70,
+    "wrong_above_stranger_p99": 30,
+    "p_wrong_outscores_stranger": 0.8693,
+    "p_right_outscores_wrong": 0.8494,
+    "above_every_stranger": {
+     "min": 9,
+     "median": 26.0,
+     "max": 37,
+     "this_draw": 33,
+     "not_used": "one draw's maximum: it moves with the draw"
+    }
+   }
   },
   "verite": "not read: calibration reads Factify2 train only",
   "factify2_ledger": {
@@ -2157,24 +2210,24 @@
   },
   "adjudicated": {
    "decisions": {
-    "vlm": 35,
+    "vlm": 148,
     "neither": 2
    },
    "by": "a person, by eye, on the review sheet",
-   "applied": 37,
+   "applied": 150,
    "not_among_these_trials": 0,
-   "left_undecided_in_file": 0,
+   "left_undecided_in_file": 44,
    "relabelled": {
-    "unchanged": 33,
-    "wrong_to_right": 4
+    "unchanged": 136,
+    "wrong_to_right": 14
    },
    "note": "a trial without a decision keeps its label; relabelled says how many decisions changed a label, and in which direction, and how many confirmed it",
    "review_findings": {
     "what": "every name a person decided, by where the gallery puts it against its consistency threshold: a confirmed name below it is a recognition failure, one it cannot score is coverage; label noise (decisions that changed a label) is counted apart",
     "floor": 0.3811,
     "confirmed_right": {
-     "names": 35,
-     "recognised": 33,
+     "names": 148,
+     "recognised": 146,
      "recognition_failures": 0,
      "coverage": {
       "no_usable_reference": 1,
@@ -2188,34 +2241,37 @@
     },
     "label_noise": {
      "wrong_to_right": {
-      "at_or_above_floor": 4
+      "at_or_above_floor": 14
      }
     },
     "faces": {
      "recognised": {
-      "median_face_side": 96.2,
-      "median_eye_span": 39.4,
-      "median_eye_mouth": 44.7,
-      "median_nose_offset": 0.14,
-      "side_on": 4
+      "median_face_side": 107.3,
+      "median_eye_span": 45.4,
+      "median_eye_mouth": 50.8,
+      "median_nose_offset": 0.09,
+      "side_on": 8
      },
      "recognition_failures": null
     },
     "recognition_failures_by_cause": {
      "pose": 0,
      "size": 0,
-     "both": 0,
+     "occlusion": 0,
+     "more_than_one": 0,
      "neither": 0,
      "rules": {
       "pose": "side-on: the nose 0.5 eye spans or more from the eyes' midpoint, along the eye line -- past the far eye",
-      "size": "eyes to mouth, smaller than every face the gallery recognised among the confirmed names (the smallest: 20.0 px)"
+      "size": "eyes to mouth, smaller than every face the gallery recognised among the confirmed names (the smallest: 20.0 px)",
+      "occlusion": "the mouth region's skin share 0.6 or more below the eyes' band, on the aligned crop: a mask over nose and mouth"
      },
      "remedies": {
       "pose": "references in more poses, a side view for a side view",
-      "size": "none in the gallery: under the 20 px floor verify answers no_usable_face, and only a larger image helps"
+      "size": "none in the gallery: under the 20 px floor verify answers no_usable_face, and only a larger image helps",
+      "occlusion": "none in the gallery: the recognizer scores what the mask leaves"
      }
     },
-    "statement": "A person confirmed 35 names right. The gallery scores 33 at or above its floor of 0.381; 0 below it, among different people's faces -- recognition failures, not label errors: they lower TAR, and they are the recognizer's limit on these images (pose: 0, size: 0, both: 0, neither: 0); 2 it cannot score -- coverage, never a true accept. 4 decisions changed a label (label noise): wrong to right: 4 (4 at or above the floor, 0 below it, 0 unscorable)"
+    "statement": "A person confirmed 148 names right. The gallery scores 146 at or above its floor of 0.381; 0 below it, among different people's faces -- recognition failures, not label errors: they lower TAR, and they are the recognizer's limit on these images (pose: 0, size: 0, occlusion: 0, more than one: 0, neither: 0); 2 it cannot score -- coverage, never a true accept. 14 decisions changed a label (label noise): wrong to right: 14 (14 at or above the floor, 0 below it, 0 unscorable)"
    },
    "trials": {
     "total": 284,
@@ -2223,8 +2279,8 @@
     "excluded_same_photo": 2,
     "forced_lines": 0,
     "by_label": {
-     "right": 183,
-     "wrong": 88,
+     "right": 193,
+     "wrong": 78,
      "unlinked": 11
     },
     "unscorable": {
@@ -2236,10 +2292,10 @@
     }
    },
    "vlm_precision": {
-    "qid": 0.6489,
+    "qid": 0.6844,
     "names": 282,
-    "right": 183,
-    "excluding_unlinked": 0.6753,
+    "right": 193,
+    "excluding_unlinked": 0.7122,
     "rule": "right when the name resolves, by QID, to anyone the image's claims name: the probe's listed figures and claim NER's people. A claim name that resolves to several people decides nothing",
     "single_figure_rule": 0.5426,
     "token_rule_on_probe_list_images": 0.6566,
@@ -2247,52 +2303,39 @@
    },
    "bar": {
     "accepted_name_precision": 0.9,
-    "max_fmr_over_tar": 0.2054,
+    "max_fmr_over_tar": 0.241,
     "rule": "p*TAR / (p*TAR + (1-p)*FMR) >= 0.90, i.e. FMR/TAR <= p / (9 (1 - p))"
    },
    "threshold": {
-    "chosen": null,
-    "certified": false,
-    "chosen_by": "unset: no threshold reaches the one-sided 95% lower bound of 0.90, and a point estimate is never adopted, so the gallery does not decide at this confidence. Short of the bound: the highest lower bound of accepted-name precision is 0.8827, at 0.5214: 131 of 141 accepted names right (0.9291). That clears 0.90 as a point estimate, on too few trials to certify it: at that precision about 333 accepted names would",
+    "chosen": 0.5214,
+    "certified": true,
+    "chosen_by": "one-sided 95% lower bound of accepted-name precision >= 0.90, on names a person has checked, every one it accepts",
     "candidate": 0.5214,
-    "candidate_by": "closest to the bound and short of it: the highest lower bound of accepted-name precision is 0.8827, at 0.5214: 131 of 141 accepted names right (0.9291). That clears 0.90 as a point estimate, on too few trials to certify it: at that precision about 333 accepted names would",
-    "bound_shortfall": {
-     "threshold": 0.5214,
-     "at": {
-      "threshold": 0.5214,
-      "right": 183,
-      "wrong": 99,
-      "accepted_right": 131,
-      "accepted_wrong": 10,
-      "tar": 0.7158,
-      "fmr": 0.101,
-      "fmr_upper_95": 0.1653,
-      "precision": 0.9291,
-      "precision_lower_95": 0.8827
-     },
-     "accepted_names": 141,
-     "reason": "too_few_trials",
-     "accepted_names_needed": 333,
-     "statement": "the highest lower bound of accepted-name precision is 0.8827, at 0.5214: 131 of 141 accepted names right (0.9291). That clears 0.90 as a point estimate, on too few trials to certify it: at that precision about 333 accepted names would"
+    "candidate_score": 0.521386,
+    "candidate_by": "one-sided 95% lower bound of accepted-name precision >= 0.90, on names a person has checked, every one it accepts",
+    "bound_shortfall": null,
+    "by_bound": 0.5214,
+    "by_bound_unchecked": {
+     "threshold": 0.3959,
+     "unchecked_accepted": 16
     },
-    "by_bound": null,
-    "by_point_estimate": 0.4306
+    "by_point_estimate": 0.3538
    },
    "at_threshold": {
     "threshold": 0.5214,
-    "right": 183,
-    "wrong": 99,
-    "accepted_right": 131,
-    "accepted_wrong": 10,
-    "tar": 0.7158,
-    "fmr": 0.101,
-    "fmr_upper_95": 0.1653,
-    "precision": 0.9291,
-    "precision_lower_95": 0.8827
+    "right": 193,
+    "wrong": 89,
+    "accepted_right": 141,
+    "accepted_wrong": 0,
+    "tar": 0.7306,
+    "fmr": 0.0,
+    "fmr_upper_95": 0.0331,
+    "precision": 1.0,
+    "precision_lower_95": 0.979
    },
-   "fmr_over_tar": 0.1411,
+   "fmr_over_tar": 0.0,
    "cost_in_true_accepts": {
-    "right_names": 183,
+    "right_names": 193,
     "rejected": 52,
     "rejected_unscorable": {
      "no_usable_face": 17,
@@ -2300,131 +2343,256 @@
      "no_face_in_image": 11
     },
     "rejected_below_threshold": 23,
-    "right_names_scorable": 154,
-    "tar_scorable": 0.8506,
+    "right_names_scorable": 164,
+    "tar_scorable": 0.8598,
     "note": "TAR is (right names the gallery can score / right names) x tar_scorable: a name it cannot score is coverage, and tar_scorable is the recognizer's own rate without it"
    },
    "bootstrap_95": {
     "tar": [
-     0.639,
-     0.7849
+     0.6598,
+     0.7961
     ],
     "fmr": [
-     0.0444,
-     0.1667
+     0.0,
+     0.0
     ],
     "precision": [
-     0.8819,
-     0.9692
+     1.0,
+     1.0
     ]
    },
    "cross_validated": {
     "bound": {
      "rule": "bound",
      "fold_thresholds": [
-      null,
-      null,
-      null,
-      null,
-      null
+      0.3987,
+      0.4098,
+      0.3889,
+      0.4216,
+      0.3938
      ],
-     "accepted_right": 0,
-     "accepted_wrong": 0,
-     "tar": 0.0,
-     "fmr": 0.0,
-     "precision": null
+     "accepted_right": 153,
+     "accepted_wrong": 9,
+     "tar": 0.7927,
+     "fmr": 0.1011,
+     "precision": 0.9444
     },
     "point": {
      "rule": "point",
      "fold_thresholds": [
-      0.4306,
-      0.4383,
-      0.4216,
-      0.4216,
-      0.4216
+      0.3152,
+      0.3574,
+      0.3538,
+      0.3859,
+      0.3152
      ],
-     "accepted_right": 143,
-     "accepted_wrong": 15,
-     "tar": 0.7814,
-     "fmr": 0.1515,
-     "precision": 0.9051
+     "accepted_right": 155,
+     "accepted_wrong": 18,
+     "tar": 0.8031,
+     "fmr": 0.2022,
+     "precision": 0.896
+    }
+   },
+   "strata": {
+    "one_face": {
+     "threshold": 0.5214,
+     "right": 97,
+     "wrong": 17,
+     "accepted_right": 90,
+     "accepted_wrong": 0,
+     "tar": 0.9278,
+     "fmr": 0.0,
+     "fmr_upper_95": 0.1616,
+     "precision": 1.0,
+     "precision_lower_95": 0.9673
+    },
+    "several_faces": {
+     "threshold": 0.5214,
+     "right": 85,
+     "wrong": 64,
+     "accepted_right": 51,
+     "accepted_wrong": 0,
+     "tar": 0.6,
+     "fmr": 0.0,
+     "fmr_upper_95": 0.0457,
+     "precision": 1.0,
+     "precision_lower_95": 0.943
+    },
+    "figure_from_probe_list": {
+     "threshold": 0.5214,
+     "right": 133,
+     "wrong": 33,
+     "accepted_right": 98,
+     "accepted_wrong": 0,
+     "tar": 0.7368,
+     "fmr": 0.0,
+     "fmr_upper_95": 0.0868,
+     "precision": 1.0,
+     "precision_lower_95": 0.9699
+    },
+    "figure_from_claim_ner": {
+     "threshold": 0.5214,
+     "right": 60,
+     "wrong": 56,
+     "accepted_right": 43,
+     "accepted_wrong": 0,
+     "tar": 0.7167,
+     "fmr": 0.0,
+     "fmr_upper_95": 0.0521,
+     "precision": 1.0,
+     "precision_lower_95": 0.9327
+    },
+    "ambiguous_link": {
+     "threshold": 0.5214,
+     "right": 1,
+     "wrong": 4,
+     "accepted_right": 1,
+     "accepted_wrong": 0,
+     "tar": 1.0,
+     "fmr": 0.0,
+     "fmr_upper_95": 0.5271,
+     "precision": 1.0,
+     "precision_lower_95": 0.05
+    },
+    "figure_link_ambiguous": {
+     "threshold": 0.5214,
+     "right": 1,
+     "wrong": 1,
+     "accepted_right": 1,
+     "accepted_wrong": 0,
+     "tar": 1.0,
+     "fmr": 0.0,
+     "fmr_upper_95": 0.95,
+     "precision": 1.0,
+     "precision_lower_95": 0.05
+    },
+    "occluded": {
+     "threshold": 0.5214,
+     "right": 7,
+     "wrong": 2,
+     "accepted_right": 2,
+     "accepted_wrong": 0,
+     "tar": 0.2857,
+     "fmr": 0.0,
+     "fmr_upper_95": 0.7764,
+     "precision": 1.0,
+     "precision_lower_95": 0.2236
+    },
+    "not_occluded": {
+     "threshold": 0.5214,
+     "right": 154,
+     "wrong": 52,
+     "accepted_right": 136,
+     "accepted_wrong": 0,
+     "tar": 0.8831,
+     "fmr": 0.0,
+     "fmr_upper_95": 0.056,
+     "precision": 1.0,
+     "precision_lower_95": 0.9782
     }
    },
    "figure_stratified": {
     "what": "every figure weighs the same: each trial counts 1 / its figure's trials; 95% intervals by resampling figures",
     "figures": 61,
     "threshold": 0.5214,
-    "vlm_precision": 0.5298,
-    "tar": 0.8092,
-    "fmr": 0.0474,
-    "precision": 0.9506,
-    "precision_lower_95": 0.8828,
+    "vlm_precision": 0.5521,
+    "tar": 0.8169,
+    "fmr": 0.0,
+    "precision": 1.0,
+    "precision_lower_95": 1.0,
     "bootstrap_95": {
      "vlm_precision": [
-      0.4133,
-      0.6421
+      0.4314,
+      0.6632
      ],
      "tar": [
-      0.6834,
-      0.9184
+      0.6979,
+      0.9218
      ],
      "fmr": [
-      0.0036,
-      0.1325
+      0.0,
+      0.0
      ],
      "precision": [
-      0.8663,
-      0.9959
+      1.0,
+      1.0
      ]
     },
-    "threshold_by_figure_bound": 0.7661,
+    "threshold_by_figure_bound": 0.4306,
     "note": "the threshold at which the one-sided 95% lower bound of figure-weighted precision reaches 0.90; when it is above the pooled one, the pooled threshold leans on the most-tried figures",
     "pooled_without_top_two_figures": {
      "threshold": 0.5214,
-     "right": 79,
-     "wrong": 68,
-     "accepted_right": 61,
-     "accepted_wrong": 4,
-     "tar": 0.7722,
-     "fmr": 0.0588,
-     "fmr_upper_95": 0.1296,
-     "precision": 0.9385,
-     "precision_lower_95": 0.8647
+     "right": 83,
+     "wrong": 64,
+     "accepted_right": 65,
+     "accepted_wrong": 0,
+     "tar": 0.7831,
+     "fmr": 0.0,
+     "fmr_upper_95": 0.0457,
+     "precision": 1.0,
+     "precision_lower_95": 0.955
     }
    },
    "look_alike_finding": {
-    "what": "the VLM's wrong names against random strangers: the right names' faces, each scored against a random other person in the gallery (seeded). A contrast, never an input",
+    "what": "the VLM's wrong names against random strangers: the right names' faces, each scored against a random other person in the gallery, over 200 seeded draws (the first is the one reported field by field). A contrast, never an input",
     "random_strangers": {
-     "pairs": 146,
-     "max_score": 0.4154,
-     "median_score": 0.1513,
+     "pairs": 156,
+     "max_score": 0.4034,
+     "median_score": 0.169,
      "accepted_at_threshold": 0
     },
     "vlm_wrong_names": {
-     "wrong": 99,
-     "scorable": 66,
-     "median_score": 0.2971,
-     "above_every_stranger": 16,
-     "accepted_at_threshold": 10
+     "wrong": 89,
+     "scorable": 56,
+     "median_score": 0.2789,
+     "above_every_stranger": 7,
+     "accepted_at_threshold": 0
     },
-    "right_names_median_score": 0.6252,
+    "right_names_median_score": 0.6298,
     "if_calibrated_on_random_pairs": {
-     "threshold": 0.2385,
+     "threshold": 0.2285,
      "rule": "the lowest threshold at which p*TAR / (p*TAR + (1-p)*FMR) >= 0.90 with FMR measured on random strangers (point estimate), p the VLM's QID precision",
      "on_the_vlms_own_names": {
-      "threshold": 0.2385,
-      "right": 183,
-      "wrong": 99,
-      "accepted_right": 151,
-      "accepted_wrong": 44,
-      "tar": 0.8251,
-      "fmr": 0.4444,
-      "fmr_upper_95": 0.532,
-      "precision": 0.7744,
-      "precision_lower_95": 0.7196
+      "threshold": 0.2285,
+      "right": 193,
+      "wrong": 89,
+      "accepted_right": 161,
+      "accepted_wrong": 37,
+      "tar": 0.8342,
+      "fmr": 0.4157,
+      "fmr_upper_95": 0.5084,
+      "precision": 0.8131,
+      "precision_lower_95": 0.7616
      }
     },
-    "finding": "Scored against a random other person, the right names' faces reach at most 0.415 (median 0.151); 16 of the 66 scorable wrong names the VLM gave score above every stranger. A threshold calibrated on random pairs would sit at 0.239; on the VLM's own names it accepts 44 of 99 wrong names, an accepted-name precision of 0.7744 against the 0.9 required. A random-pair false-match rate measures strangers; the names a gallery must refuse are the look-alikes the VLM chose, so the threshold is calibrated on those."
+    "finding": "Calibrated on random pairs, the threshold would sit at 0.230 (0.204 to 0.260 over 200 draws of strangers) and give the VLM's own names an accepted-name precision of 0.817 (0.785 to 0.838), against the 0.9 required: 0 of the 200 draws reach it. 17 of the 56 scorable wrong names score above the 99th percentile of 31,452 stranger scores (0.353); a wrong name outscores a random stranger with probability 0.8323, and a right name a wrong one with probability 0.9593. The count of wrong names above every stranger is one draw's maximum, and it ran from 0 to 21 over the draws: not a statistic, so not used. A random-pair false-match rate measures strangers; the names a gallery must refuse are the look-alikes the VLM chose, so the threshold is calibrated on those.",
+    "over_draws": {
+     "draws": 200,
+     "pooled_stranger_scores": 31452,
+     "random_pair_threshold": {
+      "min": 0.2037,
+      "median": 0.2301,
+      "max": 0.26
+     },
+     "precision_on_the_vlms_own_names": {
+      "min": 0.7854,
+      "median": 0.8173,
+      "max": 0.8377,
+      "draws_reaching_the_bar": 0
+     },
+     "stranger_p99": 0.353,
+     "wrong_scorable": 56,
+     "wrong_above_stranger_p99": 17,
+     "p_wrong_outscores_stranger": 0.8323,
+     "p_right_outscores_wrong": 0.9593,
+     "above_every_stranger": {
+      "min": 0,
+      "median": 12.0,
+      "max": 21,
+      "this_draw": 7,
+      "not_used": "one draw's maximum: it moves with the draw"
+     }
+    }
    }
   }
  }
