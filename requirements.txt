@@ -38,6 +38,10 @@ transformers==5.17.0
 accelerate==1.15.0
 bitsandbytes==0.50.2
 qwen-vl-utils==0.0.14
+# The ensemble (scripts/ensemble.py): SigLIP's tokenizer is SentencePiece's
+# (Apache-2.0); transformers 5.17 has no fast SigLIP tokenizer. 0.2.1 is from
+# 2025-08-12, pinned 2026-11-10.
+sentencepiece==0.2.1
 
 # --- image-to-text (scripts/image_text.py) ---
 # EasyOCR runs the OCR beside the VLM; its pins were captured on 2026-10-01 for

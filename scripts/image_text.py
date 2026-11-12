@@ -165,7 +165,11 @@ PARSER_VERSION = 4
 SEED = 20260901
 
 #: The order datasets are processed in. ``--through X`` runs ORDER up to X.
-ORDER = ("verite", "averimatec", "factify2", "fakeddit")
+ORDER = ("verite", "averimatec", "factify2", "m4fc", "fakeddit")
+#: Processed splits whose images are never processed. M4FC's processed test is
+#: not touched: its 420 rows are train-period rows the duplicate rule moved
+#: there, and the authors' own test split is not in processed at all.
+SKIP_SPLITS = {"m4fc": frozenset({"test"})}
 
 OUT_ROOT = INTERIM / "image_text"
 PILOT_REPORT = REPORTS / "image_text_pilot.json"
@@ -510,12 +514,17 @@ def build_worklist(dataset: str, *, rows: Iterable[dict[str, Any]] | None = None
     and its ``image_paths`` hold only images that passed the gates at build
     time (they are gated again when read). Order is by sha256 -- label-free and
     pseudo-random, so a pilot's first N are not all one class -- except for
-    Fakeddit, whose order is the nested stratified sample.
+    Fakeddit, whose order is the nested stratified sample. Rows of a split in
+    ``SKIP_SPLITS`` are left out and counted.
     """
     cache = {} if cache is None else cache
     groups: dict[str, dict[str, Any]] = {}
-    n_rows = 0
+    skip = SKIP_SPLITS.get(dataset, frozenset())
+    n_rows = n_skipped = 0
     for row in (usable_rows(dataset) if rows is None else rows):
+        if row.get("split") in skip:
+            n_skipped += 1
+            continue
         n_rows += 1
         for path in row["image_paths"]:
             entry = _index_row(path, cache)
@@ -538,6 +547,8 @@ def build_worklist(dataset: str, *, rows: Iterable[dict[str, Any]] | None = None
     stats = {"usable_rows_with_images": n_rows,
              "image_paths": sum(len(g["paths"]) for g in groups.values()),
              "distinct_images": len(items)}
+    if skip:
+        stats["rows_in_skipped_splits"] = n_skipped
     if dataset == "fakeddit":
         return nested_stratified(items), stats
     return sorted(items, key=lambda it: it.sha256), stats
@@ -2862,6 +2873,11 @@ def cmd_run(args) -> int:
     vlm.prepare()
     ocr.prepare()
     ctx = make_context(vlm, ocr)
+    if args.expect_config and ctx.config_id != args.expect_config:
+        print(f"REFUSED: this machine's config is {ctx.config_id}, not {args.expect_config}: "
+              "the model, a prompt, decoding or a library version differs. Nothing written.",
+              file=sys.stderr)
+        return 3
     write_config(ctx)
     log(f"config {ctx.config_id} -> {ctx.out_dir}")
     lists, stats = worklists(args, scope)
@@ -3145,6 +3161,8 @@ def build_parser() -> argparse.ArgumentParser:
                    help="re-attempt rows whose status is failed or partial")
     r.add_argument("--worklist", type=Path, default=None,
                    help="JSONL of work items instead of the processed layer")
+    r.add_argument("--expect-config", default=None, metavar="ID",
+                   help="refuse, writing nothing, unless this machine's config id is ID")
     for p in (r, c := sub.add_parser("recheck", help="re-run finished rows in a fresh process")):
         p.add_argument("--ocr-device", choices=("cuda", "cpu"), default="cuda")
         p.add_argument("--stub", action="store_true",

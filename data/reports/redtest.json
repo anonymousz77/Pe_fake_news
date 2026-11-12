@@ -1,10 +1,122 @@
 {
-  "generated_at": "2026-09-10T23:51:35+00:00",
-  "as_of": "2020-06-15",
+  "generated_at": "2026-10-28T21:47:35+00:00",
+  "before": "2020-06-15",
+  "rule": "published_at < before, and no blocked source or path word (configs/factcheckers.yaml)",
+  "blocklist": {
+    "rows": 98,
+    "doc_ids": 1,
+    "path_words": 19,
+    "tested_host": "211check.org",
+    "tested_desk": "12newsnow.com/article/news/verify",
+    "tested_words": [
+      "fact-check",
+      "webqoof",
+      "hoax-alert",
+      "verificador"
+    ],
+    "word_host": "redtest-news.invalid"
+  },
   "plants": {
-    "prior": "2020-06-14",
-    "future": "2020-06-16",
-    "null": null
+    "prior": {
+      "published_at": "2020-06-14",
+      "source_domain": "redtest.invalid",
+      "returns": true
+    },
+    "same_day": {
+      "published_at": "2020-06-15",
+      "source_domain": "redtest.invalid",
+      "returns": false
+    },
+    "future": {
+      "published_at": "2020-06-16",
+      "source_domain": "redtest.invalid",
+      "returns": false
+    },
+    "null": {
+      "published_at": null,
+      "source_domain": null,
+      "returns": false
+    },
+    "fc_domain": {
+      "published_at": "2020-06-14",
+      "source_domain": "211check.org",
+      "returns": false
+    },
+    "fc_subdomain": {
+      "published_at": "2020-06-14",
+      "source_domain": "redtest.211check.org",
+      "returns": false
+    },
+    "fc_upper_case": {
+      "published_at": "2020-06-14",
+      "source_domain": "211CHECK.ORG",
+      "returns": false
+    },
+    "fc_wayback": {
+      "published_at": "2020-06-14",
+      "source_domain": "web.archive.org",
+      "returns": false
+    },
+    "desk_section": {
+      "published_at": "2020-06-14",
+      "source_domain": "12newsnow.com",
+      "returns": false
+    },
+    "desk_upper_path": {
+      "published_at": "2020-06-14",
+      "source_domain": "12newsnow.com",
+      "returns": false
+    },
+    "desk_wayback": {
+      "published_at": "2020-06-14",
+      "source_domain": "web.archive.org",
+      "returns": false
+    },
+    "desk_news": {
+      "published_at": "2020-06-14",
+      "source_domain": "12newsnow.com",
+      "returns": true
+    },
+    "lookalike_prefix": {
+      "published_at": "2020-06-14",
+      "source_domain": "not211check.org",
+      "returns": true
+    },
+    "lookalike_suffix": {
+      "published_at": "2020-06-14",
+      "source_domain": "211check.org.redtest.invalid",
+      "returns": true
+    },
+    "fc_listed_doc": {
+      "published_at": "2020-06-14",
+      "source_domain": "redtest.invalid",
+      "returns": false
+    },
+    "word_segment": {
+      "published_at": "2020-06-14",
+      "source_domain": "redtest-news.invalid",
+      "returns": false
+    },
+    "word_upper_case": {
+      "published_at": "2020-06-14",
+      "source_domain": "redtest-news.invalid",
+      "returns": false
+    },
+    "word_in_slug": {
+      "published_at": "2020-06-14",
+      "source_domain": "redtest-news.invalid",
+      "returns": false
+    },
+    "word_wayback": {
+      "published_at": "2020-06-14",
+      "source_domain": "web.archive.org",
+      "returns": false
+    },
+    "word_news": {
+      "published_at": "2020-06-14",
+      "source_domain": "redtest-news.invalid",
+      "returns": true
+    }
   },
   "index_rows_before": {
     "docs_fts": 1368613,
@@ -22,80 +134,155 @@
     "bm25.sqlite": 13387153408,
     "temporal.sqlite": 439357440
   },
+  "index_sha256_before": {
+    "bm25.sqlite": "8b3ef94ff390116a3b8a817ee3c8058bf59ddda2fe722f931942f57ebc038301",
+    "temporal.sqlite": "0f8b85c3566143bf0a29bcfe04fad70d726ff5d948ef8bf4f277eea5b692c424"
+  },
+  "index_sha256_after": {
+    "bm25.sqlite": "8b3ef94ff390116a3b8a817ee3c8058bf59ddda2fe722f931942f57ebc038301",
+    "temporal.sqlite": "0f8b85c3566143bf0a29bcfe04fad70d726ff5d948ef8bf4f277eea5b692c424"
+  },
+  "index_byte_identical": true,
   "ranking_fingerprint_unchanged": true,
   "fingerprint_depth": 50,
   "temporal_quick_check": "ok",
+  "connection_rules_after": {
+    "words": 19,
+    "doc_ids": 1
+  },
   "probe_nonce": [
     {
       "k": 1,
-      "future_returned": false,
-      "null_returned": false,
-      "prior_returned": true,
+      "leaked": [],
+      "missing": [
+        "desk_news",
+        "lookalike_prefix",
+        "lookalike_suffix",
+        "word_news"
+      ],
       "latest_published_at": "2020-06-14",
       "returned": 1
     },
     {
       "k": 10,
-      "future_returned": false,
-      "null_returned": false,
-      "prior_returned": true,
+      "leaked": [],
+      "missing": [],
       "latest_published_at": "2020-06-14",
-      "returned": 1
+      "returned": 5
     },
     {
       "k": 100,
-      "future_returned": false,
-      "null_returned": false,
-      "prior_returned": true,
+      "leaked": [],
+      "missing": [],
       "latest_published_at": "2020-06-14",
-      "returned": 1
+      "returned": 5
     },
     {
       "k": 1000,
-      "future_returned": false,
-      "null_returned": false,
-      "prior_returned": true,
+      "leaked": [],
+      "missing": [],
       "latest_published_at": "2020-06-14",
-      "returned": 1
+      "returned": 5
     },
     {
       "k": 100000,
-      "future_returned": false,
-      "null_returned": false,
-      "prior_returned": true,
+      "leaked": [],
+      "missing": [],
+      "latest_published_at": "2020-06-14",
+      "returned": 5
+    },
+    {
+      "k": 2000000,
+      "leaked": [],
+      "missing": [],
+      "latest_published_at": "2020-06-14",
+      "returned": 5
+    }
+  ],
+  "probe_nonce_without_words": [
+    {
+      "k": 1,
+      "leaked": [],
+      "missing": [
+        "desk_news",
+        "lookalike_prefix",
+        "lookalike_suffix",
+        "word_in_slug",
+        "word_news",
+        "word_segment",
+        "word_upper_case",
+        "word_wayback"
+      ],
       "latest_published_at": "2020-06-14",
       "returned": 1
     },
     {
-      "k": 2000000,
-      "future_returned": false,
-      "null_returned": false,
-      "prior_returned": true,
+      "k": 10,
+      "leaked": [],
+      "missing": [],
       "latest_published_at": "2020-06-14",
-      "returned": 1
+      "returned": 9
+    },
+    {
+      "k": 100,
+      "leaked": [],
+      "missing": [],
+      "latest_published_at": "2020-06-14",
+      "returned": 9
+    },
+    {
+      "k": 1000,
+      "leaked": [],
+      "missing": [],
+      "latest_published_at": "2020-06-14",
+      "returned": 9
+    },
+    {
+      "k": 100000,
+      "leaked": [],
+      "missing": [],
+      "latest_published_at": "2020-06-14",
+      "returned": 9
+    },
+    {
+      "k": 2000000,
+      "leaked": [],
+      "missing": [],
+      "latest_published_at": "2020-06-14",
+      "returned": 9
     }
   ],
   "probe_bounded": {
-    "k": 880160,
-    "future_returned": false,
-    "null_returned": false,
-    "prior_returned": true,
+    "k": 880330,
+    "leaked": [],
+    "missing": [],
     "latest_published_at": "2020-06-14",
     "term": "hospital",
-    "matches_ignoring_date": 88016,
-    "returned": 62380,
-    "seconds": 15.9
+    "matches_ignoring_rules": 88033,
+    "returned": 62287,
+    "seconds": 30.5
+  },
+  "probe_parity": {
+    "rows": 1368632,
+    "differ": 0,
+    "sql_blocked": {
+      "by_source": 445,
+      "by_doc": 2,
+      "by_word": 1168
+    },
+    "examples": [],
+    "seconds": 295.0
   },
   "probe_whole_corpus": {
     "k": 2000000,
-    "future_returned": false,
-    "null_returned": false,
-    "prior_returned": true,
-    "latest_published_at": "2020-06-15",
+    "leaked": [],
+    "missing": [],
+    "latest_published_at": "2020-06-14",
     "term": "a",
-    "matches_ignoring_date": 973757,
-    "returned": 703362,
-    "seconds": 112.4
+    "matches_ignoring_rules": 973774,
+    "returned": 702481,
+    "blocked_sources_returned": 0,
+    "seconds": 287.2
   },
   "failures": [],
   "passed": true

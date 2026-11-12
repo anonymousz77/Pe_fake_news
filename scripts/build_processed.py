@@ -308,6 +308,15 @@ def main(argv: list[str] | None = None) -> int:
     s2.add_argument("--workers", type=int, default=8)
     args = parser.parse_args(argv)
     names = sorted(LOADERS) if args.all or not args.datasets else args.datasets
+    if args.stage == "processed" and set(names) != set(LOADERS):
+        # Splits are assigned across every corpus at once: cross-corpus duplicate
+        # groups (split_all.constraint_groups) form only from the datasets in the
+        # build, so a partial one moves rows -- M4FC alone sends its 420 test rows
+        # back to train, though their images are byte-identical to records of
+        # Factify2 (413), VERITE (10) and MOCHEG (1) -- and rewrites
+        # data/reports/processed.json with the listed datasets only.
+        parser.error("processed builds every dataset or none: run it with --all "
+                     f"(asked for {', '.join(sorted(names))})")
     t = time.time()
     if args.stage == "interim":
         for name in names:

@@ -120,6 +120,15 @@ as `repo_type: dataset` returns 404; do not "correct" it.
   names (`true_N` / `false_N`) are its labels: tracked files use the row-index
   alias, the real paths stay in `data/interim/verite_private_map.json`. ISOT and
   FakeNewsNet record ids are label-free. `scripts/prepush_check.py` enforces both.
+  - **M4FC's ids are the exception, and the finding is closed** (the person's
+    decision, 2026-10-30). They are slugs of the fact-checks' URLs, and many
+    state the finding; published files hold 4,894 of them. M4FC is CC-BY-SA and
+    publishes these URLs itself, so they are not a leak there.
+  - **The guard is that no id reaches a model input.** Every prompt, query and
+    feature is built from `consistency.ModelView`, which has no id, path, URL
+    or meta field. `tests/test_consistency.py` sends a canary slug through every
+    input builder and finds it in no form, and the server's runner refuses an
+    input holding an id shape. Do not raise the finding again before a publish.
 - **Fakeddit's labels are its subreddits.** All 22 are 100% one label, and the
   title identifies the subreddit. Read `docs/data_card.md` before reporting any
   Fakeddit number.
@@ -998,8 +1007,10 @@ scripts/fakeddit_classes.py / dgm4_audit.py / clip_pairs.py   shortcut audits
 scripts/verify.py          measure what we hold, against the register
 scripts/completion_report.py  assemble the completion report from stage reports
 scripts/bible.py           evidence-store build: fetch, date, quarantine, index, report
-scripts/retrieve.py        time-filtered retrieval; the date predicate lives in the SQL
-scripts/redtest.py         red-teams that predicate against the REAL index, then rolls back
+scripts/retrieve.py        retrieval: strictly before the bound, no fact-checker page; both in the SQL; a claim's 8 rarest words by default
+scripts/redtest.py         red-teams both rules against the REAL index, then rolls back
+scripts/factcheckers.py    the fact-checker blocklist, built from every split of our datasets
+scripts/retrieval_bench.py retrieval speed and leak effect, measured on the real store
 scripts/image_text.py      image-to-text: description, entities, OCR per distinct image; resumable
 scripts/gallery.py         entity gallery: names, Wikidata links, Commons references, faces, 1:1 verify, calibration
 tests/                     contract tests, offline
@@ -1007,6 +1018,8 @@ data/sources.yaml          the register (tracked)
 data/placeholders.yaml     content hashes of evidence-free images (tracked, versioned)
 data/fingerprint_rejections.yaml  real images that are not the authors' image (tracked)
 data/cross_corpus_duplicates.yaml byte-identical images across corpora (tracked)
+configs/factcheckers.yaml  hosts whose pages retrieval never returns (tracked; a person reviews it)
+configs/as_of.yaml         which date bounds each dataset's evidence (tracked)
 data/dead/<name>.csv       dead-image manifest: key + terminal reason (tracked)
 data/MANIFEST.sha256       integrity record for raw data (tracked)
 data/FETCH_LOG.jsonl       append-only acquisition log (tracked — it is provenance)
@@ -1023,6 +1036,7 @@ data/interim/gallery/      name table, claim NER cache, calibration faces and tr
 data/interim/image_text/<config_id>/<dataset>.jsonl  one row per distinct image (ignored)
 models/                    model weights, configs.paths.MODELS (ignored; refused by prepush_check)
 docs/                      hand-written prose (tracked)
+docs/related_work.md       prior work: time-filtered evidence; COVE, the consistency block's closest prior
 ```
 
 ### `data/bible/` is not documentation
@@ -1147,9 +1161,17 @@ python scripts/bible.py --requarantine                    # apply it to the exis
 python scripts/bible.py --index                           # rebuild bm25 + temporal
 python scripts/bible.py --scan                            # resumable; repeat until done
 python scripts/bible.py --report                          # data/reports/bible.json
-python scripts/retrieve.py --query "vaccine safety" --as-of 2020-01-01 -k 10
-python scripts/redtest.py                                 # time filter vs the real index
+python scripts/retrieve.py --query "vaccine safety" --before 2020-01-01 -k 10
+python scripts/retrieve.py --query "vaccine safety" --before 2020-01-01 --exact   # every word: the reference, slower
+python scripts/factcheckers.py build                      # configs/factcheckers.yaml, every split; offline
+python scripts/factcheckers.py residual                   # what the path words add; fact-checker-named hosts nothing blocks
+python scripts/redtest.py                                 # both retrieval rules vs the real index
 python scripts/redtest.py --skip-corpus                   # same, without the slow probe
+python scripts/retrieval_bench.py profile                 # where a query's time goes (3 queries)
+python scripts/retrieval_bench.py run --option E1         # one option over the 200 M4FC queries; resumable
+python scripts/retrieval_bench.py session                 # L, L+P2, L+P3, L+P4, L+P4b interleaved in one process; resumable
+python scripts/retrieval_bench.py default                 # retrieve.search's default, its df counts timed; resumable
+python scripts/retrieval_bench.py compare                 # data/reports/retrieval_bench.{md,json}
 
 python scripts/image_text.py fetch-models                 # once: pinned Qwen2.5-VL + EasyOCR weights (network)
 python scripts/image_text.py run --pilot 200              # measure (VERITE + Factify2 recognition probe), then stop
@@ -1201,7 +1223,7 @@ to force a fresh one.
 
 **A document with no publication date is quarantined and never indexed**, and
 **a date that cannot be one does not count as having a date.** A document
-stamped `1970-01-01` satisfies `published_at <= :as_of` for every claim ever
+stamped `1970-01-01` satisfies `published_at < :before` for every claim ever
 made, so a page whose real date is unknown gets served as evidence for all of
 them -- including claims it actually postdates. That is the same hindsight leak
 the quarantine rule exists to prevent, so `make_document` refuses any date
@@ -1216,11 +1238,59 @@ date in this store that is not a sentinel was checked by hand and is a genuine
 archival article whose URL carries the same date. Do not tighten the window to
 make the per-year table look tidy -- it would delete correct data.
 
-The time filter itself is a predicate *inside* `retrieve.SEARCH_SQL`, not a pass
-over the results. `scripts/redtest.py` proves it on the real 1,368,613-document index by
-planting a future-dated and an undated document, sweeping `k` past the corpus
-size, and rolling the plants back in a `finally`. It never commits. Re-run it
-after any change to the retrieval SQL or the index build.
+**Retrieval has two rules, both predicates *inside* `retrieve.SEARCH_SQL`**, not
+passes over the results (2026-10-28):
+
+- **Strictly before the claim's bound** (`published_at < :before`). The bound is
+  the claim's own date where its dataset carries one, the fact-check's
+  publication date only as a fallback, and no date means no retrieval
+  (`configs/as_of.yaml`, `retrieve.evidence_bound`; the person's rule). M4FC has
+  no claim-post date and uses `fc_pub_date`, as its authors do.
+- **Never a listed fact-checker's page** (`configs/factcheckers.yaml`, built by
+  `scripts/factcheckers.py`). It is built from every split of our datasets, test
+  included, by the person's decision: a domain list carries no label, and a
+  missed fact-checker leaks answers into test evidence. A news publisher loses
+  only its fact-check desk, and the nine with no desk section only their cited
+  fact-checks (the person's decision; a new one is flagged `review`). Five
+  fact-checkers no dataset cites are listed by hand, each blocked whole
+  (`ADDED_BY_HAND`; the person's decision, 2026-10-29). Before the rule, 10
+  claims' own fact-checks in the store were reachable as their evidence.
+- **Never a page whose path carries a fact-check desk word**, on any host
+  (`path_words`: fact-check, webqoof, verificador, …; the person's decision,
+  2026-10-28). It takes 1,038 pages the host rules miss, some of them news
+  about fake news: losing a few real news pages is cheaper than a leak. Host
+  names are not read; `factcheckers.py residual` reports the fact-checkers
+  that only a name would catch.
+
+`scripts/redtest.py` proves both on the real 1,368,613-document index. It plants
+same-day, future-dated, undated, fact-checker and path-word documents, plus
+look-alikes that must come back, sweeps `k` past the corpus size, re-runs the
+plants with the path words off (so the desk rule is proven on its own), checks
+every rule's SQL against its Python twin on every row, and rolls the plants back
+in a `finally`. It never commits, and it checks both index files' sha256 afterwards.
+Re-run it after any change to the retrieval SQL, the blocklist or the index build.
+
+The statement orders by FTS5's own `rank`, so rows stream out best first and
+the join stops at k. Ordering by `bm25()` made SQLite fetch every matching
+document's content row for the join key: 87-95% of a 94 s query
+(`scripts/retrieval_bench.py`, `docs/evidence_store.md`).
+
+**By default a claim is searched by its 8 rarest words, none of them in half
+the store or more** (`retrieve.query_terms`, P4b; the person's decision,
+2026-10-29).
+- Each word's document frequency is counted per query.
+- `exact=True` (`--exact`) searches every word, as L did. It is the reference
+  the default was measured against.
+- **On 200 M4FC claims:** the default took a median 1.33 s, counts included,
+  with overlap@5 0.782 against L. L took 6.11 s, in another session.
+- **The exception:** it lost one query on two of the four entity measures. The
+  person ruled that noise and adopted it; the numbers and the decision are in
+  `docs/evidence_store.md`.
+- Both modes run the one statement, so both rules hold in either.
+
+Prior datasets filter live web-search results after retrieval. How this store
+differs, and the open question of whether that changes results, are in
+`docs/related_work.md`.
 
 Re-running any fetch is safe: completed datasets skip via a `.done` marker
 holding a tree content-hash, and interrupted downloads resume.

@@ -1,0 +1,128 @@
+# Few-shot exemplars for the consistency block's text-only Qwen calls.
+#
+# Written by hand on 2026-10-30, before any run. Every value is invented: none
+# is taken from the person's reviewed sheet, from M4FC or from VERITE, and
+# tests/test_consistency.py checks the sheet, M4FC train+val and VERITE for a
+# match. The first draft's "a protest against fuel prices" turned out to be,
+# word for word, an M4FC event value; that check caught it, and it was
+# replaced before any run. The file is hashed into each task's config id, so
+# any edit here is a new configuration, reported as such, never a silent change.
+#
+# judge: "Can both be true at once?" -- yes (consistent), no (contradicts),
+# unclear. Four per item. Overall 6 no, 6 yes, 4 unclear, so the shots do not
+# lean towards the answer the sheet mostly holds.
+
+version: 1
+
+judge:
+  - item: date
+    claimed: "2021-08"
+    actual: "2014; 2015"
+    answer: "no"
+  - item: date
+    claimed: "early 2010s"
+    actual: "2012-05-19"
+    answer: "yes"
+  - item: date
+    claimed: "a winter evening in 1987"
+    actual: "1987-01"
+    answer: "yes"
+  - item: date
+    claimed: "recently"
+    actual: "2009-04"
+    answer: "unclear"
+
+  - item: location
+    claimed: "Porto, Portugal"
+    actual: "Valparaiso, Chile"
+    answer: "no"
+  - item: location
+    claimed: "a ferry terminal in Lake Titicaca, Bolivia"
+    actual: "Inverness, Scotland"
+    answer: "no"
+  - item: location
+    claimed: "Bavaria, Germany"
+    actual: "a square in central Munich"
+    answer: "yes"
+  - item: location
+    claimed: "the capital"
+    actual: "a riverside market"
+    answer: "unclear"
+
+  - item: people
+    claimed: "Rosa Vintner"
+    actual: "Omar Haddadi"
+    answer: "no"
+  - item: people
+    claimed: "Daniel Fairweather"
+    actual: "Daniel Fairweather; Lin Hua"
+    answer: "yes"
+  - item: people
+    claimed: "P. K. Ranganathan"
+    actual: "Pillai Krishnan Ranganathan"
+    answer: "yes"
+  - item: people
+    claimed: "the band's drummer"
+    actual: "Kemal Arslan"
+    answer: "unclear"
+
+  - item: event
+    claimed: "a victory parade after the cup final"
+    actual: "a funeral procession"
+    answer: "no"
+  - item: event
+    claimed: "an election night rally"
+    actual: "a smartphone product launch"
+    answer: "no"
+  - item: event
+    claimed: "a sit-in by dock workers over unpaid wages"
+    actual: "a strike at a container port"
+    answer: "yes"
+  - item: event
+    claimed: "the opening of the new bridge"
+    actual: "a ceremony beside a river"
+    answer: "unclear"
+
+# predict: one worked example for the context predictor, shown as a prior turn
+# (added 2026-10-30 after the second pilot on M4FC train, where 7 of 30
+# answers gave a value citing no evidence or an id the prompt did not give,
+# and 12 of 26 dates were a cited document's publication date). Invented, and
+# checked against M4FC train+val and VERITE like the judge's. It shows ids
+# quoted, every value resting on cited evidence, a document that is about
+# something else left unused, no country the evidence does not give, and a
+# null date although both documents are dated.
+predict:
+  view:
+    description: "A photograph of a street under brown floodwater, with a closed shop and a road sign half under water."
+    ocr: "CALDER VALE COUNCIL ROAD CLOSED"
+    entities:
+      - {category: GPE, name: "Calder Vale", basis: text, confidence: 0.93, forced: false}
+      - {category: ORG, name: "Calder Vale Council", basis: text, confidence: 0.88, forced: false}
+    documents:
+      - {doc_id: "exemplar-1", title: "Floods close roads across Calder Vale", published_at: "2016-03-14",
+         host: "valley-news.example",
+         excerpt: "…Council crews closed the main road through Calder Vale on Saturday as the river rose for a third day, and shops on the high street stayed shut…"}
+      - {doc_id: "exemplar-2", title: "Ten quiet towns to visit this summer", published_at: "2019-07-02",
+         host: "travel-digest.example",
+         excerpt: "…a market town known for its stone bridge, its Sunday market and the walks along the river…"}
+  answer:
+    date: {evidence: [], value: null}
+    location: {evidence: ["E1", "D1"], value: "Calder Vale"}
+    event: {evidence: ["DESC", "D1"], value: "a river flood closing a town's main road"}
+
+# extract: what a caption says of its photograph's date, place and event
+# (stage C.1), shown as prior turns. Written 2026-11-08, before any run;
+# invented, and checked against M4FC train+val and VERITE like the rest. They
+# show a full date, a year alone, a claim that dates nothing, a place in the
+# caption's own words, and a caption that says nothing at all.
+extract:
+  - claim: "Floodwater fills the main square of Calder Vale on 14 March 2016 after the river burst its banks."
+    answer: {date: "2016-03-14", location: "the main square of Calder Vale", event: "a flood after the river burst its banks"}
+  - claim: "Supporters of the Green Meadow cooperative march to the town hall in Port Eldon."
+    answer: {date: null, location: "the town hall in Port Eldon", event: "a march by supporters of a cooperative"}
+  - claim: "This photo of a burning warehouse was taken in 1998, not last week."
+    answer: {date: "1998", location: null, event: "a warehouse fire"}
+  - claim: "Crowds greet the winning rowing crew at Lake Marrin, Norway, in July 2011."
+    answer: {date: "2011-07", location: "Lake Marrin, Norway", event: "crowds greeting a winning rowing crew"}
+  - claim: "Look at what they are hiding from you!"
+    answer: {date: null, location: null, event: null}

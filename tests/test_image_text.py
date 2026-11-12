@@ -959,10 +959,12 @@ def test_the_cap_is_qwens_resize_under_constants_we_own():
 
 
 def test_the_order_is_fixed_and_nothing_runs_past_verite_without_a_flag(tmp_path, monkeypatch):
-    assert image_text.ORDER == ("verite", "averimatec", "factify2", "fakeddit")
+    assert image_text.ORDER == ("verite", "averimatec", "factify2", "m4fc", "fakeddit")
     args = image_text.build_parser().parse_args(["run"])
     assert image_text.scope_for(args.through) == ("verite",)
     assert image_text.scope_for("factify2") == ("verite", "averimatec", "factify2")
+    # M4FC needs no sample-size decision, and never pulls Fakeddit in
+    assert image_text.scope_for("m4fc") == ("verite", "averimatec", "factify2", "m4fc")
     with pytest.raises(SystemExit):
         image_text.main(["run", "--through", "fakeddit"])  # the sample size is a decision
     with pytest.raises(SystemExit):
@@ -973,6 +975,38 @@ def test_the_order_is_fixed_and_nothing_runs_past_verite_without_a_flag(tmp_path
                         lambda ds, **kw: (asked.append(ds), ([], {}))[1])
     assert image_text.main(["run", "--stub"]) == 0
     assert asked == ["verite"]
+
+
+def test_the_m4fc_work_list_never_holds_a_test_row():
+    """M4FC's processed test is not touched: its rows are skipped and counted,
+    and an image only a test row carries is not in the list at all."""
+    def row(rid, split, path):
+        return {"record_id": rid, "split": split, "label": "x", "image_paths": [path]}
+
+    paths = [f"data/raw/m4fc/media/{n}.jpg" for n in ("a", "b", "c")]
+    cache = {"m4fc": {p: {"sha256": _sha(p.encode()), "width": 9, "height": 9} for p in paths}}
+    rows = [row("r1", "train", paths[0]), row("r2", "val", paths[1]), row("r3", "test", paths[2])]
+    items, stats = image_text.build_worklist("m4fc", rows=rows, cache=cache)
+    assert {it.path for it in items} == set(paths[:2])
+    assert all("r3" not in it.record_ids for it in items)
+    assert stats == {"usable_rows_with_images": 2, "image_paths": 2, "distinct_images": 2,
+                     "rows_in_skipped_splits": 1}
+    # every other dataset keeps its test rows, and its stats keep their shape
+    cache["factify2"] = {p.replace("m4fc", "factify2"): v for p, v in cache["m4fc"].items()}
+    f2 = [dict(r, image_paths=[r["image_paths"][0].replace("m4fc", "factify2")]) for r in rows]
+    items, stats = image_text.build_worklist("factify2", rows=f2, cache=cache)
+    assert len(items) == 3 and "rows_in_skipped_splits" not in stats
+
+
+def test_expect_config_refuses_a_mismatch_and_writes_nothing(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(image_text, "OUT_ROOT", tmp_path / "out")
+    monkeypatch.setattr(image_text, "build_worklist", lambda ds, **kw: ([], {}))
+    assert image_text.main(["run", "--stub", "--expect-config", "000000000000"]) == 3
+    assert "REFUSED" in capsys.readouterr().err
+    assert not (tmp_path / "out").exists()
+    stub_id = image_text.make_context(image_text.StubVLM(), image_text.StubOCR()).config_id
+    assert image_text.main(["run", "--stub", "--expect-config", stub_id]) == 0
+    assert (tmp_path / "out" / stub_id / "config.json").is_file()
 
 
 def test_every_fakeddit_prefix_is_proportional_and_nested():

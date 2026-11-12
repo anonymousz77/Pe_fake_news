@@ -1,0 +1,193 @@
+{
+  "written_at": "2026-11-11T19:47:12+00:00",
+  "note": "a val-only variant (the person's rule): Track B's NLI-B probabilities as features of the M4FC branch, refitted in the frozen form on M4FC train and reported on M4FC val only, never on VERITE or the test",
+  "derived_from": "066e5554d9a1ec560ea59543d2170cacc3d3e77150db72e34deb6aff571ec122",
+  "stance": "3,014 claims with an NLI-B verdict (status ok); Qwen's cited verdicts serve explanations only",
+  "stance_coverage_m4fc_val": {
+    "k": 497,
+    "n": 497,
+    "rate": 1.0,
+    "wilson95": [
+      0.9923,
+      1.0
+    ]
+  },
+  "train_oof_auroc": {
+    "with_stance": 0.6976
+  },
+  "columns": [
+    "openclip_cos",
+    "siglip_cos",
+    "blip_p_match",
+    "blip_itc",
+    "blip2_p_match",
+    "blip2_itc",
+    "nli_desc_entail",
+    "nli_desc_contra",
+    "nli_ocr_entail",
+    "nli_ocr_contra",
+    "nli_docs_entail",
+    "nli_docs_contra",
+    "cons_score",
+    "cons_decided",
+    "cons_location_consistent",
+    "cons_location_contradicted",
+    "cons_people_consistent",
+    "cons_people_contradicted",
+    "cons_event_consistent",
+    "cons_event_contradicted",
+    "cons_date_consistent",
+    "cons_date_contradicted",
+    "stance_supported",
+    "stance_refuted",
+    "stance_nei",
+    "nli_ocr_missing",
+    "nli_docs_missing",
+    "cons_missing",
+    "stance_missing"
+  ],
+  "coef_stance": {
+    "stance_supported": 0.1581,
+    "stance_refuted": -0.1341,
+    "stance_nei": 0.0441,
+    "stance_missing": 0.0598
+  },
+  "auroc_m4fc_val": [
+    {
+      "system": "v1.1 + stance",
+      "against": "v1.1",
+      "records": 373,
+      "clusters": 373,
+      "positive": "false (out-of-context)",
+      "negative": "true",
+      "auroc_v1.1 + stance": 0.6603,
+      "auroc_v1.1": 0.6615,
+      "delta": -0.0013,
+      "delta_ci95": [
+        -0.0167,
+        0.0126
+      ],
+      "resamples": 2000,
+      "excludes_zero": false
+    },
+    {
+      "system": "v1.1 + stance (M4FC branch alone)",
+      "against": "v1.1 (M4FC branch alone)",
+      "records": 373,
+      "clusters": 373,
+      "positive": "false (out-of-context)",
+      "negative": "true",
+      "auroc_v1.1 + stance (M4FC branch alone)": 0.761,
+      "auroc_v1.1 (M4FC branch alone)": 0.763,
+      "delta": -0.002,
+      "delta_ci95": [
+        -0.0185,
+        0.0123
+      ],
+      "resamples": 2000,
+      "excludes_zero": false
+    },
+    {
+      "system": "v1.1 + stance",
+      "against": "clip_l14",
+      "records": 373,
+      "clusters": 373,
+      "positive": "false (out-of-context)",
+      "negative": "true",
+      "auroc_v1.1 + stance": 0.6603,
+      "auroc_clip_l14": 0.5972,
+      "delta": 0.0631,
+      "delta_ci95": [
+        -0.0252,
+        0.1454
+      ],
+      "resamples": 2000,
+      "excludes_zero": false
+    },
+    {
+      "system": "v1.1",
+      "against": "clip_l14",
+      "records": 373,
+      "clusters": 373,
+      "positive": "false (out-of-context)",
+      "negative": "true",
+      "auroc_v1.1": 0.6615,
+      "auroc_clip_l14": 0.5972,
+      "delta": 0.0644,
+      "delta_ci95": [
+        -0.027,
+        0.1465
+      ],
+      "resamples": 2000,
+      "excludes_zero": false
+    },
+    {
+      "system": "v1.1 + stance",
+      "against": "v1.1",
+      "records": 496,
+      "clusters": 495,
+      "positive": "false",
+      "negative": "true",
+      "auroc_v1.1 + stance": 0.6319,
+      "auroc_v1.1": 0.6344,
+      "delta": -0.0026,
+      "delta_ci95": [
+        -0.0194,
+        0.0115
+      ],
+      "resamples": 2000,
+      "excludes_zero": false
+    },
+    {
+      "system": "v1.1 + stance (M4FC branch alone)",
+      "against": "v1.1 (M4FC branch alone)",
+      "records": 496,
+      "clusters": 495,
+      "positive": "false",
+      "negative": "true",
+      "auroc_v1.1 + stance (M4FC branch alone)": 0.7417,
+      "auroc_v1.1 (M4FC branch alone)": 0.7456,
+      "delta": -0.0039,
+      "delta_ci95": [
+        -0.0214,
+        0.0117
+      ],
+      "resamples": 2000,
+      "excludes_zero": false
+    },
+    {
+      "system": "v1.1 + stance",
+      "against": "clip_l14",
+      "records": 496,
+      "clusters": 495,
+      "positive": "false",
+      "negative": "true",
+      "auroc_v1.1 + stance": 0.6319,
+      "auroc_clip_l14": 0.5796,
+      "delta": 0.0523,
+      "delta_ci95": [
+        -0.0364,
+        0.143
+      ],
+      "resamples": 2000,
+      "excludes_zero": false
+    },
+    {
+      "system": "v1.1",
+      "against": "clip_l14",
+      "records": 496,
+      "clusters": 495,
+      "positive": "false",
+      "negative": "true",
+      "auroc_v1.1": 0.6344,
+      "auroc_clip_l14": 0.5796,
+      "delta": 0.0548,
+      "delta_ci95": [
+        -0.031,
+        0.1419
+      ],
+      "resamples": 2000,
+      "excludes_zero": false
+    }
+  ]
+}

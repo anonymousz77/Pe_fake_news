@@ -1,0 +1,83 @@
+# The ensemble's pretrained scorers (step 8), pinned 2026-11-10.
+#
+# Each model is fixed by its Hub revision and its exact files; fetch-models
+# re-reads the Hub's metadata, refuses if the revision or the card's licence
+# changed, and checks every file's size and sha256 (LFS) after download.
+# Licences were read from the Hub's model-card metadata on 2026-11-10, not
+# from memory. Nothing non-commercial: a model trained on non-commercial data
+# is excluded too (the person's decision, 2026-11-10).
+models:
+  openclip_h14:
+    repo: laion/CLIP-ViT-H-14-laion2B-s32B-b79K
+    revision: 1c2b8495b28150b8a4922ee1c8edee224c284c0c
+    licence: mit
+    kind: dual
+    loader: clip
+    text_tokens: 77
+    files: [config.json, model.safetensors, preprocessor_config.json, special_tokens_map.json,
+            tokenizer.json, tokenizer_config.json, vocab.json, merges.txt]
+  siglip_so400m:
+    repo: google/siglip-so400m-patch14-384
+    revision: 9fdffc58afc957d1a03a25b10dba0329ab15c2a3
+    licence: apache-2.0
+    kind: dual
+    loader: siglip
+    text_tokens: 64
+    files: [config.json, model.safetensors, preprocessor_config.json, special_tokens_map.json,
+            spiece.model, tokenizer.json, tokenizer_config.json]
+  blip_itm_large:
+    repo: Salesforce/blip-itm-large-coco
+    revision: 19502f1e215844f7e48bd48473f86932486d3441
+    licence: bsd-3-clause
+    kind: itm
+    loader: blip
+    text_tokens: 64
+    # The repo holds no safetensors: the .bin is pinned by sha256 and loaded
+    # by transformers with torch's weights_only unpickler.
+    files: [config.json, preprocessor_config.json, pytorch_model.bin, special_tokens_map.json,
+            tokenizer.json, tokenizer_config.json, vocab.txt]
+  blip2_itm_g:
+    repo: Salesforce/blip2-itm-vit-g
+    revision: 520bf73fd0ef6ccce791cd3f06908040aef2d8cc
+    licence: mit
+    kind: itm
+    loader: blip2
+    text_tokens: 64
+    files: [added_tokens.json, config.json, model.safetensors, preprocessor_config.json,
+            special_tokens_map.json, tokenizer_config.json, vocab.txt]
+  nli_deberta_large:
+    repo: cross-encoder/nli-deberta-v3-large
+    revision: bab4bc7178836f731dcfd18c06ca9def0a137712
+    licence: apache-2.0
+    kind: nli
+    loader: nli
+    text_tokens: 512
+    # Its card lists its training data: SNLI (cc-by-sa-4.0) and MultiNLI
+    # (cc-by-3.0, cc-by-sa-3.0, mit, other), read from the Hub 2026-11-10.
+    training_data: [stanfordnlp/snli, nyu-mll/multi_nli]
+    files: [added_tokens.json, config.json, model.safetensors, special_tokens_map.json, spm.model,
+            tokenizer.json, tokenizer_config.json]
+# Baselines only: scored beside the system, never an input to it (the
+# person's decision, 2026-11-10: "L/14 stays a baseline only, beside every
+# number"). CLIP L/14 is pinned at Track B's revision; its model.safetensors
+# sha256 (a2bf730a...) is the weights file Track B's MUSE run pinned. Its card
+# states no licence (the code is MIT) and rules out deployed use, which is why
+# it is a baseline and nothing more.
+baselines:
+  clip_l14:
+    repo: openai/clip-vit-large-patch14
+    revision: 32bd64288804d66eefd0ccbe215aa642df71cc41
+    licence: null
+    kind: dual
+    loader: clip
+    text_tokens: 77
+    files: [config.json, model.safetensors, preprocessor_config.json, special_tokens_map.json,
+            tokenizer.json, tokenizer_config.json, vocab.json, merges.txt]
+excluded:
+  openai/clip-vit-large-patch14: >-
+    Its model card: "Any deployed use case of the model - whether commercial or
+    not - is currently out of scope." Out of the ensemble (the person's decision,
+    2026-11-10); Track B may use it only to reproduce the MUSE baseline. The same
+    card covers openai/clip-vit-base-patch32, which stays C's baseline only.
+  MoritzLaurer/DeBERTa-v3-large-mnli-fever-anli-ling-wanli: >-
+    Trained on facebook/anli, licensed cc-by-nc-4.0: non-commercial data.

@@ -522,10 +522,11 @@ def _tiny_index(tmp_path, rows):
 
 
 def test_a_future_dated_document_never_surfaces(tmp_path):
-    """Plant a document published AFTER the as_of date and demand it stay out.
+    """Plant documents published ON and AFTER the bound and demand they stay out.
 
     k is deliberately larger than the corpus, so the only thing that can keep
-    the future document out is the date predicate itself.
+    them out is the date predicate itself. The bound is strict: a fact-check is
+    dated the day it appears, so a same-day page may be the answer itself.
     """
     bm, tm = _tiny_index(tmp_path, [
         ("past", "vaccine study", "vaccine trial results", "2019-12-31"),
@@ -539,10 +540,11 @@ def test_a_future_dated_document_never_surfaces(tmp_path):
     finally:
         con.close()
     ids = {h.doc_id for h in hits}
-    assert "past" in ids and "same" in ids, "on-or-before must be inclusive"
+    assert "past" in ids
+    assert "same" not in ids, "a document published ON the bound came back: it must be strict"
     assert "future" not in ids, "a document published the NEXT DAY leaked"
     assert "far_future" not in ids
-    assert all(h.published_at <= "2020-01-01" for h in hits)
+    assert all(h.published_at < "2020-01-01" for h in hits)
 
 
 def test_an_undated_document_never_surfaces(tmp_path):
@@ -584,9 +586,11 @@ def test_the_filter_is_in_the_query_not_a_post_filter(tmp_path):
 def test_sql_names_the_date_predicate():
     """Guard the property structurally, so a refactor cannot quietly drop it."""
     sql = retrieve.SEARCH_SQL.lower()
-    assert "published_at <= :as_of" in sql
+    assert "published_at < :before" in sql
     assert "published_at is not null" in sql
     assert "join" in sql and "match" in sql
+    assert "temp.blocked_source" in sql, "the fact-checker rule left the statement"
+    assert "temp.blocked_word" in sql, "the path-word rule left the statement"
 
 
 def test_a_malformed_as_of_is_refused(tmp_path):
@@ -637,8 +641,9 @@ def test_the_red_test_holds_on_the_real_index():
     assert r["failures"] == [], r["failures"]
     assert r["index_rows_after"] == r["index_rows_before"], "rollback did not restore"
     assert r["ranking_fingerprint_unchanged"]
+    assert r["index_byte_identical"]
     for probe in r["probe_nonce"]:
-        assert not probe["future_returned"] and not probe["null_returned"]
+        assert not probe["leaked"], probe
 
 
 # --------------------------------------------------------------------------

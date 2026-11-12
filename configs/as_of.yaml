@@ -1,0 +1,83 @@
+# Which date bounds a claim's evidence, per dataset. Read by retrieve.evidence_bound().
+#
+# The rule (the person's decision, 2026-10-28): where a dataset carries the
+# claim's own date, the bound is that date. The fact-check's publication date
+# is only a fallback. A claim with neither gets no evidence: retrieval refuses
+# rather than guessing a date. Retrieval returns only documents published
+# strictly before the bound (retrieve.SEARCH_SQL).
+#
+# Fields name keys of a processed record's `meta`. Formats: `iso` (the first
+# ten characters, YYYY-MM-DD, so a timestamp's time is dropped), `unix` (epoch
+# seconds, UTC), or strptime patterns tried in order.
+
+version: 1
+
+datasets:
+  averitec:
+    claim_date: {field: claim_date, formats: ["%d-%m-%Y"]}
+    fact_check_date: null
+    note: >-
+      105 train rows carry no claim_date (dev and test always do). AVeriTeC
+      carries no fact-check date, so those rows get no evidence. 11 of them have
+      a filing date in their fact-check URL; it is not used.
+
+  averimatec:
+    claim_date: {field: date, formats: [iso]}
+    fact_check_date: null
+
+  fakeddit:
+    claim_date: {field: created_utc, formats: [unix]}
+    fact_check_date: null
+    note: The Reddit post's own time, in UTC.
+
+  isot:
+    claim_date: {field: date, formats: ["%B %d, %Y", "%b %d, %Y", "%d-%b-%y"]}
+    fact_check_date: null
+    note: >-
+      The article's own date. 10 of 44,898 values are URLs or stray text and
+      refuse. ISOT is a negative control: never a headline number.
+
+  m4fc:
+    claim_date: null
+    fact_check_date: {field: fc_pub_date, formats: [iso]}
+    note: >-
+      M4FC carries no date of the claim's post. Its only date fields are
+      fc_pub_date, claimed_date and date, and the last two are context items
+      (the claimed and the actual date of the photo), not when the claim was
+      posted. So the fact-check date is the bound, as M4FC's authors use it
+      (arXiv 2510.23508 v2, section 2.2).
+
+  dgm4:
+    claim_date: null
+    fact_check_date: null
+    note: Synthetic captions with no date. No retrieval.
+
+  factify2:
+    claim_date: null
+    fact_check_date: null
+    note: No date in any split. No retrieval.
+
+  fakenewsnet:
+    claim_date: null
+    fact_check_date: null
+    note: The CSVs we hold carry no date. No retrieval.
+
+  liar:
+    claim_date: null
+    fact_check_date: null
+    note: No date column. No retrieval.
+
+  mocheg:
+    claim_date: null
+    fact_check_date: null
+    note: Corpus2.csv has no date column. No retrieval.
+
+  verite:
+    claim_date: null
+    fact_check_date: null
+    note: No date. No retrieval.
+
+  welfake:
+    claim_date: null
+    fact_check_date: null
+    note: No date. No retrieval.

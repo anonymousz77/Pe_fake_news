@@ -1,0 +1,443 @@
+{
+  "written_at": "2026-11-11T19:03:10+00:00",
+  "system_sha256": "5eb6f48b78f0b5db86b1a101d5593195b84dc1c8af503c1e95fa8f62c30ea237",
+  "post_hoc": "post hoc: the person's E1 decision (2026-11-10), taken after VERITE was seen at gate E1; the route rule and every fitted number come from M4FC train alone",
+  "opened": {
+    "opened_at": "2026-11-11T09:19:02+00:00",
+    "system_sha256": "5eb6f48b78f0b5db86b1a101d5593195b84dc1c8af503c1e95fa8f62c30ea237",
+    "code_commit": "bcb8e1fad7ea9e08c457a4eb4cf9d15565836af7",
+    "records": {
+      "scored": 1479,
+      "image dead:gone_404+snapshot_verdict": 1,
+      "image dead:fetched_verdict+snapshots_are_placeholders": 1,
+      "image dead:gone_404+no_snapshot": 1,
+      "image dead:gone_404+archive_refuses_host_404": 7
+    },
+    "requests": 1479
+  },
+  "stance": "not in the system",
+  "records": 1468,
+  "classes": {
+    "false (out-of-context)": 833,
+    "false (manipulated/fake)": 379,
+    "false (ai-generated)": 158,
+    "true": 98
+  },
+  "branch_records": {
+    "ai-generated": {
+      "m4fc": 107,
+      "photo": 51
+    },
+    "manipulated": {
+      "m4fc": 323,
+      "photo": 56
+    },
+    "out-of-context": {
+      "m4fc": 682,
+      "photo": 151
+    },
+    "true": {
+      "photo": 65,
+      "m4fc": 33
+    }
+  },
+  "declared_ablations": [
+    "routed without the probe",
+    "the M4FC branch alone",
+    "the photo average alone",
+    "the probe alone"
+  ],
+  "auroc": [
+    {
+      "system": "routed",
+      "against": "clip_l14",
+      "records": 1468,
+      "clusters": 1468,
+      "positive": "false",
+      "negative": "true",
+      "auroc_routed": 0.6685,
+      "auroc_clip_l14": 0.5886,
+      "delta": 0.0799,
+      "delta_ci95": [
+        0.0055,
+        0.1524
+      ],
+      "resamples": 2000,
+      "excludes_zero": true
+    },
+    {
+      "system": "routed",
+      "against": "clip_b32",
+      "records": 1468,
+      "clusters": 1468,
+      "positive": "false",
+      "negative": "true",
+      "auroc_routed": 0.6685,
+      "auroc_clip_b32": 0.5339,
+      "delta": 0.1346,
+      "delta_ci95": [
+        0.0513,
+        0.2198
+      ],
+      "resamples": 2000,
+      "excludes_zero": true
+    },
+    {
+      "system": "routed_without_probe",
+      "against": "clip_l14",
+      "records": 1468,
+      "clusters": 1468,
+      "positive": "false",
+      "negative": "true",
+      "auroc_routed_without_probe": 0.598,
+      "auroc_clip_l14": 0.5886,
+      "delta": 0.0094,
+      "delta_ci95": [
+        -0.0458,
+        0.0611
+      ],
+      "resamples": 2000,
+      "excludes_zero": false
+    },
+    {
+      "system": "routed_without_probe",
+      "against": "clip_b32",
+      "records": 1468,
+      "clusters": 1468,
+      "positive": "false",
+      "negative": "true",
+      "auroc_routed_without_probe": 0.598,
+      "auroc_clip_b32": 0.5339,
+      "delta": 0.0641,
+      "delta_ci95": [
+        0.0031,
+        0.1253
+      ],
+      "resamples": 2000,
+      "excludes_zero": true
+    },
+    {
+      "system": "m4fc_branch_alone",
+      "against": "clip_l14",
+      "records": 1468,
+      "clusters": 1468,
+      "positive": "false",
+      "negative": "true",
+      "auroc_m4fc_branch_alone": 0.7388,
+      "auroc_clip_l14": 0.5886,
+      "delta": 0.1502,
+      "delta_ci95": [
+        0.0845,
+        0.2123
+      ],
+      "resamples": 2000,
+      "excludes_zero": true
+    },
+    {
+      "system": "m4fc_branch_alone",
+      "against": "clip_b32",
+      "records": 1468,
+      "clusters": 1468,
+      "positive": "false",
+      "negative": "true",
+      "auroc_m4fc_branch_alone": 0.7388,
+      "auroc_clip_b32": 0.5339,
+      "delta": 0.2049,
+      "delta_ci95": [
+        0.1302,
+        0.28
+      ],
+      "resamples": 2000,
+      "excludes_zero": true
+    },
+    {
+      "system": "photo_average_alone",
+      "against": "clip_l14",
+      "records": 1468,
+      "clusters": 1468,
+      "positive": "false",
+      "negative": "true",
+      "auroc_photo_average_alone": 0.4992,
+      "auroc_clip_l14": 0.5886,
+      "delta": -0.0894,
+      "delta_ci95": [
+        -0.1361,
+        -0.0454
+      ],
+      "resamples": 2000,
+      "excludes_zero": true
+    },
+    {
+      "system": "photo_average_alone",
+      "against": "clip_b32",
+      "records": 1468,
+      "clusters": 1468,
+      "positive": "false",
+      "negative": "true",
+      "auroc_photo_average_alone": 0.4992,
+      "auroc_clip_b32": 0.5339,
+      "delta": -0.0347,
+      "delta_ci95": [
+        -0.0865,
+        0.0131
+      ],
+      "resamples": 2000,
+      "excludes_zero": false
+    },
+    {
+      "system": "probe_alone",
+      "against": "clip_l14",
+      "records": 1468,
+      "clusters": 1468,
+      "positive": "false",
+      "negative": "true",
+      "auroc_probe_alone": 0.7079,
+      "auroc_clip_l14": 0.5886,
+      "delta": 0.1193,
+      "delta_ci95": [
+        0.0409,
+        0.1939
+      ],
+      "resamples": 2000,
+      "excludes_zero": true
+    },
+    {
+      "system": "probe_alone",
+      "against": "clip_b32",
+      "records": 1468,
+      "clusters": 1468,
+      "positive": "false",
+      "negative": "true",
+      "auroc_probe_alone": 0.7079,
+      "auroc_clip_b32": 0.5339,
+      "delta": 0.174,
+      "delta_ci95": [
+        0.0911,
+        0.2556
+      ],
+      "resamples": 2000,
+      "excludes_zero": true
+    },
+    {
+      "system": "routed",
+      "against": "clip_l14",
+      "records": 931,
+      "clusters": 931,
+      "positive": "false (out-of-context)",
+      "negative": "true",
+      "auroc_routed": 0.6937,
+      "auroc_clip_l14": 0.6349,
+      "delta": 0.0587,
+      "delta_ci95": [
+        -0.0149,
+        0.1356
+      ],
+      "resamples": 2000,
+      "excludes_zero": false
+    },
+    {
+      "system": "routed",
+      "against": "clip_b32",
+      "records": 931,
+      "clusters": 931,
+      "positive": "false (out-of-context)",
+      "negative": "true",
+      "auroc_routed": 0.6937,
+      "auroc_clip_b32": 0.5765,
+      "delta": 0.1172,
+      "delta_ci95": [
+        0.0354,
+        0.207
+      ],
+      "resamples": 2000,
+      "excludes_zero": true
+    },
+    {
+      "system": "routed_without_probe",
+      "against": "clip_l14",
+      "records": 931,
+      "clusters": 931,
+      "positive": "false (out-of-context)",
+      "negative": "true",
+      "auroc_routed_without_probe": 0.6273,
+      "auroc_clip_l14": 0.6349,
+      "delta": -0.0076,
+      "delta_ci95": [
+        -0.0645,
+        0.0466
+      ],
+      "resamples": 2000,
+      "excludes_zero": false
+    },
+    {
+      "system": "routed_without_probe",
+      "against": "clip_b32",
+      "records": 931,
+      "clusters": 931,
+      "positive": "false (out-of-context)",
+      "negative": "true",
+      "auroc_routed_without_probe": 0.6273,
+      "auroc_clip_b32": 0.5765,
+      "delta": 0.0508,
+      "delta_ci95": [
+        -0.0106,
+        0.1095
+      ],
+      "resamples": 2000,
+      "excludes_zero": false
+    },
+    {
+      "system": "m4fc_branch_alone",
+      "against": "clip_l14",
+      "records": 931,
+      "clusters": 931,
+      "positive": "false (out-of-context)",
+      "negative": "true",
+      "auroc_m4fc_branch_alone": 0.7539,
+      "auroc_clip_l14": 0.6349,
+      "delta": 0.119,
+      "delta_ci95": [
+        0.0579,
+        0.1834
+      ],
+      "resamples": 2000,
+      "excludes_zero": true
+    },
+    {
+      "system": "m4fc_branch_alone",
+      "against": "clip_b32",
+      "records": 931,
+      "clusters": 931,
+      "positive": "false (out-of-context)",
+      "negative": "true",
+      "auroc_m4fc_branch_alone": 0.7539,
+      "auroc_clip_b32": 0.5765,
+      "delta": 0.1774,
+      "delta_ci95": [
+        0.1048,
+        0.2526
+      ],
+      "resamples": 2000,
+      "excludes_zero": true
+    },
+    {
+      "system": "photo_average_alone",
+      "against": "clip_l14",
+      "records": 931,
+      "clusters": 931,
+      "positive": "false (out-of-context)",
+      "negative": "true",
+      "auroc_photo_average_alone": 0.5547,
+      "auroc_clip_l14": 0.6349,
+      "delta": -0.0803,
+      "delta_ci95": [
+        -0.1284,
+        -0.0366
+      ],
+      "resamples": 2000,
+      "excludes_zero": true
+    },
+    {
+      "system": "photo_average_alone",
+      "against": "clip_b32",
+      "records": 931,
+      "clusters": 931,
+      "positive": "false (out-of-context)",
+      "negative": "true",
+      "auroc_photo_average_alone": 0.5547,
+      "auroc_clip_b32": 0.5765,
+      "delta": -0.0218,
+      "delta_ci95": [
+        -0.0736,
+        0.028
+      ],
+      "resamples": 2000,
+      "excludes_zero": false
+    },
+    {
+      "system": "probe_alone",
+      "against": "clip_l14",
+      "records": 931,
+      "clusters": 931,
+      "positive": "false (out-of-context)",
+      "negative": "true",
+      "auroc_probe_alone": 0.7731,
+      "auroc_clip_l14": 0.6349,
+      "delta": 0.1381,
+      "delta_ci95": [
+        0.0631,
+        0.2099
+      ],
+      "resamples": 2000,
+      "excludes_zero": true
+    },
+    {
+      "system": "probe_alone",
+      "against": "clip_b32",
+      "records": 931,
+      "clusters": 931,
+      "positive": "false (out-of-context)",
+      "negative": "true",
+      "auroc_probe_alone": 0.7731,
+      "auroc_clip_b32": 0.5765,
+      "delta": 0.1965,
+      "delta_ci95": [
+        0.1135,
+        0.2773
+      ],
+      "resamples": 2000,
+      "excludes_zero": true
+    }
+  ],
+  "macro_f1_routed": 0.4939,
+  "macro_f1_routed_without_probe": 0.486,
+  "accuracy_routed": {
+    "k": 989,
+    "n": 1468,
+    "rate": 0.6737,
+    "wilson95": [
+      0.6493,
+      0.6972
+    ]
+  },
+  "by_class": {
+    "ai-generated": {
+      "k": 87,
+      "n": 158,
+      "rate": 0.5506,
+      "wilson95": [
+        0.4728,
+        0.6261
+      ]
+    },
+    "manipulated": {
+      "k": 246,
+      "n": 379,
+      "rate": 0.6491,
+      "wilson95": [
+        0.5998,
+        0.6954
+      ]
+    },
+    "out-of-context": {
+      "k": 599,
+      "n": 833,
+      "rate": 0.7191,
+      "wilson95": [
+        0.6876,
+        0.7485
+      ]
+    },
+    "true": {
+      "k": 41,
+      "n": 98,
+      "rate": 0.4184,
+      "wilson95": [
+        0.3256,
+        0.5173
+      ]
+    }
+  },
+  "clip_l14_scored": 1468,
+  "clip_b32_scored": 1468
+}

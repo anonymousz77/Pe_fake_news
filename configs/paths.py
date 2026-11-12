@@ -92,6 +92,14 @@ CROSS_CORPUS_YAML: Final[Path] = DATA / "cross_corpus_duplicates.yaml"
 #: Keyed by PATH, not hash: the same bytes elsewhere may be genuine content.
 FINGERPRINT_REJECTIONS_YAML: Final[Path] = DATA / "fingerprint_rejections.yaml"
 
+#: Retrieval policy. It lives with the code, beside this module, not with the
+#: data: the fact-checkers whose pages retrieval may never return (built by
+#: scripts/factcheckers.py, read by retrieve.connect), and the date that bounds
+#: each dataset's evidence (read by retrieve.evidence_bound).
+CONFIGS: Final[Path] = _THIS_DIR
+FACTCHECKERS_YAML: Final[Path] = CONFIGS / "factcheckers.yaml"
+AS_OF_YAML: Final[Path] = CONFIGS / "as_of.yaml"
+
 _MODELS_ENV_VAR: Final[str] = "PE_FAKE_NEWS_MODELS"
 
 

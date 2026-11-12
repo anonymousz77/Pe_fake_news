@@ -48,7 +48,7 @@ labels and paths into licensed data.
 | factify2 | `<csv stem>_<row index>` | matches the published split files and the hydration keys |
 | fakeddit | Reddit post id | image only if the post was in the seeded 150,000 sample (`meta.image_sampled`) |
 | verite | row index of `VERITE.csv` | |
-| m4fc | `image_path` from `M4FC.json` | test rows excluded, as the register requires |
+| m4fc | `image_path` from `M4FC.json` | test rows excluded, as the register requires. The id is a slug of the fact-check's URL and often states its finding; see below |
 | dgm4 | `<source id>-<sha1(image, text)[:10]>` | DGM4's `id` is shared by every manipulation of one original |
 | mocheg | `<split>_<claim_id>` | one row per CLAIM; images are its RELEVANCY=1 evidence images |
 | averitec / averimatec | `<split file>_<index>` | averitec test is unlabelled: `usable: false`, `no_label` |
@@ -64,6 +64,28 @@ paths are in `data/interim/verite_private_map.json` (gitignored).
 `scripts/prepush_check.py` refuses a staged file that names a VERITE image by its
 label, and a split file of a non-redistributable dataset whose ids carry a label
 word.
+
+**M4FC's ids are the exception, by the person's decision (2026-10-30).** They are
+slugs of the fact-checks' URLs, and many state the finding ("…-are-from-osun-…").
+M4FC is CC-BY-SA and publishes these URLs itself, so an M4FC id in a published
+file is not a leak. What matters is that no id reaches a model: every model input
+is built from a whitelisted `ModelView` (`scripts/consistency.py`), and
+`tests/test_consistency.py` sends a canary slug through every input builder and
+finds it in no form.
+
+### M4FC's `meta`
+
+`fc_org`, `fc_pub_date` and `official_split`, and, since 2026-10-30, these
+fields verbatim from `M4FC.json` (`scripts/records.M4FC_META`): `verdict` (the
+subtype: `false (out-of-context)`, `false (manipulated/fake)`, `false
+(ai-generated)`, `true`, `mixture`, `unverified`), `is_manipulated_fake`,
+`is_ai_generated`, and each context item twice: as the claim states it
+(`claimed_date`, `claimed_location`, `claimed_people`, `claimed_event`,
+`claimed_things`) and as the image actually is (`date`, `location`, `people`,
+`event`, `things`). An absent value stays as the dataset writes it ("not enough
+information"). The label stays `verdict_coarse`, and the reason codes did not
+change: the rebuild was compared against a snapshot of the whole layer, and only
+these keys moved (`scripts/consistency.py snapshot-processed --compare`).
 
 ## Splits
 

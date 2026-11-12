@@ -1,0 +1,18 @@
+# Track B's additions to requirements.txt, for the laptop venv only.
+#
+# scikit-learn runs MUSE's decision tree and random forest exactly as MUSE's own
+# code does (github.com/stevejpapad/outcontext-misinfo-progress,
+# src/muse_ml_experiment.py). Everything else in Track B reuses the repo's
+# hand-written code: TF-IDF and logistic regression are m4fc_audit.Tfidf and
+# fit_logreg.
+#
+# Installed 2026-11-10 with --no-deps after a dry run showed numpy 2.4.6 and
+# scipy 1.17.1 untouched. 1.8.0 is preferred to 1.9.x, which adds narwhals,
+# and joblib 1.5.2 to 1.6.0, which adds cloudpickle: the least new surface.
+#
+#   .venv/Scripts/python.exe -m pip install --no-deps -r requirements-trackb.txt
+#
+# The server needs none of these: its GPU jobs (Qwen, NLI) do not use them.
+scikit-learn==1.8.0
+joblib==1.5.2
+threadpoolctl==3.6.0

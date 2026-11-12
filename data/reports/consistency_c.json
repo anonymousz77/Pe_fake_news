@@ -1,0 +1,6491 @@
+{
+  "written_at": "2026-11-10T16:54:13+00:00",
+  "decisions": {
+    "primary_score": "location and people",
+    "event": "Gate A not cleared (true-row false contradictions 8/78 = 0.1026 > 0.10): unsupported in the primary score; reported as the variant with_event",
+    "date": "left out of the primary score at Gate B (B's dates right 5-8% of the time); reported as the variant with_grounded_date: a date counts only where its year is written in the evidence it cites",
+    "image_carries_claim": "a predicted value resting only on OCR or text-basis entity evidence that contains the claimed value is unsupported; fixed before C ran, measured on M4FC train, applied unchanged to val and VERITE. Widened at Gate C (a rule defect found on train): for a place, a place line recognised by how it looks whose name the OCR text holds rests on that OCR text",
+    "predictor_not_json": "the 19 predictor answers short of their final brace are not repaired: they stay errors",
+    "extraction_parser": "decades and spans whose years the claim writes are dates (parser 2); no rerun",
+    "gate_c": "accepted as measured: zero-shot context-then-compare does not beat CLIP",
+    "fused_score": "the system's score from Gate C: one logistic regression on [CLIP similarity, the primary consistency score, decided], fitted on M4FC train only; where the block abstains it is a function of CLIP's similarity alone. Explanations come from the verdicts only",
+    "other_person_face": "no size or position rule for the face other_person scores (a face rule was built and reverted: it would be fitted to the person's own checks); every other_person contradiction needs the person's review before it counts, and that review is the filter"
+  },
+  "gate_a_cleared": {
+    "date": true,
+    "location": true,
+    "event": false
+  },
+  "score_sets": [
+    "primary",
+    "with_event",
+    "with_grounded_date"
+  ],
+  "extraction": {
+    "parser": 2,
+    "datasets": {
+      "m4fc": {
+        "rows": 3015,
+        "as_run": {
+          "ok": 2967,
+          "partial": 48
+        },
+        "as_read": {
+          "ok": 2973,
+          "partial": 42
+        },
+        "changed": [
+          {
+            "item": "date",
+            "as_run": "refused",
+            "as_read": "1980s"
+          },
+          {
+            "item": "date",
+            "as_run": "refused",
+            "as_read": "1980s"
+          },
+          {
+            "item": "date",
+            "as_run": "refused",
+            "as_read": "1960s"
+          },
+          {
+            "item": "date",
+            "as_run": "refused",
+            "as_read": "1970s"
+          },
+          {
+            "item": "date",
+            "as_run": "refused",
+            "as_read": "1930s"
+          },
+          {
+            "item": "date",
+            "as_run": "refused",
+            "as_read": "1951-1967"
+          }
+        ]
+      },
+      "verite": {
+        "rows": 621,
+        "as_run": {
+          "ok": 612,
+          "partial": 9
+        },
+        "as_read": {
+          "ok": 615,
+          "partial": 6
+        },
+        "changed": [
+          {
+            "item": "date",
+            "as_run": "refused",
+            "as_read": "1870-1880"
+          },
+          {
+            "item": "date",
+            "as_run": "refused",
+            "as_read": "1961-1963"
+          },
+          {
+            "item": "date",
+            "as_run": "refused",
+            "as_read": "1930s"
+          }
+        ]
+      }
+    }
+  },
+  "people_check": {
+    "decisions": 7
+  },
+  "thresholds": {
+    "extracted:primary": {
+      "system": {
+        "threshold": 0.029264,
+        "balanced_accuracy": 0.5314,
+        "true": 164,
+        "out_of_context": 1836
+      },
+      "clip": {
+        "threshold": -0.296142,
+        "balanced_accuracy": 0.5814,
+        "true": 164,
+        "out_of_context": 1836
+      }
+    },
+    "extracted:with_event": {
+      "system": {
+        "threshold": 0.051728,
+        "balanced_accuracy": 0.592,
+        "true": 164,
+        "out_of_context": 1836
+      },
+      "clip": {
+        "threshold": -0.296142,
+        "balanced_accuracy": 0.5814,
+        "true": 164,
+        "out_of_context": 1836
+      }
+    },
+    "extracted:with_grounded_date": {
+      "system": {
+        "threshold": 0.029264,
+        "balanced_accuracy": 0.5321,
+        "true": 164,
+        "out_of_context": 1836
+      },
+      "clip": {
+        "threshold": -0.296142,
+        "balanced_accuracy": 0.5814,
+        "true": 164,
+        "out_of_context": 1836
+      }
+    },
+    "gold:primary": {
+      "system": {
+        "threshold": 0.029264,
+        "balanced_accuracy": 0.531,
+        "true": 164,
+        "out_of_context": 1836
+      },
+      "clip": {
+        "threshold": -0.296142,
+        "balanced_accuracy": 0.5814,
+        "true": 164,
+        "out_of_context": 1836
+      }
+    },
+    "gold:with_event": {
+      "system": {
+        "threshold": 0.066763,
+        "balanced_accuracy": 0.6066,
+        "true": 164,
+        "out_of_context": 1836
+      },
+      "clip": {
+        "threshold": -0.296142,
+        "balanced_accuracy": 0.5814,
+        "true": 164,
+        "out_of_context": 1836
+      }
+    },
+    "gold:with_grounded_date": {
+      "system": {
+        "threshold": 0.032811,
+        "balanced_accuracy": 0.5325,
+        "true": 164,
+        "out_of_context": 1836
+      },
+      "clip": {
+        "threshold": -0.296142,
+        "balanced_accuracy": 0.5814,
+        "true": 164,
+        "out_of_context": 1836
+      }
+    }
+  },
+  "corpora": {
+    "m4fc:extracted:primary": {
+      "records": 497,
+      "coverage": {
+        "k": 173,
+        "n": 497,
+        "rate": 0.3481,
+        "wilson95": [
+          0.3075,
+          0.391
+        ]
+      },
+      "by_class": {
+        "ai-generated": {
+          "system": {
+            "records": 5,
+            "flagged": {
+              "k": 1,
+              "n": 5,
+              "rate": 0.2,
+              "wilson95": [
+                0.0362,
+                0.6245
+              ]
+            },
+            "abstained": {
+              "k": 3,
+              "n": 5,
+              "rate": 0.6,
+              "wilson95": [
+                0.2307,
+                0.8824
+              ]
+            }
+          },
+          "clip": {
+            "records": 5,
+            "flagged": {
+              "k": 1,
+              "n": 5,
+              "rate": 0.2,
+              "wilson95": [
+                0.0362,
+                0.6245
+              ]
+            }
+          }
+        },
+        "manipulated": {
+          "system": {
+            "records": 118,
+            "flagged": {
+              "k": 20,
+              "n": 118,
+              "rate": 0.1695,
+              "wilson95": [
+                0.1125,
+                0.2473
+              ]
+            },
+            "abstained": {
+              "k": 87,
+              "n": 118,
+              "rate": 0.7373,
+              "wilson95": [
+                0.6513,
+                0.8083
+              ]
+            }
+          },
+          "clip": {
+            "records": 118,
+            "flagged": {
+              "k": 49,
+              "n": 118,
+              "rate": 0.4153,
+              "wilson95": [
+                0.3304,
+                0.5055
+              ]
+            }
+          }
+        },
+        "out-of-context": {
+          "system": {
+            "records": 342,
+            "flagged": {
+              "k": 116,
+              "n": 342,
+              "rate": 0.3392,
+              "wilson95": [
+                0.291,
+                0.3909
+              ]
+            },
+            "abstained": {
+              "k": 209,
+              "n": 342,
+              "rate": 0.6111,
+              "wilson95": [
+                0.5585,
+                0.6613
+              ]
+            }
+          },
+          "clip": {
+            "records": 342,
+            "flagged": {
+              "k": 147,
+              "n": 342,
+              "rate": 0.4298,
+              "wilson95": [
+                0.3784,
+                0.4828
+              ]
+            }
+          }
+        },
+        "true": {
+          "system": {
+            "records": 31,
+            "flagged": {
+              "k": 4,
+              "n": 31,
+              "rate": 0.129,
+              "wilson95": [
+                0.0513,
+                0.2885
+              ]
+            },
+            "abstained": {
+              "k": 24,
+              "n": 31,
+              "rate": 0.7742,
+              "wilson95": [
+                0.6019,
+                0.886
+              ]
+            }
+          },
+          "clip": {
+            "records": 31,
+            "flagged": {
+              "k": 13,
+              "n": 31,
+              "rate": 0.4194,
+              "wilson95": [
+                0.2642,
+                0.5923
+              ]
+            }
+          }
+        },
+        "unverified": {
+          "system": {
+            "records": 1,
+            "flagged": {
+              "k": 0,
+              "n": 1,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.7935
+              ]
+            },
+            "abstained": {
+              "k": 1,
+              "n": 1,
+              "rate": 1.0,
+              "wilson95": [
+                0.2065,
+                1.0
+              ]
+            }
+          },
+          "clip": {
+            "records": 1,
+            "flagged": {
+              "k": 0,
+              "n": 1,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.7935
+              ]
+            }
+          }
+        }
+      },
+      "by_evidence": {
+        "image only": {
+          "system": {
+            "records": 405,
+            "flagged": {
+              "k": 113,
+              "n": 405,
+              "rate": 0.279,
+              "wilson95": [
+                0.2376,
+                0.3246
+              ]
+            },
+            "abstained": {
+              "k": 290,
+              "n": 405,
+              "rate": 0.716,
+              "wilson95": [
+                0.6703,
+                0.7578
+              ]
+            }
+          },
+          "clip": {
+            "records": 405,
+            "flagged": {
+              "k": 174,
+              "n": 405,
+              "rate": 0.4296,
+              "wilson95": [
+                0.3823,
+                0.4783
+              ]
+            }
+          }
+        },
+        "image only + a gallery-scored person": {
+          "system": {
+            "records": 51,
+            "flagged": {
+              "k": 0,
+              "n": 51,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.07
+              ]
+            },
+            "abstained": {
+              "k": 27,
+              "n": 51,
+              "rate": 0.5294,
+              "wilson95": [
+                0.3952,
+                0.6595
+              ]
+            }
+          },
+          "clip": {
+            "records": 51,
+            "flagged": {
+              "k": 17,
+              "n": 51,
+              "rate": 0.3333,
+              "wilson95": [
+                0.2197,
+                0.4703
+              ]
+            }
+          }
+        },
+        "image only + documents": {
+          "system": {
+            "records": 33,
+            "flagged": {
+              "k": 27,
+              "n": 33,
+              "rate": 0.8182,
+              "wilson95": [
+                0.6561,
+                0.9139
+              ]
+            },
+            "abstained": {
+              "k": 6,
+              "n": 33,
+              "rate": 0.1818,
+              "wilson95": [
+                0.0861,
+                0.3439
+              ]
+            }
+          },
+          "clip": {
+            "records": 33,
+            "flagged": {
+              "k": 16,
+              "n": 33,
+              "rate": 0.4848,
+              "wilson95": [
+                0.325,
+                0.6478
+              ]
+            }
+          }
+        },
+        "image only + documents + a gallery-scored person": {
+          "system": {
+            "records": 8,
+            "flagged": {
+              "k": 1,
+              "n": 8,
+              "rate": 0.125,
+              "wilson95": [
+                0.0224,
+                0.4709
+              ]
+            },
+            "abstained": {
+              "k": 1,
+              "n": 8,
+              "rate": 0.125,
+              "wilson95": [
+                0.0224,
+                0.4709
+              ]
+            }
+          },
+          "clip": {
+            "records": 8,
+            "flagged": {
+              "k": 3,
+              "n": 8,
+              "rate": 0.375,
+              "wilson95": [
+                0.1368,
+                0.6943
+              ]
+            }
+          }
+        }
+      },
+      "auroc": [
+        {
+          "records": 373,
+          "clusters": 373,
+          "positive": "false (out-of-context)",
+          "negative": "true",
+          "auroc_score": 0.6044,
+          "auroc_clip": 0.5121,
+          "delta": 0.0923,
+          "delta_ci95": [
+            -0.0439,
+            0.2187
+          ],
+          "resamples": 2000,
+          "excludes_zero": false,
+          "coverage": {
+            "k": 140,
+            "n": 373,
+            "rate": 0.3753,
+            "wilson95": [
+              0.3277,
+              0.4255
+            ]
+          }
+        }
+      ],
+      "auroc_decided": [
+        {
+          "records": 140,
+          "clusters": 140,
+          "positive": "false (out-of-context)",
+          "negative": "true",
+          "auroc_score": 0.6037,
+          "auroc_clip": 0.6058,
+          "delta": -0.0021,
+          "delta_ci95": [
+            -0.2923,
+            0.2567
+          ],
+          "resamples": 1998,
+          "excludes_zero": false,
+          "coverage": {
+            "k": 140,
+            "n": 373,
+            "rate": 0.3753,
+            "wilson95": [
+              0.3277,
+              0.4255
+            ]
+          }
+        }
+      ],
+      "people_check": {
+        "before": {
+          "records": 497,
+          "flagged": {
+            "k": 141,
+            "n": 497,
+            "rate": 0.2837,
+            "wilson95": [
+              0.2458,
+              0.3249
+            ]
+          },
+          "abstained": {
+            "k": 324,
+            "n": 497,
+            "rate": 0.6519,
+            "wilson95": [
+              0.609,
+              0.6925
+            ]
+          }
+        },
+        "after": {
+          "records": 497,
+          "flagged": {
+            "k": 141,
+            "n": 497,
+            "rate": 0.2837,
+            "wilson95": [
+              0.2458,
+              0.3249
+            ]
+          },
+          "abstained": {
+            "k": 324,
+            "n": 497,
+            "rate": 0.6519,
+            "wilson95": [
+              0.609,
+              0.6925
+            ]
+          }
+        }
+      }
+    },
+    "verite:extracted:primary": {
+      "records": 877,
+      "coverage": {
+        "k": 132,
+        "n": 877,
+        "rate": 0.1505,
+        "wilson95": [
+          0.1284,
+          0.1757
+        ]
+      },
+      "by_class": {
+        "miscaptioned": {
+          "system": {
+            "records": 289,
+            "flagged": {
+              "k": 21,
+              "n": 289,
+              "rate": 0.0727,
+              "wilson95": [
+                0.048,
+                0.1085
+              ]
+            },
+            "abstained": {
+              "k": 251,
+              "n": 289,
+              "rate": 0.8685,
+              "wilson95": [
+                0.8247,
+                0.9027
+              ]
+            }
+          },
+          "clip": {
+            "records": 289,
+            "flagged": {
+              "k": 71,
+              "n": 289,
+              "rate": 0.2457,
+              "wilson95": [
+                0.1996,
+                0.2984
+              ]
+            }
+          }
+        },
+        "out-of-context": {
+          "system": {
+            "records": 299,
+            "flagged": {
+              "k": 28,
+              "n": 299,
+              "rate": 0.0936,
+              "wilson95": [
+                0.0656,
+                0.132
+              ]
+            },
+            "abstained": {
+              "k": 253,
+              "n": 299,
+              "rate": 0.8462,
+              "wilson95": [
+                0.8009,
+                0.8826
+              ]
+            }
+          },
+          "clip": {
+            "records": 299,
+            "flagged": {
+              "k": 156,
+              "n": 299,
+              "rate": 0.5217,
+              "wilson95": [
+                0.4652,
+                0.5777
+              ]
+            }
+          }
+        },
+        "true": {
+          "system": {
+            "records": 289,
+            "flagged": {
+              "k": 27,
+              "n": 289,
+              "rate": 0.0934,
+              "wilson95": [
+                0.065,
+                0.1325
+              ]
+            },
+            "abstained": {
+              "k": 241,
+              "n": 289,
+              "rate": 0.8339,
+              "wilson95": [
+                0.7867,
+                0.8724
+              ]
+            }
+          },
+          "clip": {
+            "records": 289,
+            "flagged": {
+              "k": 50,
+              "n": 289,
+              "rate": 0.173,
+              "wilson95": [
+                0.1338,
+                0.2208
+              ]
+            }
+          }
+        }
+      },
+      "by_evidence": {
+        "image only": {
+          "system": {
+            "records": 749,
+            "flagged": {
+              "k": 72,
+              "n": 749,
+              "rate": 0.0961,
+              "wilson95": [
+                0.077,
+                0.1193
+              ]
+            },
+            "abstained": {
+              "k": 675,
+              "n": 749,
+              "rate": 0.9012,
+              "wilson95": [
+                0.8777,
+                0.9206
+              ]
+            }
+          },
+          "clip": {
+            "records": 749,
+            "flagged": {
+              "k": 247,
+              "n": 749,
+              "rate": 0.3298,
+              "wilson95": [
+                0.297,
+                0.3642
+              ]
+            }
+          }
+        },
+        "image only + a gallery-scored person": {
+          "system": {
+            "records": 128,
+            "flagged": {
+              "k": 4,
+              "n": 128,
+              "rate": 0.0312,
+              "wilson95": [
+                0.0122,
+                0.0776
+              ]
+            },
+            "abstained": {
+              "k": 70,
+              "n": 128,
+              "rate": 0.5469,
+              "wilson95": [
+                0.4605,
+                0.6305
+              ]
+            }
+          },
+          "clip": {
+            "records": 128,
+            "flagged": {
+              "k": 30,
+              "n": 128,
+              "rate": 0.2344,
+              "wilson95": [
+                0.1694,
+                0.3148
+              ]
+            }
+          }
+        }
+      },
+      "auroc": [
+        {
+          "records": 588,
+          "clusters": 332,
+          "positive": "out-of-context",
+          "negative": "true",
+          "auroc_score": 0.5004,
+          "auroc_clip": 0.7527,
+          "delta": -0.2524,
+          "delta_ci95": [
+            -0.2916,
+            -0.2115
+          ],
+          "resamples": 2000,
+          "excludes_zero": true,
+          "coverage": {
+            "k": 94,
+            "n": 588,
+            "rate": 0.1599,
+            "wilson95": [
+              0.1325,
+              0.1917
+            ]
+          }
+        },
+        {
+          "records": 578,
+          "clusters": 289,
+          "positive": "miscaptioned",
+          "negative": "true",
+          "auroc_score": 0.4875,
+          "auroc_clip": 0.5754,
+          "delta": -0.088,
+          "delta_ci95": [
+            -0.1221,
+            -0.0529
+          ],
+          "resamples": 2000,
+          "excludes_zero": true,
+          "coverage": {
+            "k": 86,
+            "n": 578,
+            "rate": 0.1488,
+            "wilson95": [
+              0.1221,
+              0.1801
+            ]
+          }
+        }
+      ],
+      "auroc_decided": [
+        {
+          "records": 94,
+          "clusters": 76,
+          "positive": "out-of-context",
+          "negative": "true",
+          "auroc_score": 0.6479,
+          "auroc_clip": 0.7142,
+          "delta": -0.0663,
+          "delta_ci95": [
+            -0.1843,
+            0.0471
+          ],
+          "resamples": 2000,
+          "excludes_zero": false,
+          "coverage": {
+            "k": 94,
+            "n": 588,
+            "rate": 0.1599,
+            "wilson95": [
+              0.1325,
+              0.1917
+            ]
+          }
+        },
+        {
+          "records": 86,
+          "clusters": 51,
+          "positive": "miscaptioned",
+          "negative": "true",
+          "auroc_score": 0.5337,
+          "auroc_clip": 0.625,
+          "delta": -0.0913,
+          "delta_ci95": [
+            -0.1986,
+            0.0094
+          ],
+          "resamples": 2000,
+          "excludes_zero": false,
+          "coverage": {
+            "k": 86,
+            "n": 578,
+            "rate": 0.1488,
+            "wilson95": [
+              0.1221,
+              0.1801
+            ]
+          }
+        }
+      ],
+      "people_check": {
+        "before": {
+          "records": 877,
+          "flagged": {
+            "k": 74,
+            "n": 877,
+            "rate": 0.0844,
+            "wilson95": [
+              0.0677,
+              0.1046
+            ]
+          },
+          "abstained": {
+            "k": 747,
+            "n": 877,
+            "rate": 0.8518,
+            "wilson95": [
+              0.8267,
+              0.8737
+            ]
+          }
+        },
+        "after": {
+          "records": 877,
+          "flagged": {
+            "k": 76,
+            "n": 877,
+            "rate": 0.0867,
+            "wilson95": [
+              0.0698,
+              0.1071
+            ]
+          },
+          "abstained": {
+            "k": 745,
+            "n": 877,
+            "rate": 0.8495,
+            "wilson95": [
+              0.8243,
+              0.8716
+            ]
+          }
+        }
+      }
+    },
+    "m4fc:extracted:with_event": {
+      "records": 497,
+      "coverage": {
+        "k": 360,
+        "n": 497,
+        "rate": 0.7243,
+        "wilson95": [
+          0.6835,
+          0.7618
+        ]
+      },
+      "by_class": {
+        "ai-generated": {
+          "system": {
+            "records": 5,
+            "flagged": {
+              "k": 3,
+              "n": 5,
+              "rate": 0.6,
+              "wilson95": [
+                0.2307,
+                0.8824
+              ]
+            },
+            "abstained": {
+              "k": 2,
+              "n": 5,
+              "rate": 0.4,
+              "wilson95": [
+                0.1176,
+                0.7693
+              ]
+            }
+          },
+          "clip": {
+            "records": 5,
+            "flagged": {
+              "k": 1,
+              "n": 5,
+              "rate": 0.2,
+              "wilson95": [
+                0.0362,
+                0.6245
+              ]
+            }
+          }
+        },
+        "manipulated": {
+          "system": {
+            "records": 118,
+            "flagged": {
+              "k": 74,
+              "n": 118,
+              "rate": 0.6271,
+              "wilson95": [
+                0.5372,
+                0.7091
+              ]
+            },
+            "abstained": {
+              "k": 36,
+              "n": 118,
+              "rate": 0.3051,
+              "wilson95": [
+                0.2292,
+                0.3932
+              ]
+            }
+          },
+          "clip": {
+            "records": 118,
+            "flagged": {
+              "k": 49,
+              "n": 118,
+              "rate": 0.4153,
+              "wilson95": [
+                0.3304,
+                0.5055
+              ]
+            }
+          }
+        },
+        "out-of-context": {
+          "system": {
+            "records": 342,
+            "flagged": {
+              "k": 252,
+              "n": 342,
+              "rate": 0.7368,
+              "wilson95": [
+                0.6877,
+                0.7807
+              ]
+            },
+            "abstained": {
+              "k": 81,
+              "n": 342,
+              "rate": 0.2368,
+              "wilson95": [
+                0.1949,
+                0.2847
+              ]
+            }
+          },
+          "clip": {
+            "records": 342,
+            "flagged": {
+              "k": 147,
+              "n": 342,
+              "rate": 0.4298,
+              "wilson95": [
+                0.3784,
+                0.4828
+              ]
+            }
+          }
+        },
+        "true": {
+          "system": {
+            "records": 31,
+            "flagged": {
+              "k": 13,
+              "n": 31,
+              "rate": 0.4194,
+              "wilson95": [
+                0.2642,
+                0.5923
+              ]
+            },
+            "abstained": {
+              "k": 17,
+              "n": 31,
+              "rate": 0.5484,
+              "wilson95": [
+                0.3777,
+                0.7084
+              ]
+            }
+          },
+          "clip": {
+            "records": 31,
+            "flagged": {
+              "k": 13,
+              "n": 31,
+              "rate": 0.4194,
+              "wilson95": [
+                0.2642,
+                0.5923
+              ]
+            }
+          }
+        },
+        "unverified": {
+          "system": {
+            "records": 1,
+            "flagged": {
+              "k": 0,
+              "n": 1,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.7935
+              ]
+            },
+            "abstained": {
+              "k": 1,
+              "n": 1,
+              "rate": 1.0,
+              "wilson95": [
+                0.2065,
+                1.0
+              ]
+            }
+          },
+          "clip": {
+            "records": 1,
+            "flagged": {
+              "k": 0,
+              "n": 1,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.7935
+              ]
+            }
+          }
+        }
+      },
+      "by_evidence": {
+        "image only": {
+          "system": {
+            "records": 405,
+            "flagged": {
+              "k": 272,
+              "n": 405,
+              "rate": 0.6716,
+              "wilson95": [
+                0.6244,
+                0.7155
+              ]
+            },
+            "abstained": {
+              "k": 127,
+              "n": 405,
+              "rate": 0.3136,
+              "wilson95": [
+                0.2703,
+                0.3603
+              ]
+            }
+          },
+          "clip": {
+            "records": 405,
+            "flagged": {
+              "k": 174,
+              "n": 405,
+              "rate": 0.4296,
+              "wilson95": [
+                0.3823,
+                0.4783
+              ]
+            }
+          }
+        },
+        "image only + a gallery-scored person": {
+          "system": {
+            "records": 51,
+            "flagged": {
+              "k": 30,
+              "n": 51,
+              "rate": 0.5882,
+              "wilson95": [
+                0.4517,
+                0.7125
+              ]
+            },
+            "abstained": {
+              "k": 10,
+              "n": 51,
+              "rate": 0.1961,
+              "wilson95": [
+                0.1102,
+                0.3246
+              ]
+            }
+          },
+          "clip": {
+            "records": 51,
+            "flagged": {
+              "k": 17,
+              "n": 51,
+              "rate": 0.3333,
+              "wilson95": [
+                0.2197,
+                0.4703
+              ]
+            }
+          }
+        },
+        "image only + documents": {
+          "system": {
+            "records": 33,
+            "flagged": {
+              "k": 33,
+              "n": 33,
+              "rate": 1.0,
+              "wilson95": [
+                0.8957,
+                1.0
+              ]
+            },
+            "abstained": {
+              "k": 0,
+              "n": 33,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.1043
+              ]
+            }
+          },
+          "clip": {
+            "records": 33,
+            "flagged": {
+              "k": 16,
+              "n": 33,
+              "rate": 0.4848,
+              "wilson95": [
+                0.325,
+                0.6478
+              ]
+            }
+          }
+        },
+        "image only + documents + a gallery-scored person": {
+          "system": {
+            "records": 8,
+            "flagged": {
+              "k": 7,
+              "n": 8,
+              "rate": 0.875,
+              "wilson95": [
+                0.5291,
+                0.9776
+              ]
+            },
+            "abstained": {
+              "k": 0,
+              "n": 8,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.3244
+              ]
+            }
+          },
+          "clip": {
+            "records": 8,
+            "flagged": {
+              "k": 3,
+              "n": 8,
+              "rate": 0.375,
+              "wilson95": [
+                0.1368,
+                0.6943
+              ]
+            }
+          }
+        }
+      },
+      "auroc": [
+        {
+          "records": 373,
+          "clusters": 373,
+          "positive": "false (out-of-context)",
+          "negative": "true",
+          "auroc_score": 0.6116,
+          "auroc_clip": 0.5121,
+          "delta": 0.0996,
+          "delta_ci95": [
+            -0.0726,
+            0.263
+          ],
+          "resamples": 2000,
+          "excludes_zero": false,
+          "coverage": {
+            "k": 275,
+            "n": 373,
+            "rate": 0.7373,
+            "wilson95": [
+              0.6903,
+              0.7793
+            ]
+          }
+        }
+      ],
+      "auroc_decided": [
+        {
+          "records": 275,
+          "clusters": 275,
+          "positive": "false (out-of-context)",
+          "negative": "true",
+          "auroc_score": 0.3725,
+          "auroc_clip": 0.5662,
+          "delta": -0.1938,
+          "delta_ci95": [
+            -0.3792,
+            -0.007
+          ],
+          "resamples": 2000,
+          "excludes_zero": true,
+          "coverage": {
+            "k": 275,
+            "n": 373,
+            "rate": 0.7373,
+            "wilson95": [
+              0.6903,
+              0.7793
+            ]
+          }
+        }
+      ],
+      "people_check": {
+        "before": {
+          "records": 497,
+          "flagged": {
+            "k": 342,
+            "n": 497,
+            "rate": 0.6881,
+            "wilson95": [
+              0.6461,
+              0.7273
+            ]
+          },
+          "abstained": {
+            "k": 137,
+            "n": 497,
+            "rate": 0.2757,
+            "wilson95": [
+              0.2382,
+              0.3165
+            ]
+          }
+        },
+        "after": {
+          "records": 497,
+          "flagged": {
+            "k": 342,
+            "n": 497,
+            "rate": 0.6881,
+            "wilson95": [
+              0.6461,
+              0.7273
+            ]
+          },
+          "abstained": {
+            "k": 137,
+            "n": 497,
+            "rate": 0.2757,
+            "wilson95": [
+              0.2382,
+              0.3165
+            ]
+          }
+        }
+      }
+    },
+    "verite:extracted:with_event": {
+      "records": 877,
+      "coverage": {
+        "k": 578,
+        "n": 877,
+        "rate": 0.6591,
+        "wilson95": [
+          0.6271,
+          0.6897
+        ]
+      },
+      "by_class": {
+        "miscaptioned": {
+          "system": {
+            "records": 289,
+            "flagged": {
+              "k": 178,
+              "n": 289,
+              "rate": 0.6159,
+              "wilson95": [
+                0.5587,
+                0.6701
+              ]
+            },
+            "abstained": {
+              "k": 98,
+              "n": 289,
+              "rate": 0.3391,
+              "wilson95": [
+                0.2869,
+                0.3955
+              ]
+            }
+          },
+          "clip": {
+            "records": 289,
+            "flagged": {
+              "k": 71,
+              "n": 289,
+              "rate": 0.2457,
+              "wilson95": [
+                0.1996,
+                0.2984
+              ]
+            }
+          }
+        },
+        "out-of-context": {
+          "system": {
+            "records": 299,
+            "flagged": {
+              "k": 182,
+              "n": 299,
+              "rate": 0.6087,
+              "wilson95": [
+                0.5523,
+                0.6623
+              ]
+            },
+            "abstained": {
+              "k": 107,
+              "n": 299,
+              "rate": 0.3579,
+              "wilson95": [
+                0.3056,
+                0.4137
+              ]
+            }
+          },
+          "clip": {
+            "records": 299,
+            "flagged": {
+              "k": 156,
+              "n": 299,
+              "rate": 0.5217,
+              "wilson95": [
+                0.4652,
+                0.5777
+              ]
+            }
+          }
+        },
+        "true": {
+          "system": {
+            "records": 289,
+            "flagged": {
+              "k": 182,
+              "n": 289,
+              "rate": 0.6298,
+              "wilson95": [
+                0.5727,
+                0.6834
+              ]
+            },
+            "abstained": {
+              "k": 94,
+              "n": 289,
+              "rate": 0.3253,
+              "wilson95": [
+                0.2738,
+                0.3813
+              ]
+            }
+          },
+          "clip": {
+            "records": 289,
+            "flagged": {
+              "k": 50,
+              "n": 289,
+              "rate": 0.173,
+              "wilson95": [
+                0.1338,
+                0.2208
+              ]
+            }
+          }
+        }
+      },
+      "by_evidence": {
+        "image only": {
+          "system": {
+            "records": 749,
+            "flagged": {
+              "k": 473,
+              "n": 749,
+              "rate": 0.6315,
+              "wilson95": [
+                0.5964,
+                0.6653
+              ]
+            },
+            "abstained": {
+              "k": 270,
+              "n": 749,
+              "rate": 0.3605,
+              "wilson95": [
+                0.3269,
+                0.3955
+              ]
+            }
+          },
+          "clip": {
+            "records": 749,
+            "flagged": {
+              "k": 247,
+              "n": 749,
+              "rate": 0.3298,
+              "wilson95": [
+                0.297,
+                0.3642
+              ]
+            }
+          }
+        },
+        "image only + a gallery-scored person": {
+          "system": {
+            "records": 128,
+            "flagged": {
+              "k": 69,
+              "n": 128,
+              "rate": 0.5391,
+              "wilson95": [
+                0.4528,
+                0.623
+              ]
+            },
+            "abstained": {
+              "k": 29,
+              "n": 128,
+              "rate": 0.2266,
+              "wilson95": [
+                0.1626,
+                0.3064
+              ]
+            }
+          },
+          "clip": {
+            "records": 128,
+            "flagged": {
+              "k": 30,
+              "n": 128,
+              "rate": 0.2344,
+              "wilson95": [
+                0.1694,
+                0.3148
+              ]
+            }
+          }
+        }
+      },
+      "auroc": [
+        {
+          "records": 588,
+          "clusters": 332,
+          "positive": "out-of-context",
+          "negative": "true",
+          "auroc_score": 0.5171,
+          "auroc_clip": 0.7527,
+          "delta": -0.2357,
+          "delta_ci95": [
+            -0.2914,
+            -0.183
+          ],
+          "resamples": 2000,
+          "excludes_zero": true,
+          "coverage": {
+            "k": 387,
+            "n": 588,
+            "rate": 0.6582,
+            "wilson95": [
+              0.6189,
+              0.6954
+            ]
+          }
+        },
+        {
+          "records": 578,
+          "clusters": 289,
+          "positive": "miscaptioned",
+          "negative": "true",
+          "auroc_score": 0.5293,
+          "auroc_clip": 0.5754,
+          "delta": -0.0461,
+          "delta_ci95": [
+            -0.084,
+            -0.0093
+          ],
+          "resamples": 2000,
+          "excludes_zero": true,
+          "coverage": {
+            "k": 386,
+            "n": 578,
+            "rate": 0.6678,
+            "wilson95": [
+              0.6284,
+              0.705
+            ]
+          }
+        }
+      ],
+      "auroc_decided": [
+        {
+          "records": 387,
+          "clusters": 268,
+          "positive": "out-of-context",
+          "negative": "true",
+          "auroc_score": 0.5742,
+          "auroc_clip": 0.7595,
+          "delta": -0.1854,
+          "delta_ci95": [
+            -0.2453,
+            -0.1277
+          ],
+          "resamples": 2000,
+          "excludes_zero": true,
+          "coverage": {
+            "k": 387,
+            "n": 588,
+            "rate": 0.6582,
+            "wilson95": [
+              0.6189,
+              0.6954
+            ]
+          }
+        },
+        {
+          "records": 386,
+          "clusters": 204,
+          "positive": "miscaptioned",
+          "negative": "true",
+          "auroc_score": 0.5808,
+          "auroc_clip": 0.5891,
+          "delta": -0.0083,
+          "delta_ci95": [
+            -0.0549,
+            0.0401
+          ],
+          "resamples": 2000,
+          "excludes_zero": false,
+          "coverage": {
+            "k": 386,
+            "n": 578,
+            "rate": 0.6678,
+            "wilson95": [
+              0.6284,
+              0.705
+            ]
+          }
+        }
+      ],
+      "people_check": {
+        "before": {
+          "records": 877,
+          "flagged": {
+            "k": 540,
+            "n": 877,
+            "rate": 0.6157,
+            "wilson95": [
+              0.5831,
+              0.6474
+            ]
+          },
+          "abstained": {
+            "k": 301,
+            "n": 877,
+            "rate": 0.3432,
+            "wilson95": [
+              0.3125,
+              0.3753
+            ]
+          }
+        },
+        "after": {
+          "records": 877,
+          "flagged": {
+            "k": 542,
+            "n": 877,
+            "rate": 0.618,
+            "wilson95": [
+              0.5854,
+              0.6496
+            ]
+          },
+          "abstained": {
+            "k": 299,
+            "n": 877,
+            "rate": 0.3409,
+            "wilson95": [
+              0.3103,
+              0.3729
+            ]
+          }
+        }
+      }
+    },
+    "m4fc:extracted:with_grounded_date": {
+      "records": 497,
+      "coverage": {
+        "k": 182,
+        "n": 497,
+        "rate": 0.3662,
+        "wilson95": [
+          0.325,
+          0.4094
+        ]
+      },
+      "by_class": {
+        "ai-generated": {
+          "system": {
+            "records": 5,
+            "flagged": {
+              "k": 1,
+              "n": 5,
+              "rate": 0.2,
+              "wilson95": [
+                0.0362,
+                0.6245
+              ]
+            },
+            "abstained": {
+              "k": 3,
+              "n": 5,
+              "rate": 0.6,
+              "wilson95": [
+                0.2307,
+                0.8824
+              ]
+            }
+          },
+          "clip": {
+            "records": 5,
+            "flagged": {
+              "k": 1,
+              "n": 5,
+              "rate": 0.2,
+              "wilson95": [
+                0.0362,
+                0.6245
+              ]
+            }
+          }
+        },
+        "manipulated": {
+          "system": {
+            "records": 118,
+            "flagged": {
+              "k": 21,
+              "n": 118,
+              "rate": 0.178,
+              "wilson95": [
+                0.1194,
+                0.2568
+              ]
+            },
+            "abstained": {
+              "k": 86,
+              "n": 118,
+              "rate": 0.7288,
+              "wilson95": [
+                0.6423,
+                0.8009
+              ]
+            }
+          },
+          "clip": {
+            "records": 118,
+            "flagged": {
+              "k": 49,
+              "n": 118,
+              "rate": 0.4153,
+              "wilson95": [
+                0.3304,
+                0.5055
+              ]
+            }
+          }
+        },
+        "out-of-context": {
+          "system": {
+            "records": 342,
+            "flagged": {
+              "k": 119,
+              "n": 342,
+              "rate": 0.348,
+              "wilson95": [
+                0.2994,
+                0.3999
+              ]
+            },
+            "abstained": {
+              "k": 201,
+              "n": 342,
+              "rate": 0.5877,
+              "wilson95": [
+                0.5349,
+                0.6386
+              ]
+            }
+          },
+          "clip": {
+            "records": 342,
+            "flagged": {
+              "k": 147,
+              "n": 342,
+              "rate": 0.4298,
+              "wilson95": [
+                0.3784,
+                0.4828
+              ]
+            }
+          }
+        },
+        "true": {
+          "system": {
+            "records": 31,
+            "flagged": {
+              "k": 4,
+              "n": 31,
+              "rate": 0.129,
+              "wilson95": [
+                0.0513,
+                0.2885
+              ]
+            },
+            "abstained": {
+              "k": 24,
+              "n": 31,
+              "rate": 0.7742,
+              "wilson95": [
+                0.6019,
+                0.886
+              ]
+            }
+          },
+          "clip": {
+            "records": 31,
+            "flagged": {
+              "k": 13,
+              "n": 31,
+              "rate": 0.4194,
+              "wilson95": [
+                0.2642,
+                0.5923
+              ]
+            }
+          }
+        },
+        "unverified": {
+          "system": {
+            "records": 1,
+            "flagged": {
+              "k": 0,
+              "n": 1,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.7935
+              ]
+            },
+            "abstained": {
+              "k": 1,
+              "n": 1,
+              "rate": 1.0,
+              "wilson95": [
+                0.2065,
+                1.0
+              ]
+            }
+          },
+          "clip": {
+            "records": 1,
+            "flagged": {
+              "k": 0,
+              "n": 1,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.7935
+              ]
+            }
+          }
+        }
+      },
+      "by_evidence": {
+        "image only": {
+          "system": {
+            "records": 405,
+            "flagged": {
+              "k": 115,
+              "n": 405,
+              "rate": 0.284,
+              "wilson95": [
+                0.2422,
+                0.3297
+              ]
+            },
+            "abstained": {
+              "k": 283,
+              "n": 405,
+              "rate": 0.6988,
+              "wilson95": [
+                0.6524,
+                0.7414
+              ]
+            }
+          },
+          "clip": {
+            "records": 405,
+            "flagged": {
+              "k": 174,
+              "n": 405,
+              "rate": 0.4296,
+              "wilson95": [
+                0.3823,
+                0.4783
+              ]
+            }
+          }
+        },
+        "image only + a gallery-scored person": {
+          "system": {
+            "records": 51,
+            "flagged": {
+              "k": 2,
+              "n": 51,
+              "rate": 0.0392,
+              "wilson95": [
+                0.0108,
+                0.1322
+              ]
+            },
+            "abstained": {
+              "k": 25,
+              "n": 51,
+              "rate": 0.4902,
+              "wilson95": [
+                0.3586,
+                0.6232
+              ]
+            }
+          },
+          "clip": {
+            "records": 51,
+            "flagged": {
+              "k": 17,
+              "n": 51,
+              "rate": 0.3333,
+              "wilson95": [
+                0.2197,
+                0.4703
+              ]
+            }
+          }
+        },
+        "image only + documents": {
+          "system": {
+            "records": 33,
+            "flagged": {
+              "k": 27,
+              "n": 33,
+              "rate": 0.8182,
+              "wilson95": [
+                0.6561,
+                0.9139
+              ]
+            },
+            "abstained": {
+              "k": 6,
+              "n": 33,
+              "rate": 0.1818,
+              "wilson95": [
+                0.0861,
+                0.3439
+              ]
+            }
+          },
+          "clip": {
+            "records": 33,
+            "flagged": {
+              "k": 16,
+              "n": 33,
+              "rate": 0.4848,
+              "wilson95": [
+                0.325,
+                0.6478
+              ]
+            }
+          }
+        },
+        "image only + documents + a gallery-scored person": {
+          "system": {
+            "records": 8,
+            "flagged": {
+              "k": 1,
+              "n": 8,
+              "rate": 0.125,
+              "wilson95": [
+                0.0224,
+                0.4709
+              ]
+            },
+            "abstained": {
+              "k": 1,
+              "n": 8,
+              "rate": 0.125,
+              "wilson95": [
+                0.0224,
+                0.4709
+              ]
+            }
+          },
+          "clip": {
+            "records": 8,
+            "flagged": {
+              "k": 3,
+              "n": 8,
+              "rate": 0.375,
+              "wilson95": [
+                0.1368,
+                0.6943
+              ]
+            }
+          }
+        }
+      },
+      "auroc": [
+        {
+          "records": 373,
+          "clusters": 373,
+          "positive": "false (out-of-context)",
+          "negative": "true",
+          "auroc_score": 0.6099,
+          "auroc_clip": 0.5121,
+          "delta": 0.0978,
+          "delta_ci95": [
+            -0.038,
+            0.2232
+          ],
+          "resamples": 2000,
+          "excludes_zero": false,
+          "coverage": {
+            "k": 148,
+            "n": 373,
+            "rate": 0.3968,
+            "wilson95": [
+              0.3484,
+              0.4472
+            ]
+          }
+        }
+      ],
+      "auroc_decided": [
+        {
+          "records": 148,
+          "clusters": 148,
+          "positive": "false (out-of-context)",
+          "negative": "true",
+          "auroc_score": 0.6044,
+          "auroc_clip": 0.5988,
+          "delta": 0.0056,
+          "delta_ci95": [
+            -0.2742,
+            0.2614
+          ],
+          "resamples": 1999,
+          "excludes_zero": false,
+          "coverage": {
+            "k": 148,
+            "n": 373,
+            "rate": 0.3968,
+            "wilson95": [
+              0.3484,
+              0.4472
+            ]
+          }
+        }
+      ],
+      "people_check": {
+        "before": {
+          "records": 497,
+          "flagged": {
+            "k": 145,
+            "n": 497,
+            "rate": 0.2918,
+            "wilson95": [
+              0.2535,
+              0.3332
+            ]
+          },
+          "abstained": {
+            "k": 315,
+            "n": 497,
+            "rate": 0.6338,
+            "wilson95": [
+              0.5906,
+              0.675
+            ]
+          }
+        },
+        "after": {
+          "records": 497,
+          "flagged": {
+            "k": 145,
+            "n": 497,
+            "rate": 0.2918,
+            "wilson95": [
+              0.2535,
+              0.3332
+            ]
+          },
+          "abstained": {
+            "k": 315,
+            "n": 497,
+            "rate": 0.6338,
+            "wilson95": [
+              0.5906,
+              0.675
+            ]
+          }
+        }
+      }
+    },
+    "verite:extracted:with_grounded_date": {
+      "records": 877,
+      "coverage": {
+        "k": 138,
+        "n": 877,
+        "rate": 0.1574,
+        "wilson95": [
+          0.1348,
+          0.1829
+        ]
+      },
+      "by_class": {
+        "miscaptioned": {
+          "system": {
+            "records": 289,
+            "flagged": {
+              "k": 21,
+              "n": 289,
+              "rate": 0.0727,
+              "wilson95": [
+                0.048,
+                0.1085
+              ]
+            },
+            "abstained": {
+              "k": 251,
+              "n": 289,
+              "rate": 0.8685,
+              "wilson95": [
+                0.8247,
+                0.9027
+              ]
+            }
+          },
+          "clip": {
+            "records": 289,
+            "flagged": {
+              "k": 71,
+              "n": 289,
+              "rate": 0.2457,
+              "wilson95": [
+                0.1996,
+                0.2984
+              ]
+            }
+          }
+        },
+        "out-of-context": {
+          "system": {
+            "records": 299,
+            "flagged": {
+              "k": 33,
+              "n": 299,
+              "rate": 0.1104,
+              "wilson95": [
+                0.0797,
+                0.1509
+              ]
+            },
+            "abstained": {
+              "k": 249,
+              "n": 299,
+              "rate": 0.8328,
+              "wilson95": [
+                0.7863,
+                0.8708
+              ]
+            }
+          },
+          "clip": {
+            "records": 299,
+            "flagged": {
+              "k": 156,
+              "n": 299,
+              "rate": 0.5217,
+              "wilson95": [
+                0.4652,
+                0.5777
+              ]
+            }
+          }
+        },
+        "true": {
+          "system": {
+            "records": 289,
+            "flagged": {
+              "k": 27,
+              "n": 289,
+              "rate": 0.0934,
+              "wilson95": [
+                0.065,
+                0.1325
+              ]
+            },
+            "abstained": {
+              "k": 239,
+              "n": 289,
+              "rate": 0.827,
+              "wilson95": [
+                0.7792,
+                0.8662
+              ]
+            }
+          },
+          "clip": {
+            "records": 289,
+            "flagged": {
+              "k": 50,
+              "n": 289,
+              "rate": 0.173,
+              "wilson95": [
+                0.1338,
+                0.2208
+              ]
+            }
+          }
+        }
+      },
+      "by_evidence": {
+        "image only": {
+          "system": {
+            "records": 749,
+            "flagged": {
+              "k": 76,
+              "n": 749,
+              "rate": 0.1015,
+              "wilson95": [
+                0.0818,
+                0.1252
+              ]
+            },
+            "abstained": {
+              "k": 669,
+              "n": 749,
+              "rate": 0.8932,
+              "wilson95": [
+                0.869,
+                0.9133
+              ]
+            }
+          },
+          "clip": {
+            "records": 749,
+            "flagged": {
+              "k": 247,
+              "n": 749,
+              "rate": 0.3298,
+              "wilson95": [
+                0.297,
+                0.3642
+              ]
+            }
+          }
+        },
+        "image only + a gallery-scored person": {
+          "system": {
+            "records": 128,
+            "flagged": {
+              "k": 5,
+              "n": 128,
+              "rate": 0.0391,
+              "wilson95": [
+                0.0168,
+                0.0882
+              ]
+            },
+            "abstained": {
+              "k": 70,
+              "n": 128,
+              "rate": 0.5469,
+              "wilson95": [
+                0.4605,
+                0.6305
+              ]
+            }
+          },
+          "clip": {
+            "records": 128,
+            "flagged": {
+              "k": 30,
+              "n": 128,
+              "rate": 0.2344,
+              "wilson95": [
+                0.1694,
+                0.3148
+              ]
+            }
+          }
+        }
+      },
+      "auroc": [
+        {
+          "records": 588,
+          "clusters": 332,
+          "positive": "out-of-context",
+          "negative": "true",
+          "auroc_score": 0.5087,
+          "auroc_clip": 0.7527,
+          "delta": -0.244,
+          "delta_ci95": [
+            -0.2843,
+            -0.2026
+          ],
+          "resamples": 2000,
+          "excludes_zero": true,
+          "coverage": {
+            "k": 100,
+            "n": 588,
+            "rate": 0.1701,
+            "wilson95": [
+              0.1419,
+              0.2026
+            ]
+          }
+        },
+        {
+          "records": 578,
+          "clusters": 289,
+          "positive": "miscaptioned",
+          "negative": "true",
+          "auroc_score": 0.487,
+          "auroc_clip": 0.5754,
+          "delta": -0.0884,
+          "delta_ci95": [
+            -0.1223,
+            -0.0532
+          ],
+          "resamples": 2000,
+          "excludes_zero": true,
+          "coverage": {
+            "k": 88,
+            "n": 578,
+            "rate": 0.1522,
+            "wilson95": [
+              0.1253,
+              0.1838
+            ]
+          }
+        }
+      ],
+      "auroc_decided": [
+        {
+          "records": 100,
+          "clusters": 81,
+          "positive": "out-of-context",
+          "negative": "true",
+          "auroc_score": 0.6678,
+          "auroc_clip": 0.72,
+          "delta": -0.0522,
+          "delta_ci95": [
+            -0.1601,
+            0.0632
+          ],
+          "resamples": 2000,
+          "excludes_zero": false,
+          "coverage": {
+            "k": 100,
+            "n": 588,
+            "rate": 0.1701,
+            "wilson95": [
+              0.1419,
+              0.2026
+            ]
+          }
+        },
+        {
+          "records": 88,
+          "clusters": 51,
+          "positive": "miscaptioned",
+          "negative": "true",
+          "auroc_score": 0.5245,
+          "auroc_clip": 0.6284,
+          "delta": -0.1039,
+          "delta_ci95": [
+            -0.2122,
+            -0.0015
+          ],
+          "resamples": 2000,
+          "excludes_zero": true,
+          "coverage": {
+            "k": 88,
+            "n": 578,
+            "rate": 0.1522,
+            "wilson95": [
+              0.1253,
+              0.1838
+            ]
+          }
+        }
+      ],
+      "people_check": {
+        "before": {
+          "records": 877,
+          "flagged": {
+            "k": 79,
+            "n": 877,
+            "rate": 0.0901,
+            "wilson95": [
+              0.0729,
+              0.1109
+            ]
+          },
+          "abstained": {
+            "k": 741,
+            "n": 877,
+            "rate": 0.8449,
+            "wilson95": [
+              0.8195,
+              0.8674
+            ]
+          }
+        },
+        "after": {
+          "records": 877,
+          "flagged": {
+            "k": 81,
+            "n": 877,
+            "rate": 0.0924,
+            "wilson95": [
+              0.0749,
+              0.1133
+            ]
+          },
+          "abstained": {
+            "k": 739,
+            "n": 877,
+            "rate": 0.8426,
+            "wilson95": [
+              0.8171,
+              0.8652
+            ]
+          }
+        }
+      }
+    },
+    "m4fc:gold:primary": {
+      "records": 497,
+      "coverage": {
+        "k": 203,
+        "n": 497,
+        "rate": 0.4085,
+        "wilson95": [
+          0.3661,
+          0.4522
+        ]
+      },
+      "by_class": {
+        "ai-generated": {
+          "system": {
+            "records": 5,
+            "flagged": {
+              "k": 1,
+              "n": 5,
+              "rate": 0.2,
+              "wilson95": [
+                0.0362,
+                0.6245
+              ]
+            },
+            "abstained": {
+              "k": 3,
+              "n": 5,
+              "rate": 0.6,
+              "wilson95": [
+                0.2307,
+                0.8824
+              ]
+            }
+          },
+          "clip": {
+            "records": 5,
+            "flagged": {
+              "k": 1,
+              "n": 5,
+              "rate": 0.2,
+              "wilson95": [
+                0.0362,
+                0.6245
+              ]
+            }
+          }
+        },
+        "manipulated": {
+          "system": {
+            "records": 118,
+            "flagged": {
+              "k": 27,
+              "n": 118,
+              "rate": 0.2288,
+              "wilson95": [
+                0.1623,
+                0.3124
+              ]
+            },
+            "abstained": {
+              "k": 81,
+              "n": 118,
+              "rate": 0.6864,
+              "wilson95": [
+                0.598,
+                0.7632
+              ]
+            }
+          },
+          "clip": {
+            "records": 118,
+            "flagged": {
+              "k": 49,
+              "n": 118,
+              "rate": 0.4153,
+              "wilson95": [
+                0.3304,
+                0.5055
+              ]
+            }
+          }
+        },
+        "out-of-context": {
+          "system": {
+            "records": 342,
+            "flagged": {
+              "k": 138,
+              "n": 342,
+              "rate": 0.4035,
+              "wilson95": [
+                0.3529,
+                0.4563
+              ]
+            },
+            "abstained": {
+              "k": 187,
+              "n": 342,
+              "rate": 0.5468,
+              "wilson95": [
+                0.4938,
+                0.5987
+              ]
+            }
+          },
+          "clip": {
+            "records": 342,
+            "flagged": {
+              "k": 147,
+              "n": 342,
+              "rate": 0.4298,
+              "wilson95": [
+                0.3784,
+                0.4828
+              ]
+            }
+          }
+        },
+        "true": {
+          "system": {
+            "records": 31,
+            "flagged": {
+              "k": 7,
+              "n": 31,
+              "rate": 0.2258,
+              "wilson95": [
+                0.114,
+                0.3981
+              ]
+            },
+            "abstained": {
+              "k": 22,
+              "n": 31,
+              "rate": 0.7097,
+              "wilson95": [
+                0.5341,
+                0.839
+              ]
+            }
+          },
+          "clip": {
+            "records": 31,
+            "flagged": {
+              "k": 13,
+              "n": 31,
+              "rate": 0.4194,
+              "wilson95": [
+                0.2642,
+                0.5923
+              ]
+            }
+          }
+        },
+        "unverified": {
+          "system": {
+            "records": 1,
+            "flagged": {
+              "k": 0,
+              "n": 1,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.7935
+              ]
+            },
+            "abstained": {
+              "k": 1,
+              "n": 1,
+              "rate": 1.0,
+              "wilson95": [
+                0.2065,
+                1.0
+              ]
+            }
+          },
+          "clip": {
+            "records": 1,
+            "flagged": {
+              "k": 0,
+              "n": 1,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.7935
+              ]
+            }
+          }
+        }
+      },
+      "by_evidence": {
+        "image only": {
+          "system": {
+            "records": 403,
+            "flagged": {
+              "k": 133,
+              "n": 403,
+              "rate": 0.33,
+              "wilson95": [
+                0.2859,
+                0.3773
+              ]
+            },
+            "abstained": {
+              "k": 266,
+              "n": 403,
+              "rate": 0.66,
+              "wilson95": [
+                0.6125,
+                0.7046
+              ]
+            }
+          },
+          "clip": {
+            "records": 403,
+            "flagged": {
+              "k": 170,
+              "n": 403,
+              "rate": 0.4218,
+              "wilson95": [
+                0.3746,
+                0.4706
+              ]
+            }
+          }
+        },
+        "image only + a gallery-scored person": {
+          "system": {
+            "records": 53,
+            "flagged": {
+              "k": 5,
+              "n": 53,
+              "rate": 0.0943,
+              "wilson95": [
+                0.041,
+                0.2025
+              ]
+            },
+            "abstained": {
+              "k": 24,
+              "n": 53,
+              "rate": 0.4528,
+              "wilson95": [
+                0.3266,
+                0.5855
+              ]
+            }
+          },
+          "clip": {
+            "records": 53,
+            "flagged": {
+              "k": 18,
+              "n": 53,
+              "rate": 0.3396,
+              "wilson95": [
+                0.2269,
+                0.4741
+              ]
+            }
+          }
+        },
+        "image only + documents": {
+          "system": {
+            "records": 35,
+            "flagged": {
+              "k": 32,
+              "n": 35,
+              "rate": 0.9143,
+              "wilson95": [
+                0.7762,
+                0.9704
+              ]
+            },
+            "abstained": {
+              "k": 3,
+              "n": 35,
+              "rate": 0.0857,
+              "wilson95": [
+                0.0296,
+                0.2238
+              ]
+            }
+          },
+          "clip": {
+            "records": 35,
+            "flagged": {
+              "k": 20,
+              "n": 35,
+              "rate": 0.5714,
+              "wilson95": [
+                0.4086,
+                0.7202
+              ]
+            }
+          }
+        },
+        "image only + documents + a gallery-scored person": {
+          "system": {
+            "records": 6,
+            "flagged": {
+              "k": 3,
+              "n": 6,
+              "rate": 0.5,
+              "wilson95": [
+                0.1876,
+                0.8124
+              ]
+            },
+            "abstained": {
+              "k": 1,
+              "n": 6,
+              "rate": 0.1667,
+              "wilson95": [
+                0.0301,
+                0.5635
+              ]
+            }
+          },
+          "clip": {
+            "records": 6,
+            "flagged": {
+              "k": 2,
+              "n": 6,
+              "rate": 0.3333,
+              "wilson95": [
+                0.0968,
+                0.7
+              ]
+            }
+          }
+        }
+      },
+      "auroc": [
+        {
+          "records": 373,
+          "clusters": 373,
+          "positive": "false (out-of-context)",
+          "negative": "true",
+          "auroc_score": 0.6037,
+          "auroc_clip": 0.5121,
+          "delta": 0.0916,
+          "delta_ci95": [
+            -0.0588,
+            0.2297
+          ],
+          "resamples": 2000,
+          "excludes_zero": false,
+          "coverage": {
+            "k": 164,
+            "n": 373,
+            "rate": 0.4397,
+            "wilson95": [
+              0.3902,
+              0.4904
+            ]
+          }
+        }
+      ],
+      "auroc_decided": [
+        {
+          "records": 164,
+          "clusters": 164,
+          "positive": "false (out-of-context)",
+          "negative": "true",
+          "auroc_score": 0.6373,
+          "auroc_clip": 0.6609,
+          "delta": -0.0237,
+          "delta_ci95": [
+            -0.2416,
+            0.1933
+          ],
+          "resamples": 1999,
+          "excludes_zero": false,
+          "coverage": {
+            "k": 164,
+            "n": 373,
+            "rate": 0.4397,
+            "wilson95": [
+              0.3902,
+              0.4904
+            ]
+          }
+        }
+      ],
+      "people_check": {
+        "before": {
+          "records": 497,
+          "flagged": {
+            "k": 173,
+            "n": 497,
+            "rate": 0.3481,
+            "wilson95": [
+              0.3075,
+              0.391
+            ]
+          },
+          "abstained": {
+            "k": 294,
+            "n": 497,
+            "rate": 0.5915,
+            "wilson95": [
+              0.5478,
+              0.6339
+            ]
+          }
+        },
+        "after": {
+          "records": 497,
+          "flagged": {
+            "k": 173,
+            "n": 497,
+            "rate": 0.3481,
+            "wilson95": [
+              0.3075,
+              0.391
+            ]
+          },
+          "abstained": {
+            "k": 294,
+            "n": 497,
+            "rate": 0.5915,
+            "wilson95": [
+              0.5478,
+              0.6339
+            ]
+          }
+        }
+      }
+    },
+    "m4fc:gold:with_event": {
+      "records": 497,
+      "coverage": {
+        "k": 333,
+        "n": 497,
+        "rate": 0.67,
+        "wilson95": [
+          0.6275,
+          0.7099
+        ]
+      },
+      "by_class": {
+        "ai-generated": {
+          "system": {
+            "records": 5,
+            "flagged": {
+              "k": 1,
+              "n": 5,
+              "rate": 0.2,
+              "wilson95": [
+                0.0362,
+                0.6245
+              ]
+            },
+            "abstained": {
+              "k": 3,
+              "n": 5,
+              "rate": 0.6,
+              "wilson95": [
+                0.2307,
+                0.8824
+              ]
+            }
+          },
+          "clip": {
+            "records": 5,
+            "flagged": {
+              "k": 1,
+              "n": 5,
+              "rate": 0.2,
+              "wilson95": [
+                0.0362,
+                0.6245
+              ]
+            }
+          }
+        },
+        "manipulated": {
+          "system": {
+            "records": 118,
+            "flagged": {
+              "k": 57,
+              "n": 118,
+              "rate": 0.4831,
+              "wilson95": [
+                0.3949,
+                0.5723
+              ]
+            },
+            "abstained": {
+              "k": 50,
+              "n": 118,
+              "rate": 0.4237,
+              "wilson95": [
+                0.3384,
+                0.5139
+              ]
+            }
+          },
+          "clip": {
+            "records": 118,
+            "flagged": {
+              "k": 49,
+              "n": 118,
+              "rate": 0.4153,
+              "wilson95": [
+                0.3304,
+                0.5055
+              ]
+            }
+          }
+        },
+        "out-of-context": {
+          "system": {
+            "records": 342,
+            "flagged": {
+              "k": 238,
+              "n": 342,
+              "rate": 0.6959,
+              "wilson95": [
+                0.6452,
+                0.7423
+              ]
+            },
+            "abstained": {
+              "k": 91,
+              "n": 342,
+              "rate": 0.2661,
+              "wilson95": [
+                0.222,
+                0.3153
+              ]
+            }
+          },
+          "clip": {
+            "records": 342,
+            "flagged": {
+              "k": 147,
+              "n": 342,
+              "rate": 0.4298,
+              "wilson95": [
+                0.3784,
+                0.4828
+              ]
+            }
+          }
+        },
+        "true": {
+          "system": {
+            "records": 31,
+            "flagged": {
+              "k": 10,
+              "n": 31,
+              "rate": 0.3226,
+              "wilson95": [
+                0.1857,
+                0.4986
+              ]
+            },
+            "abstained": {
+              "k": 19,
+              "n": 31,
+              "rate": 0.6129,
+              "wilson95": [
+                0.4382,
+                0.7627
+              ]
+            }
+          },
+          "clip": {
+            "records": 31,
+            "flagged": {
+              "k": 13,
+              "n": 31,
+              "rate": 0.4194,
+              "wilson95": [
+                0.2642,
+                0.5923
+              ]
+            }
+          }
+        },
+        "unverified": {
+          "system": {
+            "records": 1,
+            "flagged": {
+              "k": 0,
+              "n": 1,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.7935
+              ]
+            },
+            "abstained": {
+              "k": 1,
+              "n": 1,
+              "rate": 1.0,
+              "wilson95": [
+                0.2065,
+                1.0
+              ]
+            }
+          },
+          "clip": {
+            "records": 1,
+            "flagged": {
+              "k": 0,
+              "n": 1,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.7935
+              ]
+            }
+          }
+        }
+      },
+      "by_evidence": {
+        "image only": {
+          "system": {
+            "records": 403,
+            "flagged": {
+              "k": 245,
+              "n": 403,
+              "rate": 0.6079,
+              "wilson95": [
+                0.5595,
+                0.6544
+              ]
+            },
+            "abstained": {
+              "k": 149,
+              "n": 403,
+              "rate": 0.3697,
+              "wilson95": [
+                0.324,
+                0.4179
+              ]
+            }
+          },
+          "clip": {
+            "records": 403,
+            "flagged": {
+              "k": 170,
+              "n": 403,
+              "rate": 0.4218,
+              "wilson95": [
+                0.3746,
+                0.4706
+              ]
+            }
+          }
+        },
+        "image only + a gallery-scored person": {
+          "system": {
+            "records": 53,
+            "flagged": {
+              "k": 23,
+              "n": 53,
+              "rate": 0.434,
+              "wilson95": [
+                0.3095,
+                0.5673
+              ]
+            },
+            "abstained": {
+              "k": 15,
+              "n": 53,
+              "rate": 0.283,
+              "wilson95": [
+                0.1797,
+                0.4157
+              ]
+            }
+          },
+          "clip": {
+            "records": 53,
+            "flagged": {
+              "k": 18,
+              "n": 53,
+              "rate": 0.3396,
+              "wilson95": [
+                0.2269,
+                0.4741
+              ]
+            }
+          }
+        },
+        "image only + documents": {
+          "system": {
+            "records": 35,
+            "flagged": {
+              "k": 33,
+              "n": 35,
+              "rate": 0.9429,
+              "wilson95": [
+                0.8139,
+                0.9842
+              ]
+            },
+            "abstained": {
+              "k": 0,
+              "n": 35,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.0989
+              ]
+            }
+          },
+          "clip": {
+            "records": 35,
+            "flagged": {
+              "k": 20,
+              "n": 35,
+              "rate": 0.5714,
+              "wilson95": [
+                0.4086,
+                0.7202
+              ]
+            }
+          }
+        },
+        "image only + documents + a gallery-scored person": {
+          "system": {
+            "records": 6,
+            "flagged": {
+              "k": 5,
+              "n": 6,
+              "rate": 0.8333,
+              "wilson95": [
+                0.4365,
+                0.9699
+              ]
+            },
+            "abstained": {
+              "k": 0,
+              "n": 6,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.3903
+              ]
+            }
+          },
+          "clip": {
+            "records": 6,
+            "flagged": {
+              "k": 2,
+              "n": 6,
+              "rate": 0.3333,
+              "wilson95": [
+                0.0968,
+                0.7
+              ]
+            }
+          }
+        }
+      },
+      "auroc": [
+        {
+          "records": 373,
+          "clusters": 373,
+          "positive": "false (out-of-context)",
+          "negative": "true",
+          "auroc_score": 0.6777,
+          "auroc_clip": 0.5121,
+          "delta": 0.1657,
+          "delta_ci95": [
+            0.0183,
+            0.3083
+          ],
+          "resamples": 2000,
+          "excludes_zero": true,
+          "coverage": {
+            "k": 263,
+            "n": 373,
+            "rate": 0.7051,
+            "wilson95": [
+              0.6569,
+              0.7491
+            ]
+          }
+        }
+      ],
+      "auroc_decided": [
+        {
+          "records": 263,
+          "clusters": 263,
+          "positive": "false (out-of-context)",
+          "negative": "true",
+          "auroc_score": 0.5191,
+          "auroc_clip": 0.5647,
+          "delta": -0.0457,
+          "delta_ci95": [
+            -0.2351,
+            0.1349
+          ],
+          "resamples": 2000,
+          "excludes_zero": false,
+          "coverage": {
+            "k": 263,
+            "n": 373,
+            "rate": 0.7051,
+            "wilson95": [
+              0.6569,
+              0.7491
+            ]
+          }
+        }
+      ],
+      "people_check": {
+        "before": {
+          "records": 497,
+          "flagged": {
+            "k": 306,
+            "n": 497,
+            "rate": 0.6157,
+            "wilson95": [
+              0.5722,
+              0.6574
+            ]
+          },
+          "abstained": {
+            "k": 164,
+            "n": 497,
+            "rate": 0.33,
+            "wilson95": [
+              0.2901,
+              0.3725
+            ]
+          }
+        },
+        "after": {
+          "records": 497,
+          "flagged": {
+            "k": 306,
+            "n": 497,
+            "rate": 0.6157,
+            "wilson95": [
+              0.5722,
+              0.6574
+            ]
+          },
+          "abstained": {
+            "k": 164,
+            "n": 497,
+            "rate": 0.33,
+            "wilson95": [
+              0.2901,
+              0.3725
+            ]
+          }
+        }
+      }
+    },
+    "m4fc:gold:with_grounded_date": {
+      "records": 497,
+      "coverage": {
+        "k": 218,
+        "n": 497,
+        "rate": 0.4386,
+        "wilson95": [
+          0.3956,
+          0.4826
+        ]
+      },
+      "by_class": {
+        "ai-generated": {
+          "system": {
+            "records": 5,
+            "flagged": {
+              "k": 1,
+              "n": 5,
+              "rate": 0.2,
+              "wilson95": [
+                0.0362,
+                0.6245
+              ]
+            },
+            "abstained": {
+              "k": 2,
+              "n": 5,
+              "rate": 0.4,
+              "wilson95": [
+                0.1176,
+                0.7693
+              ]
+            }
+          },
+          "clip": {
+            "records": 5,
+            "flagged": {
+              "k": 1,
+              "n": 5,
+              "rate": 0.2,
+              "wilson95": [
+                0.0362,
+                0.6245
+              ]
+            }
+          }
+        },
+        "manipulated": {
+          "system": {
+            "records": 118,
+            "flagged": {
+              "k": 29,
+              "n": 118,
+              "rate": 0.2458,
+              "wilson95": [
+                0.1769,
+                0.3306
+              ]
+            },
+            "abstained": {
+              "k": 80,
+              "n": 118,
+              "rate": 0.678,
+              "wilson95": [
+                0.5892,
+                0.7555
+              ]
+            }
+          },
+          "clip": {
+            "records": 118,
+            "flagged": {
+              "k": 49,
+              "n": 118,
+              "rate": 0.4153,
+              "wilson95": [
+                0.3304,
+                0.5055
+              ]
+            }
+          }
+        },
+        "out-of-context": {
+          "system": {
+            "records": 342,
+            "flagged": {
+              "k": 144,
+              "n": 342,
+              "rate": 0.4211,
+              "wilson95": [
+                0.3699,
+                0.474
+              ]
+            },
+            "abstained": {
+              "k": 175,
+              "n": 342,
+              "rate": 0.5117,
+              "wilson95": [
+                0.4589,
+                0.5642
+              ]
+            }
+          },
+          "clip": {
+            "records": 342,
+            "flagged": {
+              "k": 147,
+              "n": 342,
+              "rate": 0.4298,
+              "wilson95": [
+                0.3784,
+                0.4828
+              ]
+            }
+          }
+        },
+        "true": {
+          "system": {
+            "records": 31,
+            "flagged": {
+              "k": 9,
+              "n": 31,
+              "rate": 0.2903,
+              "wilson95": [
+                0.161,
+                0.4659
+              ]
+            },
+            "abstained": {
+              "k": 21,
+              "n": 31,
+              "rate": 0.6774,
+              "wilson95": [
+                0.5014,
+                0.8143
+              ]
+            }
+          },
+          "clip": {
+            "records": 31,
+            "flagged": {
+              "k": 13,
+              "n": 31,
+              "rate": 0.4194,
+              "wilson95": [
+                0.2642,
+                0.5923
+              ]
+            }
+          }
+        },
+        "unverified": {
+          "system": {
+            "records": 1,
+            "flagged": {
+              "k": 0,
+              "n": 1,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.7935
+              ]
+            },
+            "abstained": {
+              "k": 1,
+              "n": 1,
+              "rate": 1.0,
+              "wilson95": [
+                0.2065,
+                1.0
+              ]
+            }
+          },
+          "clip": {
+            "records": 1,
+            "flagged": {
+              "k": 0,
+              "n": 1,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.7935
+              ]
+            }
+          }
+        }
+      },
+      "by_evidence": {
+        "image only": {
+          "system": {
+            "records": 403,
+            "flagged": {
+              "k": 139,
+              "n": 403,
+              "rate": 0.3449,
+              "wilson95": [
+                0.3002,
+                0.3926
+              ]
+            },
+            "abstained": {
+              "k": 252,
+              "n": 403,
+              "rate": 0.6253,
+              "wilson95": [
+                0.5771,
+                0.6712
+              ]
+            }
+          },
+          "clip": {
+            "records": 403,
+            "flagged": {
+              "k": 170,
+              "n": 403,
+              "rate": 0.4218,
+              "wilson95": [
+                0.3746,
+                0.4706
+              ]
+            }
+          }
+        },
+        "image only + a gallery-scored person": {
+          "system": {
+            "records": 53,
+            "flagged": {
+              "k": 7,
+              "n": 53,
+              "rate": 0.1321,
+              "wilson95": [
+                0.0655,
+                0.2484
+              ]
+            },
+            "abstained": {
+              "k": 24,
+              "n": 53,
+              "rate": 0.4528,
+              "wilson95": [
+                0.3266,
+                0.5855
+              ]
+            }
+          },
+          "clip": {
+            "records": 53,
+            "flagged": {
+              "k": 18,
+              "n": 53,
+              "rate": 0.3396,
+              "wilson95": [
+                0.2269,
+                0.4741
+              ]
+            }
+          }
+        },
+        "image only + documents": {
+          "system": {
+            "records": 35,
+            "flagged": {
+              "k": 33,
+              "n": 35,
+              "rate": 0.9429,
+              "wilson95": [
+                0.8139,
+                0.9842
+              ]
+            },
+            "abstained": {
+              "k": 2,
+              "n": 35,
+              "rate": 0.0571,
+              "wilson95": [
+                0.0158,
+                0.1861
+              ]
+            }
+          },
+          "clip": {
+            "records": 35,
+            "flagged": {
+              "k": 20,
+              "n": 35,
+              "rate": 0.5714,
+              "wilson95": [
+                0.4086,
+                0.7202
+              ]
+            }
+          }
+        },
+        "image only + documents + a gallery-scored person": {
+          "system": {
+            "records": 6,
+            "flagged": {
+              "k": 4,
+              "n": 6,
+              "rate": 0.6667,
+              "wilson95": [
+                0.3,
+                0.9032
+              ]
+            },
+            "abstained": {
+              "k": 1,
+              "n": 6,
+              "rate": 0.1667,
+              "wilson95": [
+                0.0301,
+                0.5635
+              ]
+            }
+          },
+          "clip": {
+            "records": 6,
+            "flagged": {
+              "k": 2,
+              "n": 6,
+              "rate": 0.3333,
+              "wilson95": [
+                0.0968,
+                0.7
+              ]
+            }
+          }
+        }
+      },
+      "auroc": [
+        {
+          "records": 373,
+          "clusters": 373,
+          "positive": "false (out-of-context)",
+          "negative": "true",
+          "auroc_score": 0.5729,
+          "auroc_clip": 0.5121,
+          "delta": 0.0608,
+          "delta_ci95": [
+            -0.0883,
+            0.2063
+          ],
+          "resamples": 2000,
+          "excludes_zero": false,
+          "coverage": {
+            "k": 177,
+            "n": 373,
+            "rate": 0.4745,
+            "wilson95": [
+              0.4244,
+              0.5252
+            ]
+          }
+        }
+      ],
+      "auroc_decided": [
+        {
+          "records": 177,
+          "clusters": 177,
+          "positive": "false (out-of-context)",
+          "negative": "true",
+          "auroc_score": 0.5039,
+          "auroc_clip": 0.609,
+          "delta": -0.1051,
+          "delta_ci95": [
+            -0.3304,
+            0.1106
+          ],
+          "resamples": 2000,
+          "excludes_zero": false,
+          "coverage": {
+            "k": 177,
+            "n": 373,
+            "rate": 0.4745,
+            "wilson95": [
+              0.4244,
+              0.5252
+            ]
+          }
+        }
+      ],
+      "people_check": {
+        "before": {
+          "records": 497,
+          "flagged": {
+            "k": 183,
+            "n": 497,
+            "rate": 0.3682,
+            "wilson95": [
+              0.327,
+              0.4115
+            ]
+          },
+          "abstained": {
+            "k": 279,
+            "n": 497,
+            "rate": 0.5614,
+            "wilson95": [
+              0.5174,
+              0.6044
+            ]
+          }
+        },
+        "after": {
+          "records": 497,
+          "flagged": {
+            "k": 183,
+            "n": 497,
+            "rate": 0.3682,
+            "wilson95": [
+              0.327,
+              0.4115
+            ]
+          },
+          "abstained": {
+            "k": 279,
+            "n": 497,
+            "rate": 0.5614,
+            "wilson95": [
+              0.5174,
+              0.6044
+            ]
+          }
+        }
+      }
+    }
+  },
+  "clip_missing": 0,
+  "items": {
+    "m4fc train:extracted": {
+      "date": {
+        "out-of-context": {
+          "records": 1836,
+          "claimed": 193,
+          "verdict": {
+            "unsupported": 193
+          },
+          "why": {
+            "gate_b_left_out": 138,
+            "no_image_evidence": 47,
+            "prediction_refused": 8
+          }
+        },
+        "manipulated": {
+          "records": 505,
+          "claimed": 27,
+          "verdict": {
+            "unsupported": 27
+          },
+          "why": {
+            "gate_b_left_out": 24,
+            "no_image_evidence": 3
+          }
+        },
+        "true": {
+          "records": 164,
+          "claimed": 25,
+          "verdict": {
+            "unsupported": 25
+          },
+          "why": {
+            "gate_b_left_out": 15,
+            "no_image_evidence": 10
+          }
+        },
+        "ai-generated": {
+          "records": 4,
+          "claimed": 2,
+          "verdict": {
+            "unsupported": 2
+          },
+          "why": {
+            "no_image_evidence": 2
+          }
+        },
+        "unverified": {
+          "records": 2,
+          "claimed": 0,
+          "verdict": {},
+          "why": {}
+        },
+        "mixture": {
+          "records": 13,
+          "claimed": 1,
+          "verdict": {
+            "unsupported": 1
+          },
+          "why": {
+            "gate_b_left_out": 1
+          }
+        }
+      },
+      "event": {
+        "out-of-context": {
+          "records": 1836,
+          "claimed": 1758,
+          "verdict": {
+            "unsupported": 1758
+          },
+          "why": {
+            "gate_a_not_cleared": 1391,
+            "no_image_evidence": 338,
+            "prediction_refused": 29
+          }
+        },
+        "manipulated": {
+          "records": 505,
+          "claimed": 476,
+          "verdict": {
+            "unsupported": 476
+          },
+          "why": {
+            "gate_a_not_cleared": 353,
+            "no_image_evidence": 115,
+            "prediction_refused": 8
+          }
+        },
+        "true": {
+          "records": 164,
+          "claimed": 148,
+          "verdict": {
+            "unsupported": 148
+          },
+          "why": {
+            "gate_a_not_cleared": 93,
+            "no_image_evidence": 52,
+            "prediction_refused": 3
+          }
+        },
+        "ai-generated": {
+          "records": 4,
+          "claimed": 4,
+          "verdict": {
+            "unsupported": 4
+          },
+          "why": {
+            "gate_a_not_cleared": 2,
+            "no_image_evidence": 2
+          }
+        },
+        "unverified": {
+          "records": 2,
+          "claimed": 2,
+          "verdict": {
+            "unsupported": 2
+          },
+          "why": {
+            "gate_a_not_cleared": 2
+          }
+        },
+        "mixture": {
+          "records": 13,
+          "claimed": 13,
+          "verdict": {
+            "unsupported": 13
+          },
+          "why": {
+            "gate_a_not_cleared": 10,
+            "no_image_evidence": 3
+          }
+        }
+      },
+      "location": {
+        "out-of-context": {
+          "records": 1836,
+          "claimed": 1097,
+          "verdict": {
+            "unsupported": 639,
+            "consistent": 350,
+            "contradicted": 108
+          },
+          "why": {
+            "no_image_evidence": 472,
+            "judge_yes": 350,
+            "image_carries_claim": 120,
+            "judge_no": 108,
+            "comparator_unclear": 44,
+            "prediction_refused": 3
+          }
+        },
+        "manipulated": {
+          "records": 505,
+          "claimed": 171,
+          "verdict": {
+            "unsupported": 111,
+            "consistent": 48,
+            "contradicted": 12
+          },
+          "why": {
+            "no_image_evidence": 90,
+            "judge_yes": 48,
+            "image_carries_claim": 12,
+            "judge_no": 12,
+            "comparator_unclear": 9
+          }
+        },
+        "true": {
+          "records": 164,
+          "claimed": 82,
+          "verdict": {
+            "unsupported": 49,
+            "consistent": 27,
+            "contradicted": 6
+          },
+          "why": {
+            "no_image_evidence": 45,
+            "judge_yes": 27,
+            "judge_no": 6,
+            "comparator_unclear": 2,
+            "image_carries_claim": 2
+          }
+        },
+        "ai-generated": {
+          "records": 4,
+          "claimed": 1,
+          "verdict": {
+            "unsupported": 1
+          },
+          "why": {
+            "no_image_evidence": 1
+          }
+        },
+        "unverified": {
+          "records": 2,
+          "claimed": 1,
+          "verdict": {
+            "unsupported": 1
+          },
+          "why": {
+            "no_image_evidence": 1
+          }
+        },
+        "mixture": {
+          "records": 13,
+          "claimed": 10,
+          "verdict": {
+            "consistent": 5,
+            "unsupported": 3,
+            "contradicted": 2
+          },
+          "why": {
+            "judge_yes": 5,
+            "judge_no": 2,
+            "comparator_unclear": 1,
+            "image_carries_claim": 1,
+            "no_image_evidence": 1
+          }
+        }
+      },
+      "people": {
+        "out-of-context": {
+          "records": 1836,
+          "claimed": 552,
+          "verdict": {
+            "unsupported": 498,
+            "consistent": 53,
+            "contradicted": 1
+          },
+          "why": {
+            "name_not_in_gallery": 240,
+            "no_face_in_image": 90,
+            "ambiguous_name": 68,
+            "gallery_reject": 54,
+            "claimed_person_accepted": 53,
+            "no_usable_face": 36,
+            "no_usable_reference": 10,
+            "other_person_confirmed": 1
+          }
+        },
+        "manipulated": {
+          "records": 505,
+          "claimed": 297,
+          "verdict": {
+            "unsupported": 238,
+            "consistent": 59
+          },
+          "why": {
+            "name_not_in_gallery": 129,
+            "claimed_person_accepted": 59,
+            "gallery_reject": 36,
+            "ambiguous_name": 32,
+            "no_face_in_image": 23,
+            "no_usable_face": 14,
+            "no_usable_reference": 2,
+            "other_person_not_confirmed": 2
+          }
+        },
+        "true": {
+          "records": 164,
+          "claimed": 45,
+          "verdict": {
+            "unsupported": 32,
+            "consistent": 13
+          },
+          "why": {
+            "claimed_person_accepted": 13,
+            "name_not_in_gallery": 12,
+            "gallery_reject": 7,
+            "no_face_in_image": 5,
+            "ambiguous_name": 4,
+            "no_usable_face": 4
+          }
+        },
+        "ai-generated": {
+          "records": 4,
+          "claimed": 1,
+          "verdict": {
+            "unsupported": 1
+          },
+          "why": {
+            "no_usable_face": 1
+          }
+        },
+        "unverified": {
+          "records": 2,
+          "claimed": 0,
+          "verdict": {},
+          "why": {}
+        },
+        "mixture": {
+          "records": 13,
+          "claimed": 3,
+          "verdict": {
+            "unsupported": 3
+          },
+          "why": {
+            "ambiguous_name": 1,
+            "gallery_reject": 1,
+            "name_not_in_gallery": 1
+          }
+        }
+      },
+      "date (variant)": {
+        "out-of-context": {
+          "records": 1836,
+          "claimed": 193,
+          "verdict": {
+            "unsupported": 138,
+            "consistent": 35,
+            "contradicted": 20
+          },
+          "why": {
+            "date_not_grounded": 81,
+            "no_image_evidence": 47,
+            "date_overlap": 35,
+            "date_disjoint": 20,
+            "prediction_refused": 8,
+            "image_carries_claim": 2
+          }
+        },
+        "manipulated": {
+          "records": 505,
+          "claimed": 27,
+          "verdict": {
+            "consistent": 12,
+            "unsupported": 12,
+            "contradicted": 3
+          },
+          "why": {
+            "date_overlap": 12,
+            "date_not_grounded": 9,
+            "date_disjoint": 3,
+            "no_image_evidence": 3
+          }
+        },
+        "true": {
+          "records": 164,
+          "claimed": 25,
+          "verdict": {
+            "unsupported": 15,
+            "consistent": 8,
+            "contradicted": 2
+          },
+          "why": {
+            "no_image_evidence": 10,
+            "date_overlap": 8,
+            "date_not_grounded": 5,
+            "date_disjoint": 2
+          }
+        },
+        "ai-generated": {
+          "records": 4,
+          "claimed": 2,
+          "verdict": {
+            "unsupported": 2
+          },
+          "why": {
+            "no_image_evidence": 2
+          }
+        },
+        "unverified": {
+          "records": 2,
+          "claimed": 0,
+          "verdict": {},
+          "why": {}
+        },
+        "mixture": {
+          "records": 13,
+          "claimed": 1,
+          "verdict": {
+            "unsupported": 1
+          },
+          "why": {
+            "date_not_grounded": 1
+          }
+        }
+      },
+      "event (variant)": {
+        "out-of-context": {
+          "records": 1836,
+          "claimed": 1758,
+          "verdict": {
+            "consistent": 659,
+            "contradicted": 557,
+            "unsupported": 542
+          },
+          "why": {
+            "judge_yes": 659,
+            "judge_no": 557,
+            "no_image_evidence": 338,
+            "comparator_unclear": 175,
+            "prediction_refused": 29
+          }
+        },
+        "manipulated": {
+          "records": 505,
+          "claimed": 476,
+          "verdict": {
+            "unsupported": 175,
+            "consistent": 158,
+            "contradicted": 143
+          },
+          "why": {
+            "judge_yes": 158,
+            "judge_no": 143,
+            "no_image_evidence": 115,
+            "comparator_unclear": 52,
+            "prediction_refused": 8
+          }
+        },
+        "true": {
+          "records": 164,
+          "claimed": 148,
+          "verdict": {
+            "unsupported": 68,
+            "contradicted": 44,
+            "consistent": 36
+          },
+          "why": {
+            "no_image_evidence": 52,
+            "judge_no": 44,
+            "judge_yes": 36,
+            "comparator_unclear": 13,
+            "prediction_refused": 3
+          }
+        },
+        "ai-generated": {
+          "records": 4,
+          "claimed": 4,
+          "verdict": {
+            "consistent": 2,
+            "unsupported": 2
+          },
+          "why": {
+            "judge_yes": 2,
+            "no_image_evidence": 2
+          }
+        },
+        "unverified": {
+          "records": 2,
+          "claimed": 2,
+          "verdict": {
+            "contradicted": 2
+          },
+          "why": {
+            "judge_no": 2
+          }
+        },
+        "mixture": {
+          "records": 13,
+          "claimed": 13,
+          "verdict": {
+            "consistent": 7,
+            "contradicted": 3,
+            "unsupported": 3
+          },
+          "why": {
+            "judge_yes": 7,
+            "judge_no": 3,
+            "no_image_evidence": 3
+          }
+        }
+      }
+    },
+    "m4fc train:gold": {
+      "date": {
+        "out-of-context": {
+          "records": 1836,
+          "claimed": 568,
+          "verdict": {
+            "unsupported": 568
+          },
+          "why": {
+            "gate_b_left_out": 395,
+            "no_image_evidence": 158,
+            "prediction_refused": 15
+          }
+        },
+        "manipulated": {
+          "records": 505,
+          "claimed": 72,
+          "verdict": {
+            "unsupported": 72
+          },
+          "why": {
+            "gate_b_left_out": 52,
+            "no_image_evidence": 18,
+            "prediction_refused": 2
+          }
+        },
+        "true": {
+          "records": 164,
+          "claimed": 60,
+          "verdict": {
+            "unsupported": 60
+          },
+          "why": {
+            "gate_b_left_out": 32,
+            "no_image_evidence": 27,
+            "prediction_refused": 1
+          }
+        },
+        "ai-generated": {
+          "records": 4,
+          "claimed": 2,
+          "verdict": {
+            "unsupported": 2
+          },
+          "why": {
+            "no_image_evidence": 2
+          }
+        },
+        "unverified": {
+          "records": 2,
+          "claimed": 1,
+          "verdict": {
+            "unsupported": 1
+          },
+          "why": {
+            "gate_b_left_out": 1
+          }
+        },
+        "mixture": {
+          "records": 13,
+          "claimed": 7,
+          "verdict": {
+            "unsupported": 7
+          },
+          "why": {
+            "gate_b_left_out": 4,
+            "no_image_evidence": 3
+          }
+        }
+      },
+      "event": {
+        "out-of-context": {
+          "records": 1836,
+          "claimed": 1535,
+          "verdict": {
+            "unsupported": 1535
+          },
+          "why": {
+            "gate_a_not_cleared": 1245,
+            "no_image_evidence": 268,
+            "prediction_refused": 22
+          }
+        },
+        "manipulated": {
+          "records": 505,
+          "claimed": 307,
+          "verdict": {
+            "unsupported": 307
+          },
+          "why": {
+            "gate_a_not_cleared": 235,
+            "no_image_evidence": 67,
+            "prediction_refused": 5
+          }
+        },
+        "true": {
+          "records": 164,
+          "claimed": 92,
+          "verdict": {
+            "unsupported": 92
+          },
+          "why": {
+            "gate_a_not_cleared": 65,
+            "no_image_evidence": 24,
+            "prediction_refused": 3
+          }
+        },
+        "ai-generated": {
+          "records": 4,
+          "claimed": 3,
+          "verdict": {
+            "unsupported": 3
+          },
+          "why": {
+            "gate_a_not_cleared": 2,
+            "no_image_evidence": 1
+          }
+        },
+        "unverified": {
+          "records": 2,
+          "claimed": 2,
+          "verdict": {
+            "unsupported": 2
+          },
+          "why": {
+            "gate_a_not_cleared": 2
+          }
+        },
+        "mixture": {
+          "records": 13,
+          "claimed": 12,
+          "verdict": {
+            "unsupported": 12
+          },
+          "why": {
+            "gate_a_not_cleared": 10,
+            "no_image_evidence": 2
+          }
+        }
+      },
+      "location": {
+        "out-of-context": {
+          "records": 1836,
+          "claimed": 1410,
+          "verdict": {
+            "unsupported": 827,
+            "consistent": 438,
+            "contradicted": 145
+          },
+          "why": {
+            "no_image_evidence": 674,
+            "judge_yes": 438,
+            "judge_no": 145,
+            "image_carries_claim": 113,
+            "comparator_unclear": 36,
+            "prediction_refused": 4
+          }
+        },
+        "manipulated": {
+          "records": 505,
+          "claimed": 222,
+          "verdict": {
+            "unsupported": 143,
+            "consistent": 62,
+            "contradicted": 17
+          },
+          "why": {
+            "no_image_evidence": 118,
+            "judge_yes": 62,
+            "judge_no": 17,
+            "image_carries_claim": 15,
+            "comparator_unclear": 8,
+            "prediction_refused": 2
+          }
+        },
+        "true": {
+          "records": 164,
+          "claimed": 103,
+          "verdict": {
+            "unsupported": 59,
+            "consistent": 33,
+            "contradicted": 11
+          },
+          "why": {
+            "no_image_evidence": 55,
+            "judge_yes": 33,
+            "judge_no": 11,
+            "image_carries_claim": 4
+          }
+        },
+        "ai-generated": {
+          "records": 4,
+          "claimed": 2,
+          "verdict": {
+            "contradicted": 1,
+            "unsupported": 1
+          },
+          "why": {
+            "judge_no": 1,
+            "no_image_evidence": 1
+          }
+        },
+        "unverified": {
+          "records": 2,
+          "claimed": 1,
+          "verdict": {
+            "unsupported": 1
+          },
+          "why": {
+            "no_image_evidence": 1
+          }
+        },
+        "mixture": {
+          "records": 13,
+          "claimed": 11,
+          "verdict": {
+            "consistent": 5,
+            "contradicted": 3,
+            "unsupported": 3
+          },
+          "why": {
+            "judge_yes": 5,
+            "judge_no": 3,
+            "no_image_evidence": 2,
+            "image_carries_claim": 1
+          }
+        }
+      },
+      "people": {
+        "out-of-context": {
+          "records": 1836,
+          "claimed": 552,
+          "verdict": {
+            "unsupported": 498,
+            "consistent": 53,
+            "contradicted": 1
+          },
+          "why": {
+            "name_not_in_gallery": 240,
+            "no_face_in_image": 90,
+            "ambiguous_name": 68,
+            "gallery_reject": 54,
+            "claimed_person_accepted": 53,
+            "no_usable_face": 36,
+            "no_usable_reference": 10,
+            "other_person_confirmed": 1
+          }
+        },
+        "manipulated": {
+          "records": 505,
+          "claimed": 297,
+          "verdict": {
+            "unsupported": 238,
+            "consistent": 59
+          },
+          "why": {
+            "name_not_in_gallery": 129,
+            "claimed_person_accepted": 59,
+            "gallery_reject": 36,
+            "ambiguous_name": 32,
+            "no_face_in_image": 23,
+            "no_usable_face": 14,
+            "no_usable_reference": 2,
+            "other_person_not_confirmed": 2
+          }
+        },
+        "true": {
+          "records": 164,
+          "claimed": 45,
+          "verdict": {
+            "unsupported": 32,
+            "consistent": 13
+          },
+          "why": {
+            "claimed_person_accepted": 13,
+            "name_not_in_gallery": 12,
+            "gallery_reject": 7,
+            "no_face_in_image": 5,
+            "ambiguous_name": 4,
+            "no_usable_face": 4
+          }
+        },
+        "ai-generated": {
+          "records": 4,
+          "claimed": 1,
+          "verdict": {
+            "unsupported": 1
+          },
+          "why": {
+            "no_usable_face": 1
+          }
+        },
+        "unverified": {
+          "records": 2,
+          "claimed": 0,
+          "verdict": {},
+          "why": {}
+        },
+        "mixture": {
+          "records": 13,
+          "claimed": 3,
+          "verdict": {
+            "unsupported": 3
+          },
+          "why": {
+            "ambiguous_name": 1,
+            "gallery_reject": 1,
+            "name_not_in_gallery": 1
+          }
+        }
+      },
+      "date (variant)": {
+        "out-of-context": {
+          "records": 1836,
+          "claimed": 568,
+          "verdict": {
+            "unsupported": 428,
+            "consistent": 72,
+            "contradicted": 68
+          },
+          "why": {
+            "date_not_grounded": 248,
+            "no_image_evidence": 158,
+            "date_overlap": 72,
+            "date_disjoint": 68,
+            "prediction_refused": 15,
+            "image_carries_claim": 6,
+            "comparator_unclear": 1
+          }
+        },
+        "manipulated": {
+          "records": 505,
+          "claimed": 72,
+          "verdict": {
+            "unsupported": 42,
+            "consistent": 19,
+            "contradicted": 11
+          },
+          "why": {
+            "date_not_grounded": 22,
+            "date_overlap": 19,
+            "no_image_evidence": 18,
+            "date_disjoint": 11,
+            "prediction_refused": 2
+          }
+        },
+        "true": {
+          "records": 164,
+          "claimed": 60,
+          "verdict": {
+            "unsupported": 40,
+            "consistent": 13,
+            "contradicted": 7
+          },
+          "why": {
+            "no_image_evidence": 27,
+            "date_overlap": 13,
+            "date_not_grounded": 12,
+            "date_disjoint": 7,
+            "prediction_refused": 1
+          }
+        },
+        "ai-generated": {
+          "records": 4,
+          "claimed": 2,
+          "verdict": {
+            "unsupported": 2
+          },
+          "why": {
+            "no_image_evidence": 2
+          }
+        },
+        "unverified": {
+          "records": 2,
+          "claimed": 1,
+          "verdict": {
+            "unsupported": 1
+          },
+          "why": {
+            "date_not_grounded": 1
+          }
+        },
+        "mixture": {
+          "records": 13,
+          "claimed": 7,
+          "verdict": {
+            "unsupported": 7
+          },
+          "why": {
+            "date_not_grounded": 4,
+            "no_image_evidence": 3
+          }
+        }
+      },
+      "event (variant)": {
+        "out-of-context": {
+          "records": 1836,
+          "claimed": 1535,
+          "verdict": {
+            "consistent": 651,
+            "contradicted": 472,
+            "unsupported": 412
+          },
+          "why": {
+            "judge_yes": 651,
+            "judge_no": 472,
+            "no_image_evidence": 268,
+            "comparator_unclear": 122,
+            "prediction_refused": 22
+          }
+        },
+        "manipulated": {
+          "records": 505,
+          "claimed": 307,
+          "verdict": {
+            "consistent": 114,
+            "unsupported": 101,
+            "contradicted": 92
+          },
+          "why": {
+            "judge_yes": 114,
+            "judge_no": 92,
+            "no_image_evidence": 67,
+            "comparator_unclear": 29,
+            "prediction_refused": 5
+          }
+        },
+        "true": {
+          "records": 164,
+          "claimed": 92,
+          "verdict": {
+            "consistent": 35,
+            "unsupported": 30,
+            "contradicted": 27
+          },
+          "why": {
+            "judge_yes": 35,
+            "judge_no": 27,
+            "no_image_evidence": 24,
+            "comparator_unclear": 3,
+            "prediction_refused": 3
+          }
+        },
+        "ai-generated": {
+          "records": 4,
+          "claimed": 3,
+          "verdict": {
+            "consistent": 2,
+            "unsupported": 1
+          },
+          "why": {
+            "judge_yes": 2,
+            "no_image_evidence": 1
+          }
+        },
+        "unverified": {
+          "records": 2,
+          "claimed": 2,
+          "verdict": {
+            "consistent": 1,
+            "contradicted": 1
+          },
+          "why": {
+            "judge_no": 1,
+            "judge_yes": 1
+          }
+        },
+        "mixture": {
+          "records": 13,
+          "claimed": 12,
+          "verdict": {
+            "consistent": 7,
+            "contradicted": 3,
+            "unsupported": 2
+          },
+          "why": {
+            "judge_yes": 7,
+            "judge_no": 3,
+            "no_image_evidence": 2
+          }
+        }
+      }
+    },
+    "m4fc val:extracted": {
+      "date": {
+        "out-of-context": {
+          "records": 342,
+          "claimed": 59,
+          "verdict": {
+            "unsupported": 59
+          },
+          "why": {
+            "gate_b_left_out": 49,
+            "no_image_evidence": 9,
+            "prediction_refused": 1
+          }
+        },
+        "manipulated": {
+          "records": 118,
+          "claimed": 7,
+          "verdict": {
+            "unsupported": 7
+          },
+          "why": {
+            "gate_b_left_out": 4,
+            "no_image_evidence": 2,
+            "prediction_refused": 1
+          }
+        },
+        "true": {
+          "records": 31,
+          "claimed": 4,
+          "verdict": {
+            "unsupported": 4
+          },
+          "why": {
+            "no_image_evidence": 3,
+            "gate_b_left_out": 1
+          }
+        },
+        "ai-generated": {
+          "records": 5,
+          "claimed": 0,
+          "verdict": {},
+          "why": {}
+        },
+        "unverified": {
+          "records": 1,
+          "claimed": 0,
+          "verdict": {},
+          "why": {}
+        }
+      },
+      "event": {
+        "out-of-context": {
+          "records": 342,
+          "claimed": 323,
+          "verdict": {
+            "unsupported": 323
+          },
+          "why": {
+            "gate_a_not_cleared": 265,
+            "no_image_evidence": 54,
+            "prediction_refused": 4
+          }
+        },
+        "manipulated": {
+          "records": 118,
+          "claimed": 113,
+          "verdict": {
+            "unsupported": 113
+          },
+          "why": {
+            "gate_a_not_cleared": 83,
+            "no_image_evidence": 29,
+            "prediction_refused": 1
+          }
+        },
+        "true": {
+          "records": 31,
+          "claimed": 29,
+          "verdict": {
+            "unsupported": 29
+          },
+          "why": {
+            "no_image_evidence": 15,
+            "gate_a_not_cleared": 13,
+            "prediction_refused": 1
+          }
+        },
+        "ai-generated": {
+          "records": 5,
+          "claimed": 5,
+          "verdict": {
+            "unsupported": 5
+          },
+          "why": {
+            "gate_a_not_cleared": 4,
+            "no_image_evidence": 1
+          }
+        },
+        "unverified": {
+          "records": 1,
+          "claimed": 1,
+          "verdict": {
+            "unsupported": 1
+          },
+          "why": {
+            "prediction_refused": 1
+          }
+        }
+      },
+      "location": {
+        "out-of-context": {
+          "records": 342,
+          "claimed": 242,
+          "verdict": {
+            "unsupported": 123,
+            "consistent": 93,
+            "contradicted": 26
+          },
+          "why": {
+            "judge_yes": 93,
+            "no_image_evidence": 86,
+            "judge_no": 26,
+            "image_carries_claim": 22,
+            "comparator_unclear": 14,
+            "prediction_refused": 1
+          }
+        },
+        "manipulated": {
+          "records": 118,
+          "claimed": 42,
+          "verdict": {
+            "unsupported": 22,
+            "consistent": 16,
+            "contradicted": 4
+          },
+          "why": {
+            "no_image_evidence": 18,
+            "judge_yes": 16,
+            "judge_no": 4,
+            "comparator_unclear": 3,
+            "image_carries_claim": 1
+          }
+        },
+        "true": {
+          "records": 31,
+          "claimed": 16,
+          "verdict": {
+            "unsupported": 12,
+            "consistent": 2,
+            "contradicted": 2
+          },
+          "why": {
+            "no_image_evidence": 12,
+            "judge_no": 2,
+            "judge_yes": 2
+          }
+        },
+        "ai-generated": {
+          "records": 5,
+          "claimed": 2,
+          "verdict": {
+            "consistent": 1,
+            "unsupported": 1
+          },
+          "why": {
+            "image_carries_claim": 1,
+            "judge_yes": 1
+          }
+        },
+        "unverified": {
+          "records": 1,
+          "claimed": 1,
+          "verdict": {
+            "unsupported": 1
+          },
+          "why": {
+            "no_image_evidence": 1
+          }
+        }
+      },
+      "people": {
+        "out-of-context": {
+          "records": 342,
+          "claimed": 99,
+          "verdict": {
+            "unsupported": 83,
+            "consistent": 16
+          },
+          "why": {
+            "name_not_in_gallery": 36,
+            "claimed_person_accepted": 16,
+            "gallery_reject": 15,
+            "no_face_in_image": 13,
+            "ambiguous_name": 11,
+            "no_usable_face": 5,
+            "no_usable_reference": 2,
+            "other_person_not_confirmed": 1
+          }
+        },
+        "manipulated": {
+          "records": 118,
+          "claimed": 81,
+          "verdict": {
+            "unsupported": 70,
+            "consistent": 11
+          },
+          "why": {
+            "name_not_in_gallery": 37,
+            "claimed_person_accepted": 11,
+            "ambiguous_name": 10,
+            "gallery_reject": 10,
+            "no_face_in_image": 7,
+            "no_usable_face": 6
+          }
+        },
+        "true": {
+          "records": 31,
+          "claimed": 10,
+          "verdict": {
+            "unsupported": 7,
+            "consistent": 3
+          },
+          "why": {
+            "claimed_person_accepted": 3,
+            "no_face_in_image": 3,
+            "name_not_in_gallery": 2,
+            "gallery_reject": 1,
+            "no_usable_face": 1
+          }
+        },
+        "ai-generated": {
+          "records": 5,
+          "claimed": 4,
+          "verdict": {
+            "unsupported": 3,
+            "consistent": 1
+          },
+          "why": {
+            "no_face_in_image": 2,
+            "claimed_person_accepted": 1,
+            "gallery_reject": 1
+          }
+        },
+        "unverified": {
+          "records": 1,
+          "claimed": 0,
+          "verdict": {},
+          "why": {}
+        }
+      },
+      "date (variant)": {
+        "out-of-context": {
+          "records": 342,
+          "claimed": 59,
+          "verdict": {
+            "unsupported": 45,
+            "consistent": 9,
+            "contradicted": 5
+          },
+          "why": {
+            "date_not_grounded": 34,
+            "date_overlap": 9,
+            "no_image_evidence": 9,
+            "date_disjoint": 5,
+            "image_carries_claim": 1,
+            "prediction_refused": 1
+          }
+        },
+        "manipulated": {
+          "records": 118,
+          "claimed": 7,
+          "verdict": {
+            "unsupported": 4,
+            "contradicted": 2,
+            "consistent": 1
+          },
+          "why": {
+            "date_disjoint": 2,
+            "no_image_evidence": 2,
+            "date_overlap": 1,
+            "image_carries_claim": 1,
+            "prediction_refused": 1
+          }
+        },
+        "true": {
+          "records": 31,
+          "claimed": 4,
+          "verdict": {
+            "unsupported": 3,
+            "consistent": 1
+          },
+          "why": {
+            "no_image_evidence": 3,
+            "date_overlap": 1
+          }
+        },
+        "ai-generated": {
+          "records": 5,
+          "claimed": 0,
+          "verdict": {},
+          "why": {}
+        },
+        "unverified": {
+          "records": 1,
+          "claimed": 0,
+          "verdict": {},
+          "why": {}
+        }
+      },
+      "event (variant)": {
+        "out-of-context": {
+          "records": 342,
+          "claimed": 323,
+          "verdict": {
+            "consistent": 139,
+            "contradicted": 97,
+            "unsupported": 87
+          },
+          "why": {
+            "judge_yes": 139,
+            "judge_no": 97,
+            "no_image_evidence": 54,
+            "comparator_unclear": 29,
+            "prediction_refused": 4
+          }
+        },
+        "manipulated": {
+          "records": 118,
+          "claimed": 113,
+          "verdict": {
+            "contradicted": 43,
+            "unsupported": 38,
+            "consistent": 32
+          },
+          "why": {
+            "judge_no": 43,
+            "judge_yes": 32,
+            "no_image_evidence": 29,
+            "comparator_unclear": 8,
+            "prediction_refused": 1
+          }
+        },
+        "true": {
+          "records": 31,
+          "claimed": 29,
+          "verdict": {
+            "unsupported": 16,
+            "contradicted": 8,
+            "consistent": 5
+          },
+          "why": {
+            "no_image_evidence": 15,
+            "judge_no": 8,
+            "judge_yes": 5,
+            "prediction_refused": 1
+          }
+        },
+        "ai-generated": {
+          "records": 5,
+          "claimed": 5,
+          "verdict": {
+            "consistent": 3,
+            "unsupported": 2
+          },
+          "why": {
+            "judge_yes": 3,
+            "comparator_unclear": 1,
+            "no_image_evidence": 1
+          }
+        },
+        "unverified": {
+          "records": 1,
+          "claimed": 1,
+          "verdict": {
+            "unsupported": 1
+          },
+          "why": {
+            "prediction_refused": 1
+          }
+        }
+      }
+    },
+    "m4fc val:gold": {
+      "date": {
+        "out-of-context": {
+          "records": 342,
+          "claimed": 136,
+          "verdict": {
+            "unsupported": 136
+          },
+          "why": {
+            "gate_b_left_out": 105,
+            "no_image_evidence": 25,
+            "prediction_refused": 6
+          }
+        },
+        "manipulated": {
+          "records": 118,
+          "claimed": 33,
+          "verdict": {
+            "unsupported": 33
+          },
+          "why": {
+            "gate_b_left_out": 22,
+            "no_image_evidence": 11
+          }
+        },
+        "true": {
+          "records": 31,
+          "claimed": 17,
+          "verdict": {
+            "unsupported": 17
+          },
+          "why": {
+            "no_image_evidence": 12,
+            "gate_b_left_out": 3,
+            "prediction_refused": 2
+          }
+        },
+        "ai-generated": {
+          "records": 5,
+          "claimed": 1,
+          "verdict": {
+            "unsupported": 1
+          },
+          "why": {
+            "gate_b_left_out": 1
+          }
+        },
+        "unverified": {
+          "records": 1,
+          "claimed": 0,
+          "verdict": {},
+          "why": {}
+        }
+      },
+      "event": {
+        "out-of-context": {
+          "records": 342,
+          "claimed": 288,
+          "verdict": {
+            "unsupported": 288
+          },
+          "why": {
+            "gate_a_not_cleared": 244,
+            "no_image_evidence": 41,
+            "prediction_refused": 3
+          }
+        },
+        "manipulated": {
+          "records": 118,
+          "claimed": 77,
+          "verdict": {
+            "unsupported": 77
+          },
+          "why": {
+            "gate_a_not_cleared": 57,
+            "no_image_evidence": 19,
+            "prediction_refused": 1
+          }
+        },
+        "true": {
+          "records": 31,
+          "claimed": 24,
+          "verdict": {
+            "unsupported": 24
+          },
+          "why": {
+            "no_image_evidence": 14,
+            "gate_a_not_cleared": 9,
+            "prediction_refused": 1
+          }
+        },
+        "ai-generated": {
+          "records": 5,
+          "claimed": 2,
+          "verdict": {
+            "unsupported": 2
+          },
+          "why": {
+            "gate_a_not_cleared": 2
+          }
+        },
+        "unverified": {
+          "records": 1,
+          "claimed": 1,
+          "verdict": {
+            "unsupported": 1
+          },
+          "why": {
+            "prediction_refused": 1
+          }
+        }
+      },
+      "location": {
+        "out-of-context": {
+          "records": 342,
+          "claimed": 287,
+          "verdict": {
+            "unsupported": 145,
+            "consistent": 118,
+            "contradicted": 24
+          },
+          "why": {
+            "judge_yes": 118,
+            "no_image_evidence": 116,
+            "judge_no": 24,
+            "image_carries_claim": 21,
+            "comparator_unclear": 7,
+            "prediction_refused": 1
+          }
+        },
+        "manipulated": {
+          "records": 118,
+          "claimed": 57,
+          "verdict": {
+            "unsupported": 30,
+            "consistent": 19,
+            "contradicted": 8
+          },
+          "why": {
+            "no_image_evidence": 25,
+            "judge_yes": 19,
+            "judge_no": 8,
+            "comparator_unclear": 4,
+            "prediction_refused": 1
+          }
+        },
+        "true": {
+          "records": 31,
+          "claimed": 25,
+          "verdict": {
+            "unsupported": 18,
+            "consistent": 6,
+            "contradicted": 1
+          },
+          "why": {
+            "no_image_evidence": 18,
+            "judge_yes": 6,
+            "judge_no": 1
+          }
+        },
+        "ai-generated": {
+          "records": 5,
+          "claimed": 2,
+          "verdict": {
+            "consistent": 1,
+            "unsupported": 1
+          },
+          "why": {
+            "image_carries_claim": 1,
+            "judge_yes": 1
+          }
+        },
+        "unverified": {
+          "records": 1,
+          "claimed": 1,
+          "verdict": {
+            "unsupported": 1
+          },
+          "why": {
+            "no_image_evidence": 1
+          }
+        }
+      },
+      "people": {
+        "out-of-context": {
+          "records": 342,
+          "claimed": 99,
+          "verdict": {
+            "unsupported": 83,
+            "consistent": 16
+          },
+          "why": {
+            "name_not_in_gallery": 36,
+            "claimed_person_accepted": 16,
+            "gallery_reject": 15,
+            "no_face_in_image": 13,
+            "ambiguous_name": 11,
+            "no_usable_face": 5,
+            "no_usable_reference": 2,
+            "other_person_not_confirmed": 1
+          }
+        },
+        "manipulated": {
+          "records": 118,
+          "claimed": 81,
+          "verdict": {
+            "unsupported": 70,
+            "consistent": 11
+          },
+          "why": {
+            "name_not_in_gallery": 37,
+            "claimed_person_accepted": 11,
+            "ambiguous_name": 10,
+            "gallery_reject": 10,
+            "no_face_in_image": 7,
+            "no_usable_face": 6
+          }
+        },
+        "true": {
+          "records": 31,
+          "claimed": 10,
+          "verdict": {
+            "unsupported": 7,
+            "consistent": 3
+          },
+          "why": {
+            "claimed_person_accepted": 3,
+            "no_face_in_image": 3,
+            "name_not_in_gallery": 2,
+            "gallery_reject": 1,
+            "no_usable_face": 1
+          }
+        },
+        "ai-generated": {
+          "records": 5,
+          "claimed": 4,
+          "verdict": {
+            "unsupported": 3,
+            "consistent": 1
+          },
+          "why": {
+            "no_face_in_image": 2,
+            "claimed_person_accepted": 1,
+            "gallery_reject": 1
+          }
+        },
+        "unverified": {
+          "records": 1,
+          "claimed": 0,
+          "verdict": {},
+          "why": {}
+        }
+      },
+      "date (variant)": {
+        "out-of-context": {
+          "records": 342,
+          "claimed": 136,
+          "verdict": {
+            "unsupported": 101,
+            "contradicted": 18,
+            "consistent": 17
+          },
+          "why": {
+            "date_not_grounded": 68,
+            "no_image_evidence": 25,
+            "date_disjoint": 18,
+            "date_overlap": 17,
+            "prediction_refused": 6,
+            "image_carries_claim": 2
+          }
+        },
+        "manipulated": {
+          "records": 118,
+          "claimed": 33,
+          "verdict": {
+            "unsupported": 24,
+            "consistent": 6,
+            "contradicted": 3
+          },
+          "why": {
+            "date_not_grounded": 12,
+            "no_image_evidence": 11,
+            "date_overlap": 6,
+            "date_disjoint": 3,
+            "image_carries_claim": 1
+          }
+        },
+        "true": {
+          "records": 31,
+          "claimed": 17,
+          "verdict": {
+            "unsupported": 15,
+            "contradicted": 2
+          },
+          "why": {
+            "no_image_evidence": 12,
+            "date_disjoint": 2,
+            "prediction_refused": 2,
+            "date_not_grounded": 1
+          }
+        },
+        "ai-generated": {
+          "records": 5,
+          "claimed": 1,
+          "verdict": {
+            "consistent": 1
+          },
+          "why": {
+            "date_overlap": 1
+          }
+        },
+        "unverified": {
+          "records": 1,
+          "claimed": 0,
+          "verdict": {},
+          "why": {}
+        }
+      },
+      "event (variant)": {
+        "out-of-context": {
+          "records": 342,
+          "claimed": 288,
+          "verdict": {
+            "consistent": 128,
+            "contradicted": 91,
+            "unsupported": 69
+          },
+          "why": {
+            "judge_yes": 128,
+            "judge_no": 91,
+            "no_image_evidence": 41,
+            "comparator_unclear": 25,
+            "prediction_refused": 3
+          }
+        },
+        "manipulated": {
+          "records": 118,
+          "claimed": 77,
+          "verdict": {
+            "consistent": 33,
+            "contradicted": 23,
+            "unsupported": 21
+          },
+          "why": {
+            "judge_yes": 33,
+            "judge_no": 23,
+            "no_image_evidence": 19,
+            "comparator_unclear": 1,
+            "prediction_refused": 1
+          }
+        },
+        "true": {
+          "records": 31,
+          "claimed": 24,
+          "verdict": {
+            "unsupported": 15,
+            "contradicted": 6,
+            "consistent": 3
+          },
+          "why": {
+            "no_image_evidence": 14,
+            "judge_no": 6,
+            "judge_yes": 3,
+            "prediction_refused": 1
+          }
+        },
+        "ai-generated": {
+          "records": 5,
+          "claimed": 2,
+          "verdict": {
+            "consistent": 1,
+            "unsupported": 1
+          },
+          "why": {
+            "comparator_unclear": 1,
+            "judge_yes": 1
+          }
+        },
+        "unverified": {
+          "records": 1,
+          "claimed": 1,
+          "verdict": {
+            "unsupported": 1
+          },
+          "why": {
+            "prediction_refused": 1
+          }
+        }
+      }
+    },
+    "verite:extracted": {
+      "date": {
+        "true": {
+          "records": 289,
+          "claimed": 195,
+          "verdict": {
+            "unsupported": 195
+          },
+          "why": {
+            "no_image_evidence": 185,
+            "gate_b_left_out": 10
+          }
+        },
+        "miscaptioned": {
+          "records": 289,
+          "claimed": 160,
+          "verdict": {
+            "unsupported": 160
+          },
+          "why": {
+            "no_image_evidence": 152,
+            "gate_b_left_out": 8
+          }
+        },
+        "out-of-context": {
+          "records": 299,
+          "claimed": 203,
+          "verdict": {
+            "unsupported": 203
+          },
+          "why": {
+            "no_image_evidence": 195,
+            "gate_b_left_out": 8
+          }
+        }
+      },
+      "event": {
+        "true": {
+          "records": 289,
+          "claimed": 282,
+          "verdict": {
+            "unsupported": 282
+          },
+          "why": {
+            "gate_a_not_cleared": 200,
+            "no_image_evidence": 77,
+            "prediction_refused": 5
+          }
+        },
+        "miscaptioned": {
+          "records": 289,
+          "claimed": 285,
+          "verdict": {
+            "unsupported": 285
+          },
+          "why": {
+            "gate_a_not_cleared": 199,
+            "no_image_evidence": 81,
+            "prediction_refused": 5
+          }
+        },
+        "out-of-context": {
+          "records": 299,
+          "claimed": 291,
+          "verdict": {
+            "unsupported": 291
+          },
+          "why": {
+            "gate_a_not_cleared": 200,
+            "no_image_evidence": 85,
+            "prediction_refused": 6
+          }
+        }
+      },
+      "location": {
+        "true": {
+          "records": 289,
+          "claimed": 168,
+          "verdict": {
+            "unsupported": 139,
+            "consistent": 23,
+            "contradicted": 6
+          },
+          "why": {
+            "no_image_evidence": 129,
+            "judge_yes": 23,
+            "comparator_unclear": 10,
+            "judge_no": 6
+          }
+        },
+        "miscaptioned": {
+          "records": 289,
+          "claimed": 152,
+          "verdict": {
+            "unsupported": 131,
+            "consistent": 12,
+            "contradicted": 9
+          },
+          "why": {
+            "no_image_evidence": 118,
+            "comparator_unclear": 12,
+            "judge_yes": 12,
+            "judge_no": 9,
+            "image_carries_claim": 1
+          }
+        },
+        "out-of-context": {
+          "records": 299,
+          "claimed": 183,
+          "verdict": {
+            "unsupported": 157,
+            "contradicted": 21,
+            "consistent": 5
+          },
+          "why": {
+            "no_image_evidence": 150,
+            "judge_no": 21,
+            "comparator_unclear": 7,
+            "judge_yes": 5
+          }
+        }
+      },
+      "people": {
+        "true": {
+          "records": 289,
+          "claimed": 106,
+          "verdict": {
+            "unsupported": 87,
+            "consistent": 19
+          },
+          "why": {
+            "name_not_in_gallery": 21,
+            "gallery_reject": 20,
+            "claimed_person_accepted": 19,
+            "no_face_in_image": 17,
+            "ambiguous_name": 14,
+            "no_usable_reference": 10,
+            "no_usable_face": 5
+          }
+        },
+        "miscaptioned": {
+          "records": 289,
+          "claimed": 105,
+          "verdict": {
+            "unsupported": 88,
+            "consistent": 17
+          },
+          "why": {
+            "gallery_reject": 29,
+            "no_face_in_image": 24,
+            "ambiguous_name": 18,
+            "claimed_person_accepted": 17,
+            "name_not_in_gallery": 9,
+            "no_usable_face": 4,
+            "no_usable_reference": 4
+          }
+        },
+        "out-of-context": {
+          "records": 299,
+          "claimed": 106,
+          "verdict": {
+            "unsupported": 85,
+            "consistent": 18,
+            "contradicted": 3
+          },
+          "why": {
+            "name_not_in_gallery": 23,
+            "gallery_reject": 22,
+            "claimed_person_accepted": 18,
+            "ambiguous_name": 13,
+            "no_face_in_image": 13,
+            "no_usable_reference": 8,
+            "no_usable_face": 6,
+            "other_person_confirmed": 3
+          }
+        }
+      },
+      "date (variant)": {
+        "true": {
+          "records": 289,
+          "claimed": 195,
+          "verdict": {
+            "unsupported": 189,
+            "consistent": 3,
+            "contradicted": 3
+          },
+          "why": {
+            "no_image_evidence": 185,
+            "date_disjoint": 3,
+            "date_not_grounded": 3,
+            "date_overlap": 3,
+            "image_carries_claim": 1
+          }
+        },
+        "miscaptioned": {
+          "records": 289,
+          "claimed": 160,
+          "verdict": {
+            "unsupported": 156,
+            "consistent": 3,
+            "contradicted": 1
+          },
+          "why": {
+            "no_image_evidence": 152,
+            "date_not_grounded": 3,
+            "date_overlap": 3,
+            "date_disjoint": 1,
+            "image_carries_claim": 1
+          }
+        },
+        "out-of-context": {
+          "records": 299,
+          "claimed": 203,
+          "verdict": {
+            "unsupported": 197,
+            "contradicted": 6
+          },
+          "why": {
+            "no_image_evidence": 195,
+            "date_disjoint": 6,
+            "date_not_grounded": 2
+          }
+        }
+      },
+      "event (variant)": {
+        "true": {
+          "records": 289,
+          "claimed": 282,
+          "verdict": {
+            "consistent": 105,
+            "unsupported": 99,
+            "contradicted": 78
+          },
+          "why": {
+            "judge_yes": 105,
+            "judge_no": 78,
+            "no_image_evidence": 77,
+            "comparator_unclear": 17,
+            "prediction_refused": 5
+          }
+        },
+        "miscaptioned": {
+          "records": 289,
+          "claimed": 285,
+          "verdict": {
+            "unsupported": 106,
+            "contradicted": 101,
+            "consistent": 78
+          },
+          "why": {
+            "judge_no": 101,
+            "no_image_evidence": 81,
+            "judge_yes": 78,
+            "comparator_unclear": 20,
+            "prediction_refused": 5
+          }
+        },
+        "out-of-context": {
+          "records": 299,
+          "claimed": 291,
+          "verdict": {
+            "unsupported": 113,
+            "contradicted": 90,
+            "consistent": 88
+          },
+          "why": {
+            "judge_no": 90,
+            "judge_yes": 88,
+            "no_image_evidence": 85,
+            "comparator_unclear": 22,
+            "prediction_refused": 6
+          }
+        }
+      }
+    }
+  },
+  "image_carries_claim": {
+    "rule": "widened",
+    "train": {
+      "records": 2524,
+      "changed": {
+        "location": {
+          "out-of-context: was consistent": 113,
+          "manipulated: was consistent": 12,
+          "out-of-context: was contradicted": 7,
+          "mixture: was consistent": 1,
+          "true: was consistent": 1,
+          "true: was contradicted": 1
+        },
+        "variant:date": {
+          "out-of-context: was consistent": 2
+        }
+      },
+      "widening_changed": {
+        "location": {
+          "out-of-context: was consistent": 107,
+          "manipulated: was consistent": 12,
+          "out-of-context: was contradicted": 7,
+          "mixture: was consistent": 1,
+          "true: was consistent": 1,
+          "true: was contradicted": 1
+        }
+      },
+      "scores": {
+        "primary": {
+          "with": {
+            "auroc": 0.5231,
+            "threshold": 0.029264,
+            "balanced_accuracy": 0.5314,
+            "abstained": {
+              "k": 1845,
+              "n": 2524,
+              "rate": 0.731,
+              "wilson95": [
+                0.7133,
+                0.7479
+              ]
+            }
+          },
+          "narrow": {
+            "auroc": 0.5443,
+            "threshold": 0.025825,
+            "balanced_accuracy": 0.5522,
+            "abstained": {
+              "k": 1717,
+              "n": 2524,
+              "rate": 0.6803,
+              "wilson95": [
+                0.6618,
+                0.6982
+              ]
+            }
+          },
+          "without": {
+            "auroc": 0.5456,
+            "threshold": 0.015863,
+            "balanced_accuracy": 0.5537,
+            "abstained": {
+              "k": 1711,
+              "n": 2524,
+              "rate": 0.6779,
+              "wilson95": [
+                0.6594,
+                0.6958
+              ]
+            }
+          }
+        },
+        "with_event": {
+          "with": {
+            "auroc": 0.5695,
+            "threshold": 0.051728,
+            "balanced_accuracy": 0.592,
+            "abstained": {
+              "k": 763,
+              "n": 2524,
+              "rate": 0.3023,
+              "wilson95": [
+                0.2847,
+                0.3205
+              ]
+            }
+          },
+          "narrow": {
+            "auroc": 0.5721,
+            "threshold": 0.051728,
+            "balanced_accuracy": 0.5936,
+            "abstained": {
+              "k": 747,
+              "n": 2524,
+              "rate": 0.296,
+              "wilson95": [
+                0.2785,
+                0.3141
+              ]
+            }
+          },
+          "without": {
+            "auroc": 0.5723,
+            "threshold": 0.051728,
+            "balanced_accuracy": 0.5936,
+            "abstained": {
+              "k": 746,
+              "n": 2524,
+              "rate": 0.2956,
+              "wilson95": [
+                0.2781,
+                0.3137
+              ]
+            }
+          }
+        },
+        "with_grounded_date": {
+          "with": {
+            "auroc": 0.5237,
+            "threshold": 0.029264,
+            "balanced_accuracy": 0.5321,
+            "abstained": {
+              "k": 1800,
+              "n": 2524,
+              "rate": 0.7132,
+              "wilson95": [
+                0.6952,
+                0.7305
+              ]
+            }
+          },
+          "narrow": {
+            "auroc": 0.5437,
+            "threshold": 0.025825,
+            "balanced_accuracy": 0.5521,
+            "abstained": {
+              "k": 1684,
+              "n": 2524,
+              "rate": 0.6672,
+              "wilson95": [
+                0.6486,
+                0.6853
+              ]
+            }
+          },
+          "without": {
+            "auroc": 0.5451,
+            "threshold": 0.025825,
+            "balanced_accuracy": 0.5535,
+            "abstained": {
+              "k": 1676,
+              "n": 2524,
+              "rate": 0.664,
+              "wilson95": [
+                0.6454,
+                0.6822
+              ]
+            }
+          }
+        }
+      }
+    },
+    "applied_unchanged": {
+      "m4fc val": {
+        "records": 497,
+        "changed": {
+          "location": {
+            "out-of-context: was consistent": 22,
+            "ai-generated: was consistent": 1,
+            "manipulated: was consistent": 1
+          },
+          "variant:date": {
+            "manipulated: was consistent": 1,
+            "out-of-context: was consistent": 1
+          }
+        },
+        "widening_changed": {
+          "location": {
+            "out-of-context: was consistent": 21,
+            "ai-generated: was consistent": 1
+          }
+        },
+        "primary_auroc": {
+          "false (out-of-context) vs true": {
+            "with": 0.6044,
+            "narrow": 0.6328,
+            "without": 0.6341
+          }
+        }
+      },
+      "verite": {
+        "records": 877,
+        "changed": {
+          "location": {
+            "miscaptioned: was consistent": 1
+          },
+          "variant:date": {
+            "miscaptioned: was consistent": 1,
+            "true: was consistent": 1
+          }
+        },
+        "widening_changed": {
+          "location": {
+            "miscaptioned: was consistent": 1
+          }
+        },
+        "primary_auroc": {
+          "out-of-context vs true": {
+            "with": 0.5004,
+            "narrow": 0.5004,
+            "without": 0.5004
+          },
+          "miscaptioned vs true": {
+            "with": 0.4875,
+            "narrow": 0.489,
+            "without": 0.489
+          }
+        }
+      }
+    }
+  },
+  "fused": {
+    "model": {
+      "features": [
+        "clip_similarity",
+        "consistency_score",
+        "decided"
+      ],
+      "from": "extracted:primary",
+      "fitted_on": "m4fc train, true vs out-of-context",
+      "class_weight": "balanced",
+      "l2": 1.0,
+      "records": {
+        "true": 164,
+        "out_of_context": 1836
+      },
+      "mean": [
+        0.2979101119999996,
+        0.07511956100000006,
+        0.2775
+      ],
+      "std": [
+        0.041853151539584875,
+        0.18152505921491516,
+        0.4477652844962473
+      ],
+      "intercept": 0.05505613025400663,
+      "coef": [
+        -0.3295797356373538,
+        0.15477943588920132,
+        -0.08766243660229016
+      ],
+      "iterations": 5,
+      "converged": true,
+      "coef_raw_units": [
+        -7.874669493541867,
+        0.8526615364215441,
+        -0.19577765324284502
+      ]
+    },
+    "threshold": {
+      "threshold": 0.512272,
+      "balanced_accuracy": 0.582,
+      "true": 164,
+      "out_of_context": 1836
+    },
+    "train_auroc": {
+      "fused": 0.5987,
+      "clip": 0.5992
+    },
+    "corpora": {
+      "m4fc": {
+        "records": 497,
+        "coverage": {
+          "k": 173,
+          "n": 497,
+          "rate": 0.3481,
+          "wilson95": [
+            0.3075,
+            0.391
+          ]
+        },
+        "auroc": [
+          {
+            "records": 373,
+            "clusters": 373,
+            "positive": "false (out-of-context)",
+            "negative": "true",
+            "auroc_fused": 0.5072,
+            "auroc_clip": 0.5121,
+            "delta": -0.0049,
+            "delta_ci95": [
+              -0.0577,
+              0.0372
+            ],
+            "resamples": 2000,
+            "excludes_zero": false,
+            "coverage": {
+              "k": 140,
+              "n": 373,
+              "rate": 0.3753,
+              "wilson95": [
+                0.3277,
+                0.4255
+              ]
+            }
+          }
+        ],
+        "auroc_decided": [
+          {
+            "records": 140,
+            "clusters": 140,
+            "positive": "false (out-of-context)",
+            "negative": "true",
+            "auroc_fused": 0.5822,
+            "auroc_clip": 0.6058,
+            "delta": -0.0236,
+            "delta_ci95": [
+              -0.2352,
+              0.1617
+            ],
+            "resamples": 1998,
+            "excludes_zero": false,
+            "coverage": {
+              "k": 140,
+              "n": 373,
+              "rate": 0.3753,
+              "wilson95": [
+                0.3277,
+                0.4255
+              ]
+            }
+          }
+        ],
+        "by_class": {
+          "ai-generated": {
+            "fused": {
+              "records": 5,
+              "flagged": {
+                "k": 1,
+                "n": 5,
+                "rate": 0.2,
+                "wilson95": [
+                  0.0362,
+                  0.6245
+                ]
+              }
+            },
+            "clip": {
+              "records": 5,
+              "flagged": {
+                "k": 1,
+                "n": 5,
+                "rate": 0.2,
+                "wilson95": [
+                  0.0362,
+                  0.6245
+                ]
+              }
+            },
+            "fused_flags_on_similarity_alone": {
+              "k": 1,
+              "n": 1,
+              "rate": 1.0,
+              "wilson95": [
+                0.2065,
+                1.0
+              ]
+            }
+          },
+          "manipulated": {
+            "fused": {
+              "records": 118,
+              "flagged": {
+                "k": 50,
+                "n": 118,
+                "rate": 0.4237,
+                "wilson95": [
+                  0.3384,
+                  0.5139
+                ]
+              }
+            },
+            "clip": {
+              "records": 118,
+              "flagged": {
+                "k": 49,
+                "n": 118,
+                "rate": 0.4153,
+                "wilson95": [
+                  0.3304,
+                  0.5055
+                ]
+              }
+            },
+            "fused_flags_on_similarity_alone": {
+              "k": 38,
+              "n": 50,
+              "rate": 0.76,
+              "wilson95": [
+                0.6259,
+                0.857
+              ]
+            }
+          },
+          "out-of-context": {
+            "fused": {
+              "records": 342,
+              "flagged": {
+                "k": 141,
+                "n": 342,
+                "rate": 0.4123,
+                "wilson95": [
+                  0.3614,
+                  0.4651
+                ]
+              }
+            },
+            "clip": {
+              "records": 342,
+              "flagged": {
+                "k": 147,
+                "n": 342,
+                "rate": 0.4298,
+                "wilson95": [
+                  0.3784,
+                  0.4828
+                ]
+              }
+            },
+            "fused_flags_on_similarity_alone": {
+              "k": 91,
+              "n": 141,
+              "rate": 0.6454,
+              "wilson95": [
+                0.5635,
+                0.7195
+              ]
+            }
+          },
+          "true": {
+            "fused": {
+              "records": 31,
+              "flagged": {
+                "k": 15,
+                "n": 31,
+                "rate": 0.4839,
+                "wilson95": [
+                  0.3197,
+                  0.6516
+                ]
+              }
+            },
+            "clip": {
+              "records": 31,
+              "flagged": {
+                "k": 13,
+                "n": 31,
+                "rate": 0.4194,
+                "wilson95": [
+                  0.2642,
+                  0.5923
+                ]
+              }
+            },
+            "fused_flags_on_similarity_alone": {
+              "k": 12,
+              "n": 15,
+              "rate": 0.8,
+              "wilson95": [
+                0.5481,
+                0.9295
+              ]
+            }
+          },
+          "unverified": {
+            "fused": {
+              "records": 1,
+              "flagged": {
+                "k": 0,
+                "n": 1,
+                "rate": 0.0,
+                "wilson95": [
+                  0.0,
+                  0.7935
+                ]
+              }
+            },
+            "clip": {
+              "records": 1,
+              "flagged": {
+                "k": 0,
+                "n": 1,
+                "rate": 0.0,
+                "wilson95": [
+                  0.0,
+                  0.7935
+                ]
+              }
+            },
+            "fused_flags_on_similarity_alone": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "wilson95": null
+            }
+          }
+        }
+      },
+      "verite": {
+        "records": 877,
+        "coverage": {
+          "k": 132,
+          "n": 877,
+          "rate": 0.1505,
+          "wilson95": [
+            0.1284,
+            0.1757
+          ]
+        },
+        "auroc": [
+          {
+            "records": 588,
+            "clusters": 332,
+            "positive": "out-of-context",
+            "negative": "true",
+            "auroc_fused": 0.758,
+            "auroc_clip": 0.7527,
+            "delta": 0.0053,
+            "delta_ci95": [
+              -0.0065,
+              0.0177
+            ],
+            "resamples": 2000,
+            "excludes_zero": false,
+            "coverage": {
+              "k": 94,
+              "n": 588,
+              "rate": 0.1599,
+              "wilson95": [
+                0.1325,
+                0.1917
+              ]
+            }
+          },
+          {
+            "records": 578,
+            "clusters": 289,
+            "positive": "miscaptioned",
+            "negative": "true",
+            "auroc_fused": 0.5766,
+            "auroc_clip": 0.5754,
+            "delta": 0.0011,
+            "delta_ci95": [
+              -0.0076,
+              0.0103
+            ],
+            "resamples": 2000,
+            "excludes_zero": false,
+            "coverage": {
+              "k": 86,
+              "n": 578,
+              "rate": 0.1488,
+              "wilson95": [
+                0.1221,
+                0.1801
+              ]
+            }
+          }
+        ],
+        "auroc_decided": [
+          {
+            "records": 94,
+            "clusters": 76,
+            "positive": "out-of-context",
+            "negative": "true",
+            "auroc_fused": 0.7477,
+            "auroc_clip": 0.7142,
+            "delta": 0.0335,
+            "delta_ci95": [
+              -0.0296,
+              0.1005
+            ],
+            "resamples": 2000,
+            "excludes_zero": false,
+            "coverage": {
+              "k": 94,
+              "n": 588,
+              "rate": 0.1599,
+              "wilson95": [
+                0.1325,
+                0.1917
+              ]
+            }
+          },
+          {
+            "records": 86,
+            "clusters": 51,
+            "positive": "miscaptioned",
+            "negative": "true",
+            "auroc_fused": 0.6217,
+            "auroc_clip": 0.625,
+            "delta": -0.0033,
+            "delta_ci95": [
+              -0.0571,
+              0.0522
+            ],
+            "resamples": 2000,
+            "excludes_zero": false,
+            "coverage": {
+              "k": 86,
+              "n": 578,
+              "rate": 0.1488,
+              "wilson95": [
+                0.1221,
+                0.1801
+              ]
+            }
+          }
+        ],
+        "by_class": {
+          "miscaptioned": {
+            "fused": {
+              "records": 289,
+              "flagged": {
+                "k": 72,
+                "n": 289,
+                "rate": 0.2491,
+                "wilson95": [
+                  0.2028,
+                  0.3021
+                ]
+              }
+            },
+            "clip": {
+              "records": 289,
+              "flagged": {
+                "k": 71,
+                "n": 289,
+                "rate": 0.2457,
+                "wilson95": [
+                  0.1996,
+                  0.2984
+                ]
+              }
+            },
+            "fused_flags_on_similarity_alone": {
+              "k": 61,
+              "n": 72,
+              "rate": 0.8472,
+              "wilson95": [
+                0.7468,
+                0.9125
+              ]
+            }
+          },
+          "out-of-context": {
+            "fused": {
+              "records": 299,
+              "flagged": {
+                "k": 168,
+                "n": 299,
+                "rate": 0.5619,
+                "wilson95": [
+                  0.5052,
+                  0.617
+                ]
+              }
+            },
+            "clip": {
+              "records": 299,
+              "flagged": {
+                "k": 156,
+                "n": 299,
+                "rate": 0.5217,
+                "wilson95": [
+                  0.4652,
+                  0.5777
+                ]
+              }
+            },
+            "fused_flags_on_similarity_alone": {
+              "k": 142,
+              "n": 168,
+              "rate": 0.8452,
+              "wilson95": [
+                0.7829,
+                0.8921
+              ]
+            }
+          },
+          "true": {
+            "fused": {
+              "records": 289,
+              "flagged": {
+                "k": 55,
+                "n": 289,
+                "rate": 0.1903,
+                "wilson95": [
+                  0.1492,
+                  0.2395
+                ]
+              }
+            },
+            "clip": {
+              "records": 289,
+              "flagged": {
+                "k": 50,
+                "n": 289,
+                "rate": 0.173,
+                "wilson95": [
+                  0.1338,
+                  0.2208
+                ]
+              }
+            },
+            "fused_flags_on_similarity_alone": {
+              "k": 50,
+              "n": 55,
+              "rate": 0.9091,
+              "wilson95": [
+                0.8042,
+                0.9605
+              ]
+            }
+          }
+        }
+      }
+    },
+    "beats_clip": {
+      "m4fc: false (out-of-context) vs true": false,
+      "verite: out-of-context vs true": false,
+      "verite: miscaptioned vs true": false
+    }
+  }
+}

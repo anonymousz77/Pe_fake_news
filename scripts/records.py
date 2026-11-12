@@ -228,6 +228,17 @@ def load_fakeddit() -> Iterator[Record]:
                                        "created_utc": row.get("created_utc")})
 
 
+#: The context items M4FC annotates, each as the claim states it
+#: (``claimed_<item>``) and as the image actually is (``<item>``).
+M4FC_ITEMS = ("date", "location", "people", "event", "things")
+#: M4FC fields carried into meta verbatim: the verdict's subtype, the two
+#: false-subtype flags, and every claimed and actual item -- the consistency
+#: block's gold pairs. An absent value stays as the dataset writes it ("not
+#: enough information"); the label stays verdict_coarse.
+M4FC_META = ("verdict", "is_manipulated_fake", "is_ai_generated",
+             *(f"{side}{item}" for item in M4FC_ITEMS for side in ("claimed_", "")))
+
+
 def load_m4fc() -> Iterator[Record]:
     rows = json.loads((raw_dir("m4fc") / "data" / "M4FC.json").read_text(encoding="utf-8"))
     for row in rows:
@@ -235,7 +246,8 @@ def load_m4fc() -> Iterator[Record]:
         yield Record("m4fc", key, row.get("claim"), row.get("verdict_coarse"),
                      SPLIT_ALIASES.get(row.get("split", ""), None),
                      [ImageRef("claim", "hydrated", key, row.get("image_url"))],
-                     meta={"fc_org": row.get("fc_org"), "fc_pub_date": row.get("fc_pub_date")})
+                     meta={"fc_org": row.get("fc_org"), "fc_pub_date": row.get("fc_pub_date"),
+                           **{k: row.get(k) for k in M4FC_META}})
 
 
 # --------------------------------------------------------------------------

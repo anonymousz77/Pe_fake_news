@@ -1,0 +1,106 @@
+# Few-shot exemplars for the text-side check's Qwen judge (scripts/textcheck.py).
+#
+# Every claim, document, place, club and person here is invented, written by
+# hand on 2026-11-10: the towns (Velmora, Dunholt, Karst Bay, Olsterra,
+# Pellow), the club (Torvale United) and every host (*.example) exist nowhere.
+# tests/test_textcheck.py refuses an exemplar whose claim equals a claim of
+# any of the seven corpora, whose text shares six words in a row with one, or
+# whose invented names appear in one.
+#
+# judge: the claim and its documents, as the judge sees them. Two of each
+#   answer, in mixed order. "cite" is the numbers of the documents a supported
+#   or refuted answer rests on; not enough evidence cites none.
+# nodocs: the claim alone, for the probe of what the model already knows.
+#   These state common knowledge, or nothing anyone could know.
+#
+# The parsed exemplars are part of the prompt configuration and so of the
+# run's config id; these comments are not.
+
+judge:
+  - claim: "The mayor of Karst Bay was arrested for fraud in 2020."
+    documents:
+      - title: "Karst Bay mayor presents harbour budget"
+        published_at: "2020-02-03"
+        host: "coastline-news.example"
+        excerpt: "…The mayor of Karst Bay presented the harbour budget to the council on Monday, promising new moorings and a repaired sea wall before the summer season…"
+      - title: "Inquiry opens into harbour contractor"
+        published_at: "2020-06-11"
+        host: "coastline-news.example"
+        excerpt: "…Prosecutors have opened an inquiry into the accounts of the contractor rebuilding the Karst Bay sea wall. No one has been charged, and the town hall said it was cooperating fully…"
+    answer: "not enough evidence"
+    cite: []
+
+  - claim: "Velmora opened a tram line between its airport and the central station in March 2019."
+    documents:
+      - title: "Airport trams start running in Velmora"
+        published_at: "2019-03-18"
+        host: "velmora-courier.example"
+        excerpt: "…The first trams on the new line between Velmora airport and the central station carried passengers on Monday morning, the city's transport authority said. The line took three years to build…"
+      - title: "Velmora council debates parking charges"
+        published_at: "2019-02-02"
+        host: "regional-times.example"
+        excerpt: "…Councillors in Velmora argued for two hours over a proposal to double parking charges in the old town, with traders warning that shoppers would stay away…"
+    answer: "supported"
+    cite: [1]
+
+  - claim: "Olsterra's population fell below 50,000 at the 2016 census."
+    documents:
+      - title: "Census: Olsterra grows to 61,300"
+        published_at: "2017-04-02"
+        host: "statistics-weekly.example"
+        excerpt: "…The 2016 census counted 61,300 residents in Olsterra, up from 57,900 five years earlier, making it one of the fastest-growing towns in the province…"
+    answer: "refuted"
+    cite: [1]
+
+  - claim: "A video shows a bridge collapsing in Pellow during the 2022 floods."
+    documents:
+      - title: "Pellow approves plans for a new library"
+        published_at: "2022-03-09"
+        host: "pellow-gazette.example"
+        excerpt: "…Pellow's planning committee approved a new public library on the site of the old bus depot, with building to start next spring…"
+      - title: "Storm season outlook for the coast"
+        published_at: "2022-05-28"
+        host: "weather-desk.example"
+        excerpt: "…Forecasters expect an average storm season along the coast this year, with the wettest weeks likely in late autumn…"
+    answer: "not enough evidence"
+    cite: []
+
+  - claim: "The Dunholt marathon was cancelled in 2018 because of a heatwave."
+    documents:
+      - title: "Heat warnings issued across the north"
+        published_at: "2018-07-21"
+        host: "weather-desk.example"
+        excerpt: "…Forecasters issued heat warnings for much of the north on Saturday as temperatures were expected to pass 34C, the highest this summer…"
+      - title: "Thousands finish Dunholt marathon under grey skies"
+        published_at: "2018-05-07"
+        host: "dunholt-post.example"
+        excerpt: "…More than 4,000 runners completed the Dunholt marathon on Sunday, held as planned under overcast skies and a cool breeze. The winner crossed the line in 2 hours 14 minutes…"
+    answer: "refuted"
+    cite: [2]
+
+  - claim: "The football club Torvale United was fined for crowd trouble in 2021."
+    documents:
+      - title: "Torvale United sign young goalkeeper"
+        published_at: "2021-01-15"
+        host: "sports-wire.example"
+        excerpt: "…Torvale United have signed a 19-year-old goalkeeper on a three-year contract, the club announced on its website…"
+      - title: "Torvale United fined after fans invade pitch"
+        published_at: "2021-10-04"
+        host: "sports-wire.example"
+        excerpt: "…The football association fined Torvale United 20,000 after supporters ran onto the pitch and threw flares during Saturday's derby, the disciplinary panel ruled…"
+      - title: "Ticket prices rise across the league"
+        published_at: "2021-07-30"
+        host: "fan-forum-news.example"
+        excerpt: "…Season tickets will cost on average 6 percent more this year, according to a survey of the league's clubs…"
+    answer: "supported"
+    cite: [2]
+
+nodocs:
+  - claim: "The Pacific is the smallest of the world's oceans."
+    answer: "refuted"
+  - claim: "The town council of Velmora met on a Tuesday last month."
+    answer: "not enough evidence"
+  - claim: "Water boils at a lower temperature on a high mountain than at sea level."
+    answer: "supported"
+  - claim: "A shopkeeper in Pellow sold more umbrellas this week than last."
+    answer: "not enough evidence"

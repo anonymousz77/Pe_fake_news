@@ -1,0 +1,3502 @@
+{
+  "written_at": "2026-11-10T05:34:08+00:00",
+  "judge_rows": 396,
+  "fixed_configuration": {
+    "date": "rule",
+    "location": "judge",
+    "event": "judge"
+  },
+  "gate_bars": {
+    "precision": 0.8,
+    "precision_lower": 0.6,
+    "recall": 0.6,
+    "date_recall": 0.8,
+    "false_contradiction": 0.1,
+    "false_contradiction_upper": 0.2
+  },
+  "gold": {
+    "date": {
+      "sheet": {
+        "contradicts": 16
+      },
+      "true_row": {
+        "consistent": 57
+      }
+    },
+    "location": {
+      "sheet": {
+        "contradicts": 31,
+        "consistent": 10,
+        "unclear": 1
+      },
+      "true_row": {
+        "consistent": 99
+      }
+    },
+    "people": {
+      "sheet": {
+        "contradicts": 7,
+        "unclear": 3,
+        "consistent": 2
+      },
+      "true_row": {
+        "consistent": 45
+      }
+    },
+    "event": {
+      "sheet": {
+        "contradicts": 33,
+        "consistent": 7
+      },
+      "true_row": {
+        "consistent": 85
+      }
+    }
+  },
+  "items": {
+    "date": {
+      "always_consistent": {
+        "sheet": {
+          "pairs": 16,
+          "confusion": {
+            "contradicts->consistent": 16
+          },
+          "contradicts_precision": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "wilson95": null
+          },
+          "contradicts_precision_lenient": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "wilson95": null
+          },
+          "contradicts_recall": {
+            "k": 0,
+            "n": 16,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.1936
+            ]
+          },
+          "consistent_recall": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "wilson95": null
+          },
+          "abstention": {
+            "k": 0,
+            "n": 16,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.1936
+            ]
+          },
+          "false_contradiction": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "wilson95": null
+          }
+        },
+        "true_row": {
+          "pairs": 57,
+          "confusion": {
+            "consistent->consistent": 57
+          },
+          "contradicts_precision": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "wilson95": null
+          },
+          "contradicts_precision_lenient": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "wilson95": null
+          },
+          "contradicts_recall": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "wilson95": null
+          },
+          "consistent_recall": {
+            "k": 57,
+            "n": 57,
+            "rate": 1.0,
+            "wilson95": [
+              0.9369,
+              1.0
+            ]
+          },
+          "abstention": {
+            "k": 0,
+            "n": 57,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.0631
+            ]
+          },
+          "false_contradiction": {
+            "k": 0,
+            "n": 57,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.0631
+            ]
+          }
+        }
+      },
+      "always_contradicts": {
+        "sheet": {
+          "pairs": 16,
+          "confusion": {
+            "contradicts->contradicts": 16
+          },
+          "contradicts_precision": {
+            "k": 16,
+            "n": 16,
+            "rate": 1.0,
+            "wilson95": [
+              0.8064,
+              1.0
+            ]
+          },
+          "contradicts_precision_lenient": {
+            "k": 16,
+            "n": 16,
+            "rate": 1.0,
+            "wilson95": [
+              0.8064,
+              1.0
+            ]
+          },
+          "contradicts_recall": {
+            "k": 16,
+            "n": 16,
+            "rate": 1.0,
+            "wilson95": [
+              0.8064,
+              1.0
+            ]
+          },
+          "consistent_recall": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "wilson95": null
+          },
+          "abstention": {
+            "k": 0,
+            "n": 16,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.1936
+            ]
+          },
+          "false_contradiction": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "wilson95": null
+          }
+        },
+        "true_row": {
+          "pairs": 57,
+          "confusion": {
+            "consistent->contradicts": 57
+          },
+          "contradicts_precision": {
+            "k": 0,
+            "n": 57,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.0631
+            ]
+          },
+          "contradicts_precision_lenient": {
+            "k": 0,
+            "n": 57,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.0631
+            ]
+          },
+          "contradicts_recall": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "wilson95": null
+          },
+          "consistent_recall": {
+            "k": 0,
+            "n": 57,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.0631
+            ]
+          },
+          "abstention": {
+            "k": 0,
+            "n": 57,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.0631
+            ]
+          },
+          "false_contradiction": {
+            "k": 57,
+            "n": 57,
+            "rate": 1.0,
+            "wilson95": [
+              0.9369,
+              1.0
+            ]
+          }
+        }
+      },
+      "judge": {
+        "sheet": {
+          "pairs": 16,
+          "confusion": {
+            "contradicts->contradicts": 16
+          },
+          "contradicts_precision": {
+            "k": 16,
+            "n": 16,
+            "rate": 1.0,
+            "wilson95": [
+              0.8064,
+              1.0
+            ]
+          },
+          "contradicts_precision_lenient": {
+            "k": 16,
+            "n": 16,
+            "rate": 1.0,
+            "wilson95": [
+              0.8064,
+              1.0
+            ]
+          },
+          "contradicts_recall": {
+            "k": 16,
+            "n": 16,
+            "rate": 1.0,
+            "wilson95": [
+              0.8064,
+              1.0
+            ]
+          },
+          "consistent_recall": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "wilson95": null
+          },
+          "abstention": {
+            "k": 0,
+            "n": 16,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.1936
+            ]
+          },
+          "false_contradiction": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "wilson95": null
+          }
+        },
+        "true_row": {
+          "pairs": 57,
+          "confusion": {
+            "consistent->contradicts": 11,
+            "consistent->consistent": 46
+          },
+          "contradicts_precision": {
+            "k": 0,
+            "n": 11,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.2588
+            ]
+          },
+          "contradicts_precision_lenient": {
+            "k": 0,
+            "n": 11,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.2588
+            ]
+          },
+          "contradicts_recall": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "wilson95": null
+          },
+          "consistent_recall": {
+            "k": 46,
+            "n": 57,
+            "rate": 0.807,
+            "wilson95": [
+              0.6866,
+              0.8887
+            ]
+          },
+          "abstention": {
+            "k": 0,
+            "n": 57,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.0631
+            ]
+          },
+          "false_contradiction": {
+            "k": 11,
+            "n": 57,
+            "rate": 0.193,
+            "wilson95": [
+              0.1113,
+              0.3134
+            ]
+          }
+        }
+      },
+      "rule": {
+        "sheet": {
+          "pairs": 16,
+          "confusion": {
+            "contradicts->contradicts": 16
+          },
+          "contradicts_precision": {
+            "k": 16,
+            "n": 16,
+            "rate": 1.0,
+            "wilson95": [
+              0.8064,
+              1.0
+            ]
+          },
+          "contradicts_precision_lenient": {
+            "k": 16,
+            "n": 16,
+            "rate": 1.0,
+            "wilson95": [
+              0.8064,
+              1.0
+            ]
+          },
+          "contradicts_recall": {
+            "k": 16,
+            "n": 16,
+            "rate": 1.0,
+            "wilson95": [
+              0.8064,
+              1.0
+            ]
+          },
+          "consistent_recall": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "wilson95": null
+          },
+          "abstention": {
+            "k": 0,
+            "n": 16,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.1936
+            ]
+          },
+          "false_contradiction": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "wilson95": null
+          }
+        },
+        "true_row": {
+          "pairs": 57,
+          "confusion": {
+            "consistent->contradicts": 11,
+            "consistent->consistent": 46
+          },
+          "contradicts_precision": {
+            "k": 0,
+            "n": 11,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.2588
+            ]
+          },
+          "contradicts_precision_lenient": {
+            "k": 0,
+            "n": 11,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.2588
+            ]
+          },
+          "contradicts_recall": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "wilson95": null
+          },
+          "consistent_recall": {
+            "k": 46,
+            "n": 57,
+            "rate": 0.807,
+            "wilson95": [
+              0.6866,
+              0.8887
+            ]
+          },
+          "abstention": {
+            "k": 0,
+            "n": 57,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.0631
+            ]
+          },
+          "false_contradiction": {
+            "k": 11,
+            "n": 57,
+            "rate": 0.193,
+            "wilson95": [
+              0.1113,
+              0.3134
+            ]
+          }
+        }
+      }
+    },
+    "location": {
+      "always_consistent": {
+        "sheet": {
+          "pairs": 42,
+          "confusion": {
+            "contradicts->consistent": 31,
+            "consistent->consistent": 10,
+            "unclear->consistent": 1
+          },
+          "contradicts_precision": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "wilson95": null
+          },
+          "contradicts_precision_lenient": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "wilson95": null
+          },
+          "contradicts_recall": {
+            "k": 0,
+            "n": 31,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.1103
+            ]
+          },
+          "consistent_recall": {
+            "k": 10,
+            "n": 10,
+            "rate": 1.0,
+            "wilson95": [
+              0.7225,
+              1.0
+            ]
+          },
+          "abstention": {
+            "k": 0,
+            "n": 42,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.0838
+            ]
+          },
+          "false_contradiction": {
+            "k": 0,
+            "n": 10,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.2775
+            ]
+          }
+        },
+        "true_row": {
+          "pairs": 99,
+          "confusion": {
+            "consistent->consistent": 99
+          },
+          "contradicts_precision": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "wilson95": null
+          },
+          "contradicts_precision_lenient": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "wilson95": null
+          },
+          "contradicts_recall": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "wilson95": null
+          },
+          "consistent_recall": {
+            "k": 99,
+            "n": 99,
+            "rate": 1.0,
+            "wilson95": [
+              0.9626,
+              1.0
+            ]
+          },
+          "abstention": {
+            "k": 0,
+            "n": 99,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.0374
+            ]
+          },
+          "false_contradiction": {
+            "k": 0,
+            "n": 99,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.0374
+            ]
+          }
+        }
+      },
+      "always_contradicts": {
+        "sheet": {
+          "pairs": 42,
+          "confusion": {
+            "contradicts->contradicts": 31,
+            "consistent->contradicts": 10,
+            "unclear->contradicts": 1
+          },
+          "contradicts_precision": {
+            "k": 31,
+            "n": 42,
+            "rate": 0.7381,
+            "wilson95": [
+              0.5893,
+              0.847
+            ]
+          },
+          "contradicts_precision_lenient": {
+            "k": 31,
+            "n": 41,
+            "rate": 0.7561,
+            "wilson95": [
+              0.6066,
+              0.8617
+            ]
+          },
+          "contradicts_recall": {
+            "k": 31,
+            "n": 31,
+            "rate": 1.0,
+            "wilson95": [
+              0.8897,
+              1.0
+            ]
+          },
+          "consistent_recall": {
+            "k": 0,
+            "n": 10,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.2775
+            ]
+          },
+          "abstention": {
+            "k": 0,
+            "n": 42,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.0838
+            ]
+          },
+          "false_contradiction": {
+            "k": 10,
+            "n": 10,
+            "rate": 1.0,
+            "wilson95": [
+              0.7225,
+              1.0
+            ]
+          }
+        },
+        "true_row": {
+          "pairs": 99,
+          "confusion": {
+            "consistent->contradicts": 99
+          },
+          "contradicts_precision": {
+            "k": 0,
+            "n": 99,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.0374
+            ]
+          },
+          "contradicts_precision_lenient": {
+            "k": 0,
+            "n": 99,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.0374
+            ]
+          },
+          "contradicts_recall": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "wilson95": null
+          },
+          "consistent_recall": {
+            "k": 0,
+            "n": 99,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.0374
+            ]
+          },
+          "abstention": {
+            "k": 0,
+            "n": 99,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.0374
+            ]
+          },
+          "false_contradiction": {
+            "k": 99,
+            "n": 99,
+            "rate": 1.0,
+            "wilson95": [
+              0.9626,
+              1.0
+            ]
+          }
+        }
+      },
+      "judge": {
+        "sheet": {
+          "pairs": 42,
+          "confusion": {
+            "contradicts->contradicts": 23,
+            "contradicts->consistent": 1,
+            "contradicts->unclear": 7,
+            "consistent->contradicts": 2,
+            "consistent->consistent": 7,
+            "consistent->unclear": 1,
+            "unclear->contradicts": 1
+          },
+          "contradicts_precision": {
+            "k": 23,
+            "n": 26,
+            "rate": 0.8846,
+            "wilson95": [
+              0.7102,
+              0.96
+            ]
+          },
+          "contradicts_precision_lenient": {
+            "k": 23,
+            "n": 25,
+            "rate": 0.92,
+            "wilson95": [
+              0.7503,
+              0.9778
+            ]
+          },
+          "contradicts_recall": {
+            "k": 23,
+            "n": 31,
+            "rate": 0.7419,
+            "wilson95": [
+              0.5675,
+              0.863
+            ]
+          },
+          "consistent_recall": {
+            "k": 7,
+            "n": 10,
+            "rate": 0.7,
+            "wilson95": [
+              0.3968,
+              0.8922
+            ]
+          },
+          "abstention": {
+            "k": 8,
+            "n": 42,
+            "rate": 0.1905,
+            "wilson95": [
+              0.0998,
+              0.333
+            ]
+          },
+          "false_contradiction": {
+            "k": 2,
+            "n": 10,
+            "rate": 0.2,
+            "wilson95": [
+              0.0567,
+              0.5098
+            ]
+          }
+        },
+        "true_row": {
+          "pairs": 99,
+          "confusion": {
+            "consistent->contradicts": 11,
+            "consistent->consistent": 85,
+            "consistent->unclear": 3
+          },
+          "contradicts_precision": {
+            "k": 0,
+            "n": 11,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.2588
+            ]
+          },
+          "contradicts_precision_lenient": {
+            "k": 0,
+            "n": 11,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.2588
+            ]
+          },
+          "contradicts_recall": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "wilson95": null
+          },
+          "consistent_recall": {
+            "k": 85,
+            "n": 99,
+            "rate": 0.8586,
+            "wilson95": [
+              0.7765,
+              0.9139
+            ]
+          },
+          "abstention": {
+            "k": 3,
+            "n": 99,
+            "rate": 0.0303,
+            "wilson95": [
+              0.0104,
+              0.0853
+            ]
+          },
+          "false_contradiction": {
+            "k": 11,
+            "n": 99,
+            "rate": 0.1111,
+            "wilson95": [
+              0.0632,
+              0.1881
+            ]
+          }
+        }
+      }
+    },
+    "people": {
+      "always_consistent": {
+        "sheet": {
+          "pairs": 12,
+          "confusion": {
+            "contradicts->consistent": 7,
+            "consistent->consistent": 2,
+            "unclear->consistent": 3
+          },
+          "contradicts_precision": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "wilson95": null
+          },
+          "contradicts_precision_lenient": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "wilson95": null
+          },
+          "contradicts_recall": {
+            "k": 0,
+            "n": 7,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.3543
+            ]
+          },
+          "consistent_recall": {
+            "k": 2,
+            "n": 2,
+            "rate": 1.0,
+            "wilson95": [
+              0.3424,
+              1.0
+            ]
+          },
+          "abstention": {
+            "k": 0,
+            "n": 12,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.2425
+            ]
+          },
+          "false_contradiction": {
+            "k": 0,
+            "n": 2,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.6576
+            ]
+          }
+        },
+        "true_row": {
+          "pairs": 45,
+          "confusion": {
+            "consistent->consistent": 45
+          },
+          "contradicts_precision": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "wilson95": null
+          },
+          "contradicts_precision_lenient": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "wilson95": null
+          },
+          "contradicts_recall": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "wilson95": null
+          },
+          "consistent_recall": {
+            "k": 45,
+            "n": 45,
+            "rate": 1.0,
+            "wilson95": [
+              0.9213,
+              1.0
+            ]
+          },
+          "abstention": {
+            "k": 0,
+            "n": 45,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.0787
+            ]
+          },
+          "false_contradiction": {
+            "k": 0,
+            "n": 45,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.0787
+            ]
+          }
+        }
+      },
+      "always_contradicts": {
+        "sheet": {
+          "pairs": 12,
+          "confusion": {
+            "contradicts->contradicts": 7,
+            "consistent->contradicts": 2,
+            "unclear->contradicts": 3
+          },
+          "contradicts_precision": {
+            "k": 7,
+            "n": 12,
+            "rate": 0.5833,
+            "wilson95": [
+              0.3195,
+              0.8067
+            ]
+          },
+          "contradicts_precision_lenient": {
+            "k": 7,
+            "n": 9,
+            "rate": 0.7778,
+            "wilson95": [
+              0.4526,
+              0.9368
+            ]
+          },
+          "contradicts_recall": {
+            "k": 7,
+            "n": 7,
+            "rate": 1.0,
+            "wilson95": [
+              0.6457,
+              1.0
+            ]
+          },
+          "consistent_recall": {
+            "k": 0,
+            "n": 2,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.6576
+            ]
+          },
+          "abstention": {
+            "k": 0,
+            "n": 12,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.2425
+            ]
+          },
+          "false_contradiction": {
+            "k": 2,
+            "n": 2,
+            "rate": 1.0,
+            "wilson95": [
+              0.3424,
+              1.0
+            ]
+          }
+        },
+        "true_row": {
+          "pairs": 45,
+          "confusion": {
+            "consistent->contradicts": 45
+          },
+          "contradicts_precision": {
+            "k": 0,
+            "n": 45,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.0787
+            ]
+          },
+          "contradicts_precision_lenient": {
+            "k": 0,
+            "n": 45,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.0787
+            ]
+          },
+          "contradicts_recall": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "wilson95": null
+          },
+          "consistent_recall": {
+            "k": 0,
+            "n": 45,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.0787
+            ]
+          },
+          "abstention": {
+            "k": 0,
+            "n": 45,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.0787
+            ]
+          },
+          "false_contradiction": {
+            "k": 45,
+            "n": 45,
+            "rate": 1.0,
+            "wilson95": [
+              0.9213,
+              1.0
+            ]
+          }
+        }
+      },
+      "judge": {
+        "sheet": {
+          "pairs": 12,
+          "confusion": {
+            "contradicts->contradicts": 6,
+            "contradicts->consistent": 1,
+            "consistent->contradicts": 1,
+            "consistent->consistent": 1,
+            "unclear->unclear": 3
+          },
+          "contradicts_precision": {
+            "k": 6,
+            "n": 7,
+            "rate": 0.8571,
+            "wilson95": [
+              0.4869,
+              0.9743
+            ]
+          },
+          "contradicts_precision_lenient": {
+            "k": 6,
+            "n": 7,
+            "rate": 0.8571,
+            "wilson95": [
+              0.4869,
+              0.9743
+            ]
+          },
+          "contradicts_recall": {
+            "k": 6,
+            "n": 7,
+            "rate": 0.8571,
+            "wilson95": [
+              0.4869,
+              0.9743
+            ]
+          },
+          "consistent_recall": {
+            "k": 1,
+            "n": 2,
+            "rate": 0.5,
+            "wilson95": [
+              0.0945,
+              0.9055
+            ]
+          },
+          "abstention": {
+            "k": 3,
+            "n": 12,
+            "rate": 0.25,
+            "wilson95": [
+              0.0889,
+              0.5323
+            ]
+          },
+          "false_contradiction": {
+            "k": 1,
+            "n": 2,
+            "rate": 0.5,
+            "wilson95": [
+              0.0945,
+              0.9055
+            ]
+          }
+        },
+        "true_row": {
+          "pairs": 45,
+          "confusion": {
+            "consistent->contradicts": 9,
+            "consistent->consistent": 35,
+            "consistent->unclear": 1
+          },
+          "contradicts_precision": {
+            "k": 0,
+            "n": 9,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.2991
+            ]
+          },
+          "contradicts_precision_lenient": {
+            "k": 0,
+            "n": 9,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.2991
+            ]
+          },
+          "contradicts_recall": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "wilson95": null
+          },
+          "consistent_recall": {
+            "k": 35,
+            "n": 45,
+            "rate": 0.7778,
+            "wilson95": [
+              0.6373,
+              0.8746
+            ]
+          },
+          "abstention": {
+            "k": 1,
+            "n": 45,
+            "rate": 0.0222,
+            "wilson95": [
+              0.0039,
+              0.1157
+            ]
+          },
+          "false_contradiction": {
+            "k": 9,
+            "n": 45,
+            "rate": 0.2,
+            "wilson95": [
+              0.109,
+              0.3382
+            ]
+          }
+        }
+      },
+      "qid_rule": {
+        "sheet": {
+          "pairs": 12,
+          "confusion": {
+            "contradicts->contradicts": 1,
+            "contradicts->unclear": 6,
+            "consistent->consistent": 1,
+            "consistent->unclear": 1,
+            "unclear->unclear": 3
+          },
+          "contradicts_precision": {
+            "k": 1,
+            "n": 1,
+            "rate": 1.0,
+            "wilson95": [
+              0.2065,
+              1.0
+            ]
+          },
+          "contradicts_precision_lenient": {
+            "k": 1,
+            "n": 1,
+            "rate": 1.0,
+            "wilson95": [
+              0.2065,
+              1.0
+            ]
+          },
+          "contradicts_recall": {
+            "k": 1,
+            "n": 7,
+            "rate": 0.1429,
+            "wilson95": [
+              0.0257,
+              0.5131
+            ]
+          },
+          "consistent_recall": {
+            "k": 1,
+            "n": 2,
+            "rate": 0.5,
+            "wilson95": [
+              0.0945,
+              0.9055
+            ]
+          },
+          "abstention": {
+            "k": 10,
+            "n": 12,
+            "rate": 0.8333,
+            "wilson95": [
+              0.552,
+              0.953
+            ]
+          },
+          "false_contradiction": {
+            "k": 0,
+            "n": 2,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.6576
+            ]
+          }
+        },
+        "true_row": {
+          "pairs": 45,
+          "confusion": {
+            "consistent->consistent": 10,
+            "consistent->unclear": 35
+          },
+          "contradicts_precision": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "wilson95": null
+          },
+          "contradicts_precision_lenient": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "wilson95": null
+          },
+          "contradicts_recall": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "wilson95": null
+          },
+          "consistent_recall": {
+            "k": 10,
+            "n": 45,
+            "rate": 0.2222,
+            "wilson95": [
+              0.1254,
+              0.3627
+            ]
+          },
+          "abstention": {
+            "k": 35,
+            "n": 45,
+            "rate": 0.7778,
+            "wilson95": [
+              0.6373,
+              0.8746
+            ]
+          },
+          "false_contradiction": {
+            "k": 0,
+            "n": 45,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.0787
+            ]
+          }
+        }
+      }
+    },
+    "event": {
+      "always_consistent": {
+        "sheet": {
+          "pairs": 40,
+          "confusion": {
+            "contradicts->consistent": 33,
+            "consistent->consistent": 7
+          },
+          "contradicts_precision": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "wilson95": null
+          },
+          "contradicts_precision_lenient": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "wilson95": null
+          },
+          "contradicts_recall": {
+            "k": 0,
+            "n": 33,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.1043
+            ]
+          },
+          "consistent_recall": {
+            "k": 7,
+            "n": 7,
+            "rate": 1.0,
+            "wilson95": [
+              0.6457,
+              1.0
+            ]
+          },
+          "abstention": {
+            "k": 0,
+            "n": 40,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.0876
+            ]
+          },
+          "false_contradiction": {
+            "k": 0,
+            "n": 7,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.3543
+            ]
+          }
+        },
+        "true_row": {
+          "pairs": 85,
+          "confusion": {
+            "consistent->consistent": 85
+          },
+          "contradicts_precision": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "wilson95": null
+          },
+          "contradicts_precision_lenient": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "wilson95": null
+          },
+          "contradicts_recall": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "wilson95": null
+          },
+          "consistent_recall": {
+            "k": 85,
+            "n": 85,
+            "rate": 1.0,
+            "wilson95": [
+              0.9568,
+              1.0
+            ]
+          },
+          "abstention": {
+            "k": 0,
+            "n": 85,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.0432
+            ]
+          },
+          "false_contradiction": {
+            "k": 0,
+            "n": 85,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.0432
+            ]
+          }
+        }
+      },
+      "always_contradicts": {
+        "sheet": {
+          "pairs": 40,
+          "confusion": {
+            "contradicts->contradicts": 33,
+            "consistent->contradicts": 7
+          },
+          "contradicts_precision": {
+            "k": 33,
+            "n": 40,
+            "rate": 0.825,
+            "wilson95": [
+              0.6805,
+              0.9125
+            ]
+          },
+          "contradicts_precision_lenient": {
+            "k": 33,
+            "n": 40,
+            "rate": 0.825,
+            "wilson95": [
+              0.6805,
+              0.9125
+            ]
+          },
+          "contradicts_recall": {
+            "k": 33,
+            "n": 33,
+            "rate": 1.0,
+            "wilson95": [
+              0.8957,
+              1.0
+            ]
+          },
+          "consistent_recall": {
+            "k": 0,
+            "n": 7,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.3543
+            ]
+          },
+          "abstention": {
+            "k": 0,
+            "n": 40,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.0876
+            ]
+          },
+          "false_contradiction": {
+            "k": 7,
+            "n": 7,
+            "rate": 1.0,
+            "wilson95": [
+              0.6457,
+              1.0
+            ]
+          }
+        },
+        "true_row": {
+          "pairs": 85,
+          "confusion": {
+            "consistent->contradicts": 85
+          },
+          "contradicts_precision": {
+            "k": 0,
+            "n": 85,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.0432
+            ]
+          },
+          "contradicts_precision_lenient": {
+            "k": 0,
+            "n": 85,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.0432
+            ]
+          },
+          "contradicts_recall": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "wilson95": null
+          },
+          "consistent_recall": {
+            "k": 0,
+            "n": 85,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.0432
+            ]
+          },
+          "abstention": {
+            "k": 0,
+            "n": 85,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.0432
+            ]
+          },
+          "false_contradiction": {
+            "k": 85,
+            "n": 85,
+            "rate": 1.0,
+            "wilson95": [
+              0.9568,
+              1.0
+            ]
+          }
+        }
+      },
+      "judge": {
+        "sheet": {
+          "pairs": 40,
+          "confusion": {
+            "contradicts->contradicts": 27,
+            "contradicts->consistent": 4,
+            "contradicts->unclear": 2,
+            "consistent->contradicts": 3,
+            "consistent->consistent": 4
+          },
+          "contradicts_precision": {
+            "k": 27,
+            "n": 30,
+            "rate": 0.9,
+            "wilson95": [
+              0.7438,
+              0.9654
+            ]
+          },
+          "contradicts_precision_lenient": {
+            "k": 27,
+            "n": 30,
+            "rate": 0.9,
+            "wilson95": [
+              0.7438,
+              0.9654
+            ]
+          },
+          "contradicts_recall": {
+            "k": 27,
+            "n": 33,
+            "rate": 0.8182,
+            "wilson95": [
+              0.6561,
+              0.9139
+            ]
+          },
+          "consistent_recall": {
+            "k": 4,
+            "n": 7,
+            "rate": 0.5714,
+            "wilson95": [
+              0.2505,
+              0.8418
+            ]
+          },
+          "abstention": {
+            "k": 2,
+            "n": 40,
+            "rate": 0.05,
+            "wilson95": [
+              0.0138,
+              0.165
+            ]
+          },
+          "false_contradiction": {
+            "k": 3,
+            "n": 7,
+            "rate": 0.4286,
+            "wilson95": [
+              0.1582,
+              0.7495
+            ]
+          }
+        },
+        "true_row": {
+          "pairs": 85,
+          "confusion": {
+            "consistent->contradicts": 15,
+            "consistent->consistent": 70
+          },
+          "contradicts_precision": {
+            "k": 0,
+            "n": 15,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.2039
+            ]
+          },
+          "contradicts_precision_lenient": {
+            "k": 0,
+            "n": 15,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.2039
+            ]
+          },
+          "contradicts_recall": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "wilson95": null
+          },
+          "consistent_recall": {
+            "k": 70,
+            "n": 85,
+            "rate": 0.8235,
+            "wilson95": [
+              0.729,
+              0.89
+            ]
+          },
+          "abstention": {
+            "k": 0,
+            "n": 85,
+            "rate": 0.0,
+            "wilson95": [
+              0.0,
+              0.0432
+            ]
+          },
+          "false_contradiction": {
+            "k": 15,
+            "n": 85,
+            "rate": 0.1765,
+            "wilson95": [
+              0.11,
+              0.271
+            ]
+          }
+        }
+      }
+    }
+  },
+  "gate": {
+    "date": {
+      "passed": false,
+      "checks": {
+        "false_contradiction": false,
+        "false_contradiction_upper": false,
+        "recall": true
+      }
+    },
+    "location": {
+      "passed": false,
+      "checks": {
+        "false_contradiction": false,
+        "false_contradiction_upper": true,
+        "precision": true,
+        "precision_lower": true,
+        "recall": true
+      }
+    },
+    "event": {
+      "passed": false,
+      "checks": {
+        "false_contradiction": false,
+        "false_contradiction_upper": false,
+        "precision": true,
+        "precision_lower": true,
+        "recall": true
+      }
+    }
+  },
+  "judge_status": {
+    "ok": 396
+  },
+  "review": {
+    "contested": 46,
+    "decided": 46,
+    "relabelled": {
+      "consistent->contradicts": 28,
+      "consistent->unclear": 4
+    },
+    "gold": {
+      "date": {
+        "sheet": {
+          "contradicts": 16
+        },
+        "true_row": {
+          "consistent": 46,
+          "contradicts": 11
+        }
+      },
+      "location": {
+        "sheet": {
+          "contradicts": 31,
+          "consistent": 10,
+          "unclear": 1
+        },
+        "true_row": {
+          "consistent": 91,
+          "contradicts": 7,
+          "unclear": 1
+        }
+      },
+      "people": {
+        "sheet": {
+          "contradicts": 7,
+          "unclear": 3,
+          "consistent": 2
+        },
+        "true_row": {
+          "consistent": 39,
+          "contradicts": 3,
+          "unclear": 3
+        }
+      },
+      "event": {
+        "sheet": {
+          "contradicts": 33,
+          "consistent": 7
+        },
+        "true_row": {
+          "consistent": 78,
+          "contradicts": 7
+        }
+      }
+    },
+    "items": {
+      "date": {
+        "always_consistent": {
+          "sheet": {
+            "pairs": 16,
+            "confusion": {
+              "contradicts->consistent": 16
+            },
+            "contradicts_precision": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "wilson95": null
+            },
+            "contradicts_precision_lenient": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "wilson95": null
+            },
+            "contradicts_recall": {
+              "k": 0,
+              "n": 16,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.1936
+              ]
+            },
+            "consistent_recall": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "wilson95": null
+            },
+            "abstention": {
+              "k": 0,
+              "n": 16,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.1936
+              ]
+            },
+            "false_contradiction": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "wilson95": null
+            }
+          },
+          "true_row": {
+            "pairs": 57,
+            "confusion": {
+              "contradicts->consistent": 11,
+              "consistent->consistent": 46
+            },
+            "contradicts_precision": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "wilson95": null
+            },
+            "contradicts_precision_lenient": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "wilson95": null
+            },
+            "contradicts_recall": {
+              "k": 0,
+              "n": 11,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.2588
+              ]
+            },
+            "consistent_recall": {
+              "k": 46,
+              "n": 46,
+              "rate": 1.0,
+              "wilson95": [
+                0.9229,
+                1.0
+              ]
+            },
+            "abstention": {
+              "k": 0,
+              "n": 57,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.0631
+              ]
+            },
+            "false_contradiction": {
+              "k": 0,
+              "n": 46,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.0771
+              ]
+            }
+          }
+        },
+        "always_contradicts": {
+          "sheet": {
+            "pairs": 16,
+            "confusion": {
+              "contradicts->contradicts": 16
+            },
+            "contradicts_precision": {
+              "k": 16,
+              "n": 16,
+              "rate": 1.0,
+              "wilson95": [
+                0.8064,
+                1.0
+              ]
+            },
+            "contradicts_precision_lenient": {
+              "k": 16,
+              "n": 16,
+              "rate": 1.0,
+              "wilson95": [
+                0.8064,
+                1.0
+              ]
+            },
+            "contradicts_recall": {
+              "k": 16,
+              "n": 16,
+              "rate": 1.0,
+              "wilson95": [
+                0.8064,
+                1.0
+              ]
+            },
+            "consistent_recall": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "wilson95": null
+            },
+            "abstention": {
+              "k": 0,
+              "n": 16,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.1936
+              ]
+            },
+            "false_contradiction": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "wilson95": null
+            }
+          },
+          "true_row": {
+            "pairs": 57,
+            "confusion": {
+              "contradicts->contradicts": 11,
+              "consistent->contradicts": 46
+            },
+            "contradicts_precision": {
+              "k": 11,
+              "n": 57,
+              "rate": 0.193,
+              "wilson95": [
+                0.1113,
+                0.3134
+              ]
+            },
+            "contradicts_precision_lenient": {
+              "k": 11,
+              "n": 57,
+              "rate": 0.193,
+              "wilson95": [
+                0.1113,
+                0.3134
+              ]
+            },
+            "contradicts_recall": {
+              "k": 11,
+              "n": 11,
+              "rate": 1.0,
+              "wilson95": [
+                0.7412,
+                1.0
+              ]
+            },
+            "consistent_recall": {
+              "k": 0,
+              "n": 46,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.0771
+              ]
+            },
+            "abstention": {
+              "k": 0,
+              "n": 57,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.0631
+              ]
+            },
+            "false_contradiction": {
+              "k": 46,
+              "n": 46,
+              "rate": 1.0,
+              "wilson95": [
+                0.9229,
+                1.0
+              ]
+            }
+          }
+        },
+        "judge": {
+          "sheet": {
+            "pairs": 16,
+            "confusion": {
+              "contradicts->contradicts": 16
+            },
+            "contradicts_precision": {
+              "k": 16,
+              "n": 16,
+              "rate": 1.0,
+              "wilson95": [
+                0.8064,
+                1.0
+              ]
+            },
+            "contradicts_precision_lenient": {
+              "k": 16,
+              "n": 16,
+              "rate": 1.0,
+              "wilson95": [
+                0.8064,
+                1.0
+              ]
+            },
+            "contradicts_recall": {
+              "k": 16,
+              "n": 16,
+              "rate": 1.0,
+              "wilson95": [
+                0.8064,
+                1.0
+              ]
+            },
+            "consistent_recall": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "wilson95": null
+            },
+            "abstention": {
+              "k": 0,
+              "n": 16,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.1936
+              ]
+            },
+            "false_contradiction": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "wilson95": null
+            }
+          },
+          "true_row": {
+            "pairs": 57,
+            "confusion": {
+              "contradicts->contradicts": 11,
+              "consistent->consistent": 46
+            },
+            "contradicts_precision": {
+              "k": 11,
+              "n": 11,
+              "rate": 1.0,
+              "wilson95": [
+                0.7412,
+                1.0
+              ]
+            },
+            "contradicts_precision_lenient": {
+              "k": 11,
+              "n": 11,
+              "rate": 1.0,
+              "wilson95": [
+                0.7412,
+                1.0
+              ]
+            },
+            "contradicts_recall": {
+              "k": 11,
+              "n": 11,
+              "rate": 1.0,
+              "wilson95": [
+                0.7412,
+                1.0
+              ]
+            },
+            "consistent_recall": {
+              "k": 46,
+              "n": 46,
+              "rate": 1.0,
+              "wilson95": [
+                0.9229,
+                1.0
+              ]
+            },
+            "abstention": {
+              "k": 0,
+              "n": 57,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.0631
+              ]
+            },
+            "false_contradiction": {
+              "k": 0,
+              "n": 46,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.0771
+              ]
+            }
+          }
+        },
+        "rule": {
+          "sheet": {
+            "pairs": 16,
+            "confusion": {
+              "contradicts->contradicts": 16
+            },
+            "contradicts_precision": {
+              "k": 16,
+              "n": 16,
+              "rate": 1.0,
+              "wilson95": [
+                0.8064,
+                1.0
+              ]
+            },
+            "contradicts_precision_lenient": {
+              "k": 16,
+              "n": 16,
+              "rate": 1.0,
+              "wilson95": [
+                0.8064,
+                1.0
+              ]
+            },
+            "contradicts_recall": {
+              "k": 16,
+              "n": 16,
+              "rate": 1.0,
+              "wilson95": [
+                0.8064,
+                1.0
+              ]
+            },
+            "consistent_recall": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "wilson95": null
+            },
+            "abstention": {
+              "k": 0,
+              "n": 16,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.1936
+              ]
+            },
+            "false_contradiction": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "wilson95": null
+            }
+          },
+          "true_row": {
+            "pairs": 57,
+            "confusion": {
+              "contradicts->contradicts": 11,
+              "consistent->consistent": 46
+            },
+            "contradicts_precision": {
+              "k": 11,
+              "n": 11,
+              "rate": 1.0,
+              "wilson95": [
+                0.7412,
+                1.0
+              ]
+            },
+            "contradicts_precision_lenient": {
+              "k": 11,
+              "n": 11,
+              "rate": 1.0,
+              "wilson95": [
+                0.7412,
+                1.0
+              ]
+            },
+            "contradicts_recall": {
+              "k": 11,
+              "n": 11,
+              "rate": 1.0,
+              "wilson95": [
+                0.7412,
+                1.0
+              ]
+            },
+            "consistent_recall": {
+              "k": 46,
+              "n": 46,
+              "rate": 1.0,
+              "wilson95": [
+                0.9229,
+                1.0
+              ]
+            },
+            "abstention": {
+              "k": 0,
+              "n": 57,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.0631
+              ]
+            },
+            "false_contradiction": {
+              "k": 0,
+              "n": 46,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.0771
+              ]
+            }
+          }
+        }
+      },
+      "location": {
+        "always_consistent": {
+          "sheet": {
+            "pairs": 42,
+            "confusion": {
+              "contradicts->consistent": 31,
+              "consistent->consistent": 10,
+              "unclear->consistent": 1
+            },
+            "contradicts_precision": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "wilson95": null
+            },
+            "contradicts_precision_lenient": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "wilson95": null
+            },
+            "contradicts_recall": {
+              "k": 0,
+              "n": 31,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.1103
+              ]
+            },
+            "consistent_recall": {
+              "k": 10,
+              "n": 10,
+              "rate": 1.0,
+              "wilson95": [
+                0.7225,
+                1.0
+              ]
+            },
+            "abstention": {
+              "k": 0,
+              "n": 42,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.0838
+              ]
+            },
+            "false_contradiction": {
+              "k": 0,
+              "n": 10,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.2775
+              ]
+            }
+          },
+          "true_row": {
+            "pairs": 99,
+            "confusion": {
+              "contradicts->consistent": 7,
+              "consistent->consistent": 91,
+              "unclear->consistent": 1
+            },
+            "contradicts_precision": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "wilson95": null
+            },
+            "contradicts_precision_lenient": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "wilson95": null
+            },
+            "contradicts_recall": {
+              "k": 0,
+              "n": 7,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.3543
+              ]
+            },
+            "consistent_recall": {
+              "k": 91,
+              "n": 91,
+              "rate": 1.0,
+              "wilson95": [
+                0.9595,
+                1.0
+              ]
+            },
+            "abstention": {
+              "k": 0,
+              "n": 99,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.0374
+              ]
+            },
+            "false_contradiction": {
+              "k": 0,
+              "n": 91,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.0405
+              ]
+            }
+          }
+        },
+        "always_contradicts": {
+          "sheet": {
+            "pairs": 42,
+            "confusion": {
+              "contradicts->contradicts": 31,
+              "consistent->contradicts": 10,
+              "unclear->contradicts": 1
+            },
+            "contradicts_precision": {
+              "k": 31,
+              "n": 42,
+              "rate": 0.7381,
+              "wilson95": [
+                0.5893,
+                0.847
+              ]
+            },
+            "contradicts_precision_lenient": {
+              "k": 31,
+              "n": 41,
+              "rate": 0.7561,
+              "wilson95": [
+                0.6066,
+                0.8617
+              ]
+            },
+            "contradicts_recall": {
+              "k": 31,
+              "n": 31,
+              "rate": 1.0,
+              "wilson95": [
+                0.8897,
+                1.0
+              ]
+            },
+            "consistent_recall": {
+              "k": 0,
+              "n": 10,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.2775
+              ]
+            },
+            "abstention": {
+              "k": 0,
+              "n": 42,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.0838
+              ]
+            },
+            "false_contradiction": {
+              "k": 10,
+              "n": 10,
+              "rate": 1.0,
+              "wilson95": [
+                0.7225,
+                1.0
+              ]
+            }
+          },
+          "true_row": {
+            "pairs": 99,
+            "confusion": {
+              "contradicts->contradicts": 7,
+              "consistent->contradicts": 91,
+              "unclear->contradicts": 1
+            },
+            "contradicts_precision": {
+              "k": 7,
+              "n": 99,
+              "rate": 0.0707,
+              "wilson95": [
+                0.0347,
+                0.1388
+              ]
+            },
+            "contradicts_precision_lenient": {
+              "k": 7,
+              "n": 98,
+              "rate": 0.0714,
+              "wilson95": [
+                0.035,
+                0.1402
+              ]
+            },
+            "contradicts_recall": {
+              "k": 7,
+              "n": 7,
+              "rate": 1.0,
+              "wilson95": [
+                0.6457,
+                1.0
+              ]
+            },
+            "consistent_recall": {
+              "k": 0,
+              "n": 91,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.0405
+              ]
+            },
+            "abstention": {
+              "k": 0,
+              "n": 99,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.0374
+              ]
+            },
+            "false_contradiction": {
+              "k": 91,
+              "n": 91,
+              "rate": 1.0,
+              "wilson95": [
+                0.9595,
+                1.0
+              ]
+            }
+          }
+        },
+        "judge": {
+          "sheet": {
+            "pairs": 42,
+            "confusion": {
+              "contradicts->contradicts": 23,
+              "contradicts->consistent": 1,
+              "contradicts->unclear": 7,
+              "consistent->contradicts": 2,
+              "consistent->consistent": 7,
+              "consistent->unclear": 1,
+              "unclear->contradicts": 1
+            },
+            "contradicts_precision": {
+              "k": 23,
+              "n": 26,
+              "rate": 0.8846,
+              "wilson95": [
+                0.7102,
+                0.96
+              ]
+            },
+            "contradicts_precision_lenient": {
+              "k": 23,
+              "n": 25,
+              "rate": 0.92,
+              "wilson95": [
+                0.7503,
+                0.9778
+              ]
+            },
+            "contradicts_recall": {
+              "k": 23,
+              "n": 31,
+              "rate": 0.7419,
+              "wilson95": [
+                0.5675,
+                0.863
+              ]
+            },
+            "consistent_recall": {
+              "k": 7,
+              "n": 10,
+              "rate": 0.7,
+              "wilson95": [
+                0.3968,
+                0.8922
+              ]
+            },
+            "abstention": {
+              "k": 8,
+              "n": 42,
+              "rate": 0.1905,
+              "wilson95": [
+                0.0998,
+                0.333
+              ]
+            },
+            "false_contradiction": {
+              "k": 2,
+              "n": 10,
+              "rate": 0.2,
+              "wilson95": [
+                0.0567,
+                0.5098
+              ]
+            }
+          },
+          "true_row": {
+            "pairs": 99,
+            "confusion": {
+              "contradicts->contradicts": 7,
+              "consistent->contradicts": 3,
+              "consistent->consistent": 85,
+              "consistent->unclear": 3,
+              "unclear->contradicts": 1
+            },
+            "contradicts_precision": {
+              "k": 7,
+              "n": 11,
+              "rate": 0.6364,
+              "wilson95": [
+                0.3538,
+                0.8483
+              ]
+            },
+            "contradicts_precision_lenient": {
+              "k": 7,
+              "n": 10,
+              "rate": 0.7,
+              "wilson95": [
+                0.3968,
+                0.8922
+              ]
+            },
+            "contradicts_recall": {
+              "k": 7,
+              "n": 7,
+              "rate": 1.0,
+              "wilson95": [
+                0.6457,
+                1.0
+              ]
+            },
+            "consistent_recall": {
+              "k": 85,
+              "n": 91,
+              "rate": 0.9341,
+              "wilson95": [
+                0.8635,
+                0.9694
+              ]
+            },
+            "abstention": {
+              "k": 3,
+              "n": 99,
+              "rate": 0.0303,
+              "wilson95": [
+                0.0104,
+                0.0853
+              ]
+            },
+            "false_contradiction": {
+              "k": 3,
+              "n": 91,
+              "rate": 0.033,
+              "wilson95": [
+                0.0113,
+                0.0925
+              ]
+            }
+          }
+        }
+      },
+      "people": {
+        "always_consistent": {
+          "sheet": {
+            "pairs": 12,
+            "confusion": {
+              "contradicts->consistent": 7,
+              "consistent->consistent": 2,
+              "unclear->consistent": 3
+            },
+            "contradicts_precision": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "wilson95": null
+            },
+            "contradicts_precision_lenient": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "wilson95": null
+            },
+            "contradicts_recall": {
+              "k": 0,
+              "n": 7,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.3543
+              ]
+            },
+            "consistent_recall": {
+              "k": 2,
+              "n": 2,
+              "rate": 1.0,
+              "wilson95": [
+                0.3424,
+                1.0
+              ]
+            },
+            "abstention": {
+              "k": 0,
+              "n": 12,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.2425
+              ]
+            },
+            "false_contradiction": {
+              "k": 0,
+              "n": 2,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.6576
+              ]
+            }
+          },
+          "true_row": {
+            "pairs": 45,
+            "confusion": {
+              "contradicts->consistent": 3,
+              "consistent->consistent": 39,
+              "unclear->consistent": 3
+            },
+            "contradicts_precision": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "wilson95": null
+            },
+            "contradicts_precision_lenient": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "wilson95": null
+            },
+            "contradicts_recall": {
+              "k": 0,
+              "n": 3,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.5615
+              ]
+            },
+            "consistent_recall": {
+              "k": 39,
+              "n": 39,
+              "rate": 1.0,
+              "wilson95": [
+                0.9103,
+                1.0
+              ]
+            },
+            "abstention": {
+              "k": 0,
+              "n": 45,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.0787
+              ]
+            },
+            "false_contradiction": {
+              "k": 0,
+              "n": 39,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.0897
+              ]
+            }
+          }
+        },
+        "always_contradicts": {
+          "sheet": {
+            "pairs": 12,
+            "confusion": {
+              "contradicts->contradicts": 7,
+              "consistent->contradicts": 2,
+              "unclear->contradicts": 3
+            },
+            "contradicts_precision": {
+              "k": 7,
+              "n": 12,
+              "rate": 0.5833,
+              "wilson95": [
+                0.3195,
+                0.8067
+              ]
+            },
+            "contradicts_precision_lenient": {
+              "k": 7,
+              "n": 9,
+              "rate": 0.7778,
+              "wilson95": [
+                0.4526,
+                0.9368
+              ]
+            },
+            "contradicts_recall": {
+              "k": 7,
+              "n": 7,
+              "rate": 1.0,
+              "wilson95": [
+                0.6457,
+                1.0
+              ]
+            },
+            "consistent_recall": {
+              "k": 0,
+              "n": 2,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.6576
+              ]
+            },
+            "abstention": {
+              "k": 0,
+              "n": 12,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.2425
+              ]
+            },
+            "false_contradiction": {
+              "k": 2,
+              "n": 2,
+              "rate": 1.0,
+              "wilson95": [
+                0.3424,
+                1.0
+              ]
+            }
+          },
+          "true_row": {
+            "pairs": 45,
+            "confusion": {
+              "contradicts->contradicts": 3,
+              "consistent->contradicts": 39,
+              "unclear->contradicts": 3
+            },
+            "contradicts_precision": {
+              "k": 3,
+              "n": 45,
+              "rate": 0.0667,
+              "wilson95": [
+                0.0229,
+                0.1786
+              ]
+            },
+            "contradicts_precision_lenient": {
+              "k": 3,
+              "n": 42,
+              "rate": 0.0714,
+              "wilson95": [
+                0.0246,
+                0.1901
+              ]
+            },
+            "contradicts_recall": {
+              "k": 3,
+              "n": 3,
+              "rate": 1.0,
+              "wilson95": [
+                0.4385,
+                1.0
+              ]
+            },
+            "consistent_recall": {
+              "k": 0,
+              "n": 39,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.0897
+              ]
+            },
+            "abstention": {
+              "k": 0,
+              "n": 45,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.0787
+              ]
+            },
+            "false_contradiction": {
+              "k": 39,
+              "n": 39,
+              "rate": 1.0,
+              "wilson95": [
+                0.9103,
+                1.0
+              ]
+            }
+          }
+        },
+        "judge": {
+          "sheet": {
+            "pairs": 12,
+            "confusion": {
+              "contradicts->contradicts": 6,
+              "contradicts->consistent": 1,
+              "consistent->contradicts": 1,
+              "consistent->consistent": 1,
+              "unclear->unclear": 3
+            },
+            "contradicts_precision": {
+              "k": 6,
+              "n": 7,
+              "rate": 0.8571,
+              "wilson95": [
+                0.4869,
+                0.9743
+              ]
+            },
+            "contradicts_precision_lenient": {
+              "k": 6,
+              "n": 7,
+              "rate": 0.8571,
+              "wilson95": [
+                0.4869,
+                0.9743
+              ]
+            },
+            "contradicts_recall": {
+              "k": 6,
+              "n": 7,
+              "rate": 0.8571,
+              "wilson95": [
+                0.4869,
+                0.9743
+              ]
+            },
+            "consistent_recall": {
+              "k": 1,
+              "n": 2,
+              "rate": 0.5,
+              "wilson95": [
+                0.0945,
+                0.9055
+              ]
+            },
+            "abstention": {
+              "k": 3,
+              "n": 12,
+              "rate": 0.25,
+              "wilson95": [
+                0.0889,
+                0.5323
+              ]
+            },
+            "false_contradiction": {
+              "k": 1,
+              "n": 2,
+              "rate": 0.5,
+              "wilson95": [
+                0.0945,
+                0.9055
+              ]
+            }
+          },
+          "true_row": {
+            "pairs": 45,
+            "confusion": {
+              "contradicts->contradicts": 3,
+              "consistent->contradicts": 3,
+              "consistent->consistent": 35,
+              "consistent->unclear": 1,
+              "unclear->contradicts": 3
+            },
+            "contradicts_precision": {
+              "k": 3,
+              "n": 9,
+              "rate": 0.3333,
+              "wilson95": [
+                0.1206,
+                0.6458
+              ]
+            },
+            "contradicts_precision_lenient": {
+              "k": 3,
+              "n": 6,
+              "rate": 0.5,
+              "wilson95": [
+                0.1876,
+                0.8124
+              ]
+            },
+            "contradicts_recall": {
+              "k": 3,
+              "n": 3,
+              "rate": 1.0,
+              "wilson95": [
+                0.4385,
+                1.0
+              ]
+            },
+            "consistent_recall": {
+              "k": 35,
+              "n": 39,
+              "rate": 0.8974,
+              "wilson95": [
+                0.7642,
+                0.9594
+              ]
+            },
+            "abstention": {
+              "k": 1,
+              "n": 45,
+              "rate": 0.0222,
+              "wilson95": [
+                0.0039,
+                0.1157
+              ]
+            },
+            "false_contradiction": {
+              "k": 3,
+              "n": 39,
+              "rate": 0.0769,
+              "wilson95": [
+                0.0265,
+                0.2032
+              ]
+            }
+          }
+        },
+        "qid_rule": {
+          "sheet": {
+            "pairs": 12,
+            "confusion": {
+              "contradicts->contradicts": 1,
+              "contradicts->unclear": 6,
+              "consistent->consistent": 1,
+              "consistent->unclear": 1,
+              "unclear->unclear": 3
+            },
+            "contradicts_precision": {
+              "k": 1,
+              "n": 1,
+              "rate": 1.0,
+              "wilson95": [
+                0.2065,
+                1.0
+              ]
+            },
+            "contradicts_precision_lenient": {
+              "k": 1,
+              "n": 1,
+              "rate": 1.0,
+              "wilson95": [
+                0.2065,
+                1.0
+              ]
+            },
+            "contradicts_recall": {
+              "k": 1,
+              "n": 7,
+              "rate": 0.1429,
+              "wilson95": [
+                0.0257,
+                0.5131
+              ]
+            },
+            "consistent_recall": {
+              "k": 1,
+              "n": 2,
+              "rate": 0.5,
+              "wilson95": [
+                0.0945,
+                0.9055
+              ]
+            },
+            "abstention": {
+              "k": 10,
+              "n": 12,
+              "rate": 0.8333,
+              "wilson95": [
+                0.552,
+                0.953
+              ]
+            },
+            "false_contradiction": {
+              "k": 0,
+              "n": 2,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.6576
+              ]
+            }
+          },
+          "true_row": {
+            "pairs": 45,
+            "confusion": {
+              "contradicts->unclear": 3,
+              "consistent->consistent": 10,
+              "consistent->unclear": 29,
+              "unclear->unclear": 3
+            },
+            "contradicts_precision": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "wilson95": null
+            },
+            "contradicts_precision_lenient": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "wilson95": null
+            },
+            "contradicts_recall": {
+              "k": 0,
+              "n": 3,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.5615
+              ]
+            },
+            "consistent_recall": {
+              "k": 10,
+              "n": 39,
+              "rate": 0.2564,
+              "wilson95": [
+                0.1457,
+                0.4108
+              ]
+            },
+            "abstention": {
+              "k": 35,
+              "n": 45,
+              "rate": 0.7778,
+              "wilson95": [
+                0.6373,
+                0.8746
+              ]
+            },
+            "false_contradiction": {
+              "k": 0,
+              "n": 39,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.0897
+              ]
+            }
+          }
+        }
+      },
+      "event": {
+        "always_consistent": {
+          "sheet": {
+            "pairs": 40,
+            "confusion": {
+              "contradicts->consistent": 33,
+              "consistent->consistent": 7
+            },
+            "contradicts_precision": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "wilson95": null
+            },
+            "contradicts_precision_lenient": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "wilson95": null
+            },
+            "contradicts_recall": {
+              "k": 0,
+              "n": 33,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.1043
+              ]
+            },
+            "consistent_recall": {
+              "k": 7,
+              "n": 7,
+              "rate": 1.0,
+              "wilson95": [
+                0.6457,
+                1.0
+              ]
+            },
+            "abstention": {
+              "k": 0,
+              "n": 40,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.0876
+              ]
+            },
+            "false_contradiction": {
+              "k": 0,
+              "n": 7,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.3543
+              ]
+            }
+          },
+          "true_row": {
+            "pairs": 85,
+            "confusion": {
+              "contradicts->consistent": 7,
+              "consistent->consistent": 78
+            },
+            "contradicts_precision": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "wilson95": null
+            },
+            "contradicts_precision_lenient": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "wilson95": null
+            },
+            "contradicts_recall": {
+              "k": 0,
+              "n": 7,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.3543
+              ]
+            },
+            "consistent_recall": {
+              "k": 78,
+              "n": 78,
+              "rate": 1.0,
+              "wilson95": [
+                0.9531,
+                1.0
+              ]
+            },
+            "abstention": {
+              "k": 0,
+              "n": 85,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.0432
+              ]
+            },
+            "false_contradiction": {
+              "k": 0,
+              "n": 78,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.0469
+              ]
+            }
+          }
+        },
+        "always_contradicts": {
+          "sheet": {
+            "pairs": 40,
+            "confusion": {
+              "contradicts->contradicts": 33,
+              "consistent->contradicts": 7
+            },
+            "contradicts_precision": {
+              "k": 33,
+              "n": 40,
+              "rate": 0.825,
+              "wilson95": [
+                0.6805,
+                0.9125
+              ]
+            },
+            "contradicts_precision_lenient": {
+              "k": 33,
+              "n": 40,
+              "rate": 0.825,
+              "wilson95": [
+                0.6805,
+                0.9125
+              ]
+            },
+            "contradicts_recall": {
+              "k": 33,
+              "n": 33,
+              "rate": 1.0,
+              "wilson95": [
+                0.8957,
+                1.0
+              ]
+            },
+            "consistent_recall": {
+              "k": 0,
+              "n": 7,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.3543
+              ]
+            },
+            "abstention": {
+              "k": 0,
+              "n": 40,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.0876
+              ]
+            },
+            "false_contradiction": {
+              "k": 7,
+              "n": 7,
+              "rate": 1.0,
+              "wilson95": [
+                0.6457,
+                1.0
+              ]
+            }
+          },
+          "true_row": {
+            "pairs": 85,
+            "confusion": {
+              "contradicts->contradicts": 7,
+              "consistent->contradicts": 78
+            },
+            "contradicts_precision": {
+              "k": 7,
+              "n": 85,
+              "rate": 0.0824,
+              "wilson95": [
+                0.0405,
+                0.1604
+              ]
+            },
+            "contradicts_precision_lenient": {
+              "k": 7,
+              "n": 85,
+              "rate": 0.0824,
+              "wilson95": [
+                0.0405,
+                0.1604
+              ]
+            },
+            "contradicts_recall": {
+              "k": 7,
+              "n": 7,
+              "rate": 1.0,
+              "wilson95": [
+                0.6457,
+                1.0
+              ]
+            },
+            "consistent_recall": {
+              "k": 0,
+              "n": 78,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.0469
+              ]
+            },
+            "abstention": {
+              "k": 0,
+              "n": 85,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.0432
+              ]
+            },
+            "false_contradiction": {
+              "k": 78,
+              "n": 78,
+              "rate": 1.0,
+              "wilson95": [
+                0.9531,
+                1.0
+              ]
+            }
+          }
+        },
+        "judge": {
+          "sheet": {
+            "pairs": 40,
+            "confusion": {
+              "contradicts->contradicts": 27,
+              "contradicts->consistent": 4,
+              "contradicts->unclear": 2,
+              "consistent->contradicts": 3,
+              "consistent->consistent": 4
+            },
+            "contradicts_precision": {
+              "k": 27,
+              "n": 30,
+              "rate": 0.9,
+              "wilson95": [
+                0.7438,
+                0.9654
+              ]
+            },
+            "contradicts_precision_lenient": {
+              "k": 27,
+              "n": 30,
+              "rate": 0.9,
+              "wilson95": [
+                0.7438,
+                0.9654
+              ]
+            },
+            "contradicts_recall": {
+              "k": 27,
+              "n": 33,
+              "rate": 0.8182,
+              "wilson95": [
+                0.6561,
+                0.9139
+              ]
+            },
+            "consistent_recall": {
+              "k": 4,
+              "n": 7,
+              "rate": 0.5714,
+              "wilson95": [
+                0.2505,
+                0.8418
+              ]
+            },
+            "abstention": {
+              "k": 2,
+              "n": 40,
+              "rate": 0.05,
+              "wilson95": [
+                0.0138,
+                0.165
+              ]
+            },
+            "false_contradiction": {
+              "k": 3,
+              "n": 7,
+              "rate": 0.4286,
+              "wilson95": [
+                0.1582,
+                0.7495
+              ]
+            }
+          },
+          "true_row": {
+            "pairs": 85,
+            "confusion": {
+              "contradicts->contradicts": 7,
+              "consistent->contradicts": 8,
+              "consistent->consistent": 70
+            },
+            "contradicts_precision": {
+              "k": 7,
+              "n": 15,
+              "rate": 0.4667,
+              "wilson95": [
+                0.2481,
+                0.6988
+              ]
+            },
+            "contradicts_precision_lenient": {
+              "k": 7,
+              "n": 15,
+              "rate": 0.4667,
+              "wilson95": [
+                0.2481,
+                0.6988
+              ]
+            },
+            "contradicts_recall": {
+              "k": 7,
+              "n": 7,
+              "rate": 1.0,
+              "wilson95": [
+                0.6457,
+                1.0
+              ]
+            },
+            "consistent_recall": {
+              "k": 70,
+              "n": 78,
+              "rate": 0.8974,
+              "wilson95": [
+                0.8105,
+                0.9471
+              ]
+            },
+            "abstention": {
+              "k": 0,
+              "n": 85,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.0432
+              ]
+            },
+            "false_contradiction": {
+              "k": 8,
+              "n": 78,
+              "rate": 0.1026,
+              "wilson95": [
+                0.0529,
+                0.1895
+              ]
+            }
+          }
+        }
+      }
+    },
+    "gate": {
+      "date": {
+        "passed": true,
+        "checks": {
+          "false_contradiction": true,
+          "false_contradiction_upper": true,
+          "recall": true
+        }
+      },
+      "location": {
+        "passed": true,
+        "checks": {
+          "false_contradiction": true,
+          "false_contradiction_upper": true,
+          "precision": true,
+          "precision_lower": true,
+          "recall": true
+        }
+      },
+      "event": {
+        "passed": false,
+        "checks": {
+          "false_contradiction": false,
+          "false_contradiction_upper": true,
+          "precision": true,
+          "precision_lower": true,
+          "recall": true
+        }
+      }
+    }
+  },
+  "contested_true_rows": 46
+}

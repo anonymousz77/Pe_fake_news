@@ -1,0 +1,1428 @@
+# Fact-checker blocklist for retrieval. Generated, then reviewed by a person.
+# Regenerate with `python scripts/factcheckers.py build`; read by retrieve.connect().
+version: 1
+built: '2026-10-29'
+generated_by: python scripts/factcheckers.py build
+reads_test_splits: 'yes, by the person''s decision of 2026-10-28: a domain list carries no label, and
+  a fact-checker we miss leaks answers into test evidence'
+rule:
+  store_floor: 50
+  section_share: 0.9
+  section_words:
+  - fact-check
+  - factcheck
+  - fact_check
+  - faktencheck
+  - fact-checking
+  - hoax-alert
+  - hoax
+  - verificador
+  - verifica
+  - verify
+  - webqoof
+  - fake-news
+  - reality-check
+  - antibulo
+  - faux-et-usage
+  - desintox
+  - fakecheck
+  - viral-check
+  - debunk
+  match: the host or any subdomain; Wayback captures by the archived URL; path prefixes on the lower-cased
+    path
+read:
+  m4fc:
+    train: 2994
+    dev: 499
+    test: 1489
+  m4fc_fc_org_differs_from_url_host: 1
+  averitec:
+    train: 3068
+    dev: 500
+    test: no fact_checking_article field
+  averimatec:
+    train: 793
+    val: 152
+    test: not on disk
+  mocheg:
+    train: 18583
+    val: 600
+    test: 2001
+  verite:
+    all: 338
+  liar: 'data/raw/liar/README: statements from the politifact.com API'
+  fakenewsnet: data/raw/fakenewsnet/dataset/{politifact,gossipcop}_{fake,real}.csv
+  factify2:
+    train: 12572
+    val: 2107
+    test: 2059
+counts:
+  hosts: 107
+  domain: 79
+  path: 19
+  docs: 9
+  review: 0
+  decided: 9
+  added_by_hand: 5
+  only_from_test: 3
+  store_docs_blocked: 1477
+  store_docs_blocked_by_rule:
+    host: 398
+    section: 40
+    doc: 1
+    word: 1038
+only_from_test:
+- factchecker.gr
+- factchecklab.org
+- snopessnopes.com
+path_words:
+  words:
+  - fact-check
+  - factcheck
+  - fact_check
+  - faktencheck
+  - fact-checking
+  - hoax-alert
+  - hoax
+  - verificador
+  - verifica
+  - verify
+  - webqoof
+  - fake-news
+  - reality-check
+  - antibulo
+  - faux-et-usage
+  - desintox
+  - fakecheck
+  - viral-check
+  - debunk
+  match: 'a substring of the page''s lower-cased path (a Wayback capture''s: the archived URL''s), on
+    every host; never the host, the query or the fragment'
+  decided: 'the person, 2026-10-28: block every page whose path carries one, on every host; losing a few
+    real news pages is cheaper than a leak'
+  store_blocked: 1038
+  store_blocked_hosts: 588
+  store_blocked_by_word:
+    fact-check: 257
+    factcheck: 26
+    fact_check: 0
+    faktencheck: 81
+    fact-checking: 10
+    hoax-alert: 1
+    hoax: 134
+    verificador: 0
+    verifica: 119
+    verify: 104
+    webqoof: 4
+    fake-news: 284
+    reality-check: 13
+    antibulo: 0
+    faux-et-usage: 1
+    desintox: 3
+    fakecheck: 0
+    viral-check: 1
+    debunk: 50
+hosts:
+- host: 12newsnow.com
+  scope: path
+  paths:
+  - /article/news/verify
+  section_share: 1.0
+  store_docs: 90
+  store_blocked: 0
+  cited_by:
+    averimatec:
+    - train
+    - val
+    factify2:
+    - train
+  fact_check_urls: 2
+  cited_fact_checks_in_store: 0
+- host: 211check.org
+  scope: domain
+  store_docs: 0
+  store_blocked: 0
+  cited_by:
+    m4fc:
+    - dev
+    - test
+    - train
+  fact_check_urls: 51
+  cited_fact_checks_in_store: 0
+- host: 5newsonline.com
+  scope: path
+  paths:
+  - /article/news/verify
+  section_share: 1.0
+  store_docs: 106
+  store_blocked: 1
+  cited_by:
+    averimatec:
+    - train
+  fact_check_urls: 1
+  cited_fact_checks_in_store: 0
+- host: aap.com.au
+  scope: docs
+  doc_ids: []
+  store_docs: 64
+  store_blocked: 0
+  decided: 'the person, 2026-10-28: block only its cited fact-checks, not the host whole'
+  cited_by:
+    averimatec:
+    - train
+    - val
+    averitec:
+    - dev
+    - train
+    factify2:
+    - test
+    - train
+    - val
+  fact_check_urls: 64
+  cited_fact_checks_in_store: 0
+- host: abc.net.au
+  scope: docs
+  doc_ids: []
+  store_docs: 466
+  store_blocked: 0
+  decided: 'the person, 2026-10-28: block only its cited fact-checks, not the host whole'
+  cited_by:
+    averitec:
+    - dev
+    - train
+  fact_check_urls: 10
+  cited_fact_checks_in_store: 0
+- host: africacheck.org
+  scope: domain
+  store_docs: 63
+  store_blocked: 63
+  cited_by:
+    averitec:
+    - dev
+    - train
+    factify2:
+    - test
+    - train
+    - val
+  fact_check_urls: 607
+  cited_fact_checks_in_store: 0
+- host: altnews.in
+  scope: domain
+  store_docs: 9
+  store_blocked: 9
+  cited_by:
+    averimatec:
+    - train
+    - val
+    averitec:
+    - dev
+    - train
+  fact_check_urls: 97
+  cited_fact_checks_in_store: 3
+- host: annielab.org
+  scope: domain
+  store_docs: 0
+  store_blocked: 0
+  cited_by:
+    averimatec:
+    - train
+  fact_check_urls: 1
+  cited_fact_checks_in_store: 0
+- host: apnews.com
+  scope: domain
+  store_docs: 23
+  store_blocked: 23
+  cited_by:
+    averimatec:
+    - train
+  fact_check_urls: 1
+  cited_fact_checks_in_store: 0
+- host: bbc.co.uk
+  scope: docs
+  doc_ids:
+  - cd04b4afab022399ce32c977dc29bf3355814c2b1e168bad6d8116b0dd0f1a14
+  store_docs: 1254
+  store_blocked: 1
+  decided: 'the person, 2026-10-28: block only its cited fact-checks, not the host whole'
+  cited_by:
+    averitec:
+    - dev
+    - train
+  fact_check_urls: 17
+  cited_fact_checks_in_store: 1
+- host: boomlive.in
+  scope: domain
+  store_docs: 18
+  store_blocked: 18
+  cited_by:
+    averimatec:
+    - train
+    - val
+    averitec:
+    - dev
+    - train
+    factify2:
+    - train
+  fact_check_urls: 151
+  cited_fact_checks_in_store: 1
+- host: cambodia.factcrescendo.com
+  scope: domain
+  store_docs: 0
+  store_blocked: 0
+  cited_by:
+    averimatec:
+    - train
+    - val
+  fact_check_urls: 9
+  cited_fact_checks_in_store: 0
+- host: cbs19.tv
+  scope: path
+  paths:
+  - /article/news/verify
+  section_share: 1.0
+  store_docs: 87
+  store_blocked: 2
+  cited_by:
+    averimatec:
+    - train
+  fact_check_urls: 1
+  cited_fact_checks_in_store: 0
+- host: cbs8.com
+  scope: path
+  paths:
+  - /article/news/verify
+  section_share: 1.0
+  store_docs: 232
+  store_blocked: 1
+  cited_by:
+    averimatec:
+    - train
+    factify2:
+    - val
+  fact_check_urls: 1
+  cited_fact_checks_in_store: 0
+- host: cbsnews.com
+  scope: docs
+  doc_ids: []
+  store_docs: 541
+  store_blocked: 0
+  decided: 'the person, 2026-10-28: block only its cited fact-checks, not the host whole'
+  cited_by:
+    averitec:
+    - train
+  fact_check_urls: 7
+  cited_fact_checks_in_store: 0
+- host: check4spam.com
+  scope: domain
+  store_docs: 0
+  store_blocked: 0
+  cited_by:
+    averimatec:
+    - train
+    factify2:
+    - test
+    - train
+  fact_check_urls: 1
+  cited_fact_checks_in_store: 0
+- host: checkyourfact.com
+  scope: domain
+  store_docs: 13
+  store_blocked: 13
+  cited_by:
+    averimatec:
+    - train
+    - val
+    averitec:
+    - dev
+    - train
+  fact_check_urls: 203
+  cited_fact_checks_in_store: 2
+- host: climatefeedback.org
+  scope: domain
+  store_docs: 0
+  store_blocked: 0
+  cited_by:
+    averitec:
+    - train
+    factify2:
+    - train
+    - val
+  fact_check_urls: 3
+  cited_fact_checks_in_store: 0
+- host: congocheck.net
+  scope: domain
+  store_docs: 0
+  store_blocked: 0
+  cited_by:
+    m4fc:
+    - dev
+    - test
+    - train
+  fact_check_urls: 260
+  cited_fact_checks_in_store: 0
+- host: correctiv.org
+  scope: domain
+  store_docs: 0
+  store_blocked: 0
+  cited_by:
+    m4fc:
+    - dev
+    - test
+    - train
+  fact_check_urls: 220
+  cited_fact_checks_in_store: 0
+- host: covid19facts.ca
+  scope: domain
+  store_docs: 0
+  store_blocked: 0
+  cited_by:
+    averitec:
+    - dev
+    - train
+  fact_check_urls: 14
+  cited_fact_checks_in_store: 0
+- host: dfrac.org
+  scope: domain
+  store_docs: 0
+  store_blocked: 0
+  cited_by:
+    m4fc:
+    - dev
+    - train
+  fact_check_urls: 104
+  cited_fact_checks_in_store: 0
+- host: digiteye.in
+  scope: domain
+  store_docs: 0
+  store_blocked: 0
+  cited_by:
+    averimatec:
+    - train
+  fact_check_urls: 1
+  cited_fact_checks_in_store: 0
+- host: dogrula.org
+  scope: domain
+  store_docs: 0
+  store_blocked: 0
+  cited_by:
+    m4fc:
+    - dev
+    - test
+    - train
+  fact_check_urls: 52
+  cited_fact_checks_in_store: 0
+- host: dubawa.org
+  scope: domain
+  store_docs: 1
+  store_blocked: 1
+  cited_by:
+    averitec:
+    - dev
+    - train
+    m4fc:
+    - dev
+    - test
+    - train
+  fact_check_urls: 153
+  cited_fact_checks_in_store: 0
+- host: en.youturn.in
+  scope: domain
+  store_docs: 0
+  store_blocked: 0
+  cited_by:
+    averimatec:
+    - train
+    - val
+  fact_check_urls: 50
+  cited_fact_checks_in_store: 0
+- host: factcheck.aap.com.au
+  scope: domain
+  store_docs: 1
+  store_blocked: 1
+  added_by_hand: 'the person, 2026-10-29: a fact-checker no dataset of ours cites, found by name by `residual`;
+    block the host whole'
+  cited_by: {}
+  fact_check_urls: 0
+  cited_fact_checks_in_store: 0
+- host: factcheck.afp.com
+  scope: domain
+  store_docs: 5
+  store_blocked: 5
+  cited_by:
+    averimatec:
+    - train
+    - val
+    averitec:
+    - dev
+    - train
+    factify2:
+    - test
+    - train
+    - val
+  fact_check_urls: 385
+  cited_fact_checks_in_store: 0
+- host: factcheck.org
+  scope: domain
+  store_docs: 20
+  store_blocked: 20
+  cited_by:
+    averitec:
+    - dev
+    - train
+    factify2:
+    - test
+    - train
+    - val
+  fact_check_urls: 210
+  cited_fact_checks_in_store: 5
+- host: factcheck.thedispatch.com
+  scope: domain
+  store_docs: 0
+  store_blocked: 0
+  cited_by:
+    averitec:
+    - dev
+    - train
+  fact_check_urls: 13
+  cited_fact_checks_in_store: 0
+- host: factcheckcenter.jp
+  scope: domain
+  store_docs: 0
+  store_blocked: 0
+  cited_by:
+    m4fc:
+    - dev
+    - test
+  fact_check_urls: 18
+  cited_fact_checks_in_store: 0
+- host: factchecker.gr
+  scope: domain
+  store_docs: 0
+  store_blocked: 0
+  cited_by:
+    m4fc:
+    - test
+  fact_check_urls: 17
+  cited_fact_checks_in_store: 0
+- host: factcheckhub.com
+  scope: domain
+  store_docs: 3
+  store_blocked: 3
+  cited_by:
+    averimatec:
+    - train
+  fact_check_urls: 9
+  cited_fact_checks_in_store: 0
+- host: factchecklab.org
+  scope: domain
+  store_docs: 0
+  store_blocked: 0
+  cited_by:
+    m4fc:
+    - test
+  fact_check_urls: 5
+  cited_fact_checks_in_store: 0
+- host: factcheckni.org
+  scope: domain
+  store_docs: 1
+  store_blocked: 1
+  cited_by:
+    averitec:
+    - dev
+    - train
+  fact_check_urls: 15
+  cited_fact_checks_in_store: 0
+- host: factly.in
+  scope: domain
+  store_docs: 3
+  store_blocked: 3
+  cited_by:
+    averimatec:
+    - train
+    - val
+    averitec:
+    - train
+    factify2:
+    - train
+    - val
+    m4fc:
+    - dev
+    - test
+    - train
+  fact_check_urls: 1136
+  cited_fact_checks_in_store: 0
+- host: factrakers.org
+  scope: domain
+  store_docs: 0
+  store_blocked: 0
+  cited_by:
+    averimatec:
+    - train
+  fact_check_urls: 3
+  cited_fact_checks_in_store: 0
+- host: fakenews.pl
+  scope: domain
+  store_docs: 0
+  store_blocked: 0
+  cited_by:
+    averimatec:
+    - train
+  fact_check_urls: 1
+  cited_fact_checks_in_store: 0
+- host: fatabyyano.net
+  scope: domain
+  store_docs: 0
+  store_blocked: 0
+  cited_by:
+    m4fc:
+    - dev
+    - test
+    - train
+  fact_check_urls: 658
+  cited_fact_checks_in_store: 0
+- host: fit.thequint.com
+  scope: domain
+  store_docs: 3
+  store_blocked: 3
+  cited_by:
+    averitec:
+    - dev
+    - train
+  fact_check_urls: 3
+  cited_fact_checks_in_store: 0
+- host: fox61.com
+  scope: path
+  paths:
+  - /article/news/verify
+  section_share: 1.0
+  store_docs: 119
+  store_blocked: 1
+  cited_by:
+    averimatec:
+    - train
+  fact_check_urls: 1
+  cited_fact_checks_in_store: 0
+- host: fullfact.org
+  scope: domain
+  store_docs: 9
+  store_blocked: 9
+  cited_by:
+    averimatec:
+    - train
+    - val
+    averitec:
+    - dev
+    - train
+    factify2:
+    - test
+    - train
+    - val
+  fact_check_urls: 319
+  cited_fact_checks_in_store: 5
+- host: ghana.dubawa.org
+  scope: domain
+  store_docs: 0
+  store_blocked: 0
+  cited_by:
+    averitec:
+    - train
+  fact_check_urls: 1
+  cited_fact_checks_in_store: 0
+- host: ghanafact.com
+  scope: domain
+  store_docs: 0
+  store_blocked: 0
+  cited_by:
+    averitec:
+    - dev
+    - train
+  fact_check_urls: 15
+  cited_fact_checks_in_store: 0
+- host: gossipcop.com
+  scope: domain
+  store_docs: 22
+  store_blocked: 22
+  cited_by:
+    fakenewsnet:
+    - all
+  fact_check_urls: 0
+  cited_fact_checks_in_store: 0
+- host: ha-asia.com
+  scope: domain
+  store_docs: 0
+  store_blocked: 0
+  cited_by:
+    averitec:
+    - train
+  fact_check_urls: 10
+  cited_fact_checks_in_store: 0
+- host: healthfeedback.org
+  scope: domain
+  store_docs: 1
+  store_blocked: 1
+  cited_by:
+    averimatec:
+    - train
+    averitec:
+    - dev
+    - train
+    factify2:
+    - train
+    - val
+  fact_check_urls: 33
+  cited_fact_checks_in_store: 0
+- host: hoax.sk
+  scope: domain
+  store_docs: 4
+  store_blocked: 4
+  added_by_hand: 'the person, 2026-10-29: a fact-checker no dataset of ours cites, found by name by `residual`;
+    block the host whole'
+  cited_by: {}
+  fact_check_urls: 0
+  cited_fact_checks_in_store: 0
+- host: icirnigeria.org
+  scope: domain
+  store_docs: 7
+  store_blocked: 7
+  cited_by:
+    averimatec:
+    - train
+    averitec:
+    - dev
+    - train
+  fact_check_urls: 20
+  cited_fact_checks_in_store: 0
+- host: indiatoday.in
+  scope: path
+  paths:
+  - /fact-check
+  section_share: 1.0
+  store_docs: 779
+  store_blocked: 5
+  cited_by:
+    averimatec:
+    - train
+    - val
+    averitec:
+    - dev
+    - train
+    m4fc:
+    - dev
+    - test
+    - train
+  fact_check_urls: 418
+  cited_fact_checks_in_store: 3
+- host: kiiitv.com
+  scope: path
+  paths:
+  - /article/news/verify
+  section_share: 1.0
+  store_docs: 140
+  store_blocked: 1
+  cited_by:
+    averimatec:
+    - train
+  fact_check_urls: 2
+  cited_fact_checks_in_store: 0
+- host: king5.com
+  scope: docs
+  doc_ids: []
+  store_docs: 95
+  store_blocked: 0
+  decided: 'the person, 2026-10-28: block only its cited fact-checks, not the host whole'
+  cited_by:
+    averimatec:
+    - train
+    factify2:
+    - test
+    - train
+    - val
+  fact_check_urls: 1
+  cited_fact_checks_in_store: 0
+- host: knack.be
+  scope: path
+  paths:
+  - /factcheck
+  section_share: 1.0
+  store_docs: 228
+  store_blocked: 0
+  cited_by:
+    m4fc:
+    - dev
+    - test
+    - train
+  fact_check_urls: 95
+  cited_fact_checks_in_store: 0
+- host: ktvb.com
+  scope: path
+  paths:
+  - /article/news/verify
+  section_share: 1.0
+  store_docs: 183
+  store_blocked: 1
+  cited_by:
+    averimatec:
+    - train
+  fact_check_urls: 1
+  cited_fact_checks_in_store: 0
+- host: kvue.com
+  scope: path
+  paths:
+  - /article/news/verify
+  section_share: 1.0
+  store_docs: 146
+  store_blocked: 0
+  cited_by:
+    averimatec:
+    - train
+  fact_check_urls: 1
+  cited_fact_checks_in_store: 0
+- host: larepublica.pe
+  scope: path
+  paths:
+  - /verificador
+  section_share: 1.0
+  store_docs: 1698
+  store_blocked: 2
+  cited_by:
+    m4fc:
+    - dev
+    - test
+    - train
+  fact_check_urls: 253
+  cited_fact_checks_in_store: 1
+- host: leadstories.com
+  scope: domain
+  store_docs: 7
+  store_blocked: 7
+  cited_by:
+    averimatec:
+    - train
+    - val
+    averitec:
+    - dev
+    - train
+    factify2:
+    - val
+    m4fc:
+    - dev
+    - test
+    - train
+  fact_check_urls: 683
+  cited_fact_checks_in_store: 4
+- host: logicallyfacts.com
+  scope: domain
+  store_docs: 0
+  store_blocked: 0
+  cited_by:
+    averimatec:
+    - train
+    - val
+  fact_check_urls: 3
+  cited_fact_checks_in_store: 0
+- host: misbar.com
+  scope: domain
+  store_docs: 3
+  store_blocked: 3
+  cited_by:
+    averimatec:
+    - train
+    - val
+    averitec:
+    - dev
+    - train
+    factify2:
+    - test
+    - train
+  fact_check_urls: 68
+  cited_fact_checks_in_store: 2
+- host: myanmar.factcrescendo.com
+  scope: domain
+  store_docs: 1
+  store_blocked: 1
+  added_by_hand: 'the person, 2026-10-29: a fact-checker no dataset of ours cites, found by name by `residual`;
+    block the host whole'
+  cited_by: {}
+  fact_check_urls: 0
+  cited_fact_checks_in_store: 0
+- host: myfoxzone.com
+  scope: domain
+  store_docs: 1
+  store_blocked: 1
+  cited_by:
+    averimatec:
+    - train
+  fact_check_urls: 1
+  cited_fact_checks_in_store: 0
+- host: mythdetector.ge
+  scope: domain
+  store_docs: 0
+  store_blocked: 0
+  cited_by:
+    m4fc:
+    - dev
+    - test
+    - train
+  fact_check_urls: 67
+  cited_fact_checks_in_store: 0
+- host: namibiafactcheck.org.na
+  scope: domain
+  store_docs: 0
+  store_blocked: 0
+  cited_by:
+    averitec:
+    - train
+    factify2:
+    - train
+  fact_check_urls: 6
+  cited_fact_checks_in_store: 0
+- host: newscentermaine.com
+  scope: path
+  paths:
+  - /article/news/verify
+  section_share: 1.0
+  store_docs: 104
+  store_blocked: 1
+  cited_by:
+    averimatec:
+    - train
+    - val
+    factify2:
+    - train
+    - val
+  fact_check_urls: 2
+  cited_fact_checks_in_store: 0
+- host: newschecker.in
+  scope: domain
+  store_docs: 0
+  store_blocked: 0
+  cited_by:
+    averimatec:
+    - train
+    - val
+    factify2:
+    - test
+    - train
+  fact_check_urls: 43
+  cited_fact_checks_in_store: 0
+- host: newsmeter.in
+  scope: domain
+  store_docs: 0
+  store_blocked: 0
+  cited_by:
+    averimatec:
+    - train
+    averitec:
+    - dev
+    - train
+  fact_check_urls: 59
+  cited_fact_checks_in_store: 0
+- host: newsmobile.in
+  scope: domain
+  store_docs: 1
+  store_blocked: 1
+  cited_by:
+    averimatec:
+    - train
+    - val
+    averitec:
+    - dev
+    - train
+    factify2:
+    - test
+    - train
+  fact_check_urls: 101
+  cited_fact_checks_in_store: 0
+- host: newsweek.com
+  scope: domain
+  store_docs: 14
+  store_blocked: 14
+  cited_by:
+    averimatec:
+    - train
+    averitec:
+    - train
+    factify2:
+    - test
+    - train
+    - val
+  fact_check_urls: 17
+  cited_fact_checks_in_store: 0
+- host: nytimes.com
+  scope: docs
+  doc_ids: []
+  store_docs: 522
+  store_blocked: 0
+  decided: 'the person, 2026-10-28: block only its cited fact-checks, not the host whole'
+  cited_by:
+    averitec:
+    - train
+  fact_check_urls: 37
+  cited_fact_checks_in_store: 0
+- host: pa.media
+  scope: domain
+  store_docs: 0
+  store_blocked: 0
+  cited_by:
+    averimatec:
+    - train
+  fact_check_urls: 2
+  cited_fact_checks_in_store: 0
+- host: pesacheck.org
+  scope: domain
+  store_docs: 0
+  store_blocked: 0
+  cited_by:
+    averitec:
+    - train
+    m4fc:
+    - dev
+    - test
+    - train
+  fact_check_urls: 563
+  cited_fact_checks_in_store: 0
+- host: poligrafo.sapo.pt
+  scope: domain
+  store_docs: 0
+  store_blocked: 0
+  cited_by:
+    m4fc:
+    - dev
+    - test
+    - train
+  fact_check_urls: 284
+  cited_fact_checks_in_store: 0
+- host: politifact.com
+  scope: domain
+  store_docs: 46
+  store_blocked: 46
+  cited_by:
+    averimatec:
+    - train
+    - val
+    averitec:
+    - dev
+    - train
+    factify2:
+    - train
+    - val
+    fakenewsnet:
+    - all
+    liar:
+    - all
+    mocheg:
+    - test
+    - train
+    - val
+  fact_check_urls: 11495
+  cited_fact_checks_in_store: 18
+- host: polygraph.info
+  scope: domain
+  store_docs: 9
+  store_blocked: 9
+  cited_by:
+    averimatec:
+    - train
+    averitec:
+    - dev
+    - train
+    factify2:
+    - train
+  fact_check_urls: 73
+  cited_fact_checks_in_store: 0
+- host: poynter.org
+  scope: domain
+  store_docs: 0
+  store_blocked: 0
+  cited_by:
+    averitec:
+    - dev
+    - train
+    factify2:
+    - test
+    - train
+    - val
+  fact_check_urls: 3
+  cited_fact_checks_in_store: 0
+- host: rappler.com
+  scope: path
+  paths:
+  - /newsbreak/fact-check
+  section_share: 1.0
+  store_docs: 332
+  store_blocked: 3
+  cited_by:
+    averitec:
+    - dev
+    - train
+    factify2:
+    - train
+  fact_check_urls: 8
+  cited_fact_checks_in_store: 0
+- host: reuters.com
+  scope: docs
+  doc_ids: []
+  store_docs: 9384
+  store_blocked: 0
+  decided: 'the person, 2026-10-28: block only its cited fact-checks, not the host whole'
+  cited_by:
+    verite:
+    - all
+  fact_check_urls: 78
+  cited_fact_checks_in_store: 0
+- host: rocketcitynow.com
+  scope: domain
+  store_docs: 0
+  store_blocked: 0
+  cited_by:
+    averimatec:
+    - train
+  fact_check_urls: 1
+  cited_fact_checks_in_store: 0
+- host: sciencefeedback.co
+  scope: domain
+  store_docs: 1
+  store_blocked: 1
+  cited_by:
+    averitec:
+    - train
+  fact_check_urls: 3
+  cited_fact_checks_in_store: 0
+- host: smhoaxslayer.com
+  scope: domain
+  store_docs: 2
+  store_blocked: 2
+  added_by_hand: 'the person, 2026-10-29: a fact-checker no dataset of ours cites, found by name by `residual`;
+    block the host whole'
+  cited_by: {}
+  fact_check_urls: 0
+  cited_fact_checks_in_store: 0
+- host: snopes.com
+  scope: domain
+  store_docs: 42
+  store_blocked: 42
+  cited_by:
+    averimatec:
+    - train
+    - val
+    factify2:
+    - test
+    - train
+    - val
+    m4fc:
+    - dev
+    - test
+    - train
+    mocheg:
+    - test
+    - train
+    - val
+    verite:
+    - all
+  fact_check_urls: 11058
+  cited_fact_checks_in_store: 9
+- host: snopessnopes.com
+  scope: domain
+  store_docs: 0
+  store_blocked: 0
+  cited_by:
+    m4fc:
+    - test
+  fact_check_urls: 1
+  cited_fact_checks_in_store: 0
+- host: sochfactcheck.com
+  scope: domain
+  store_docs: 0
+  store_blocked: 0
+  cited_by:
+    averimatec:
+    - train
+    - val
+  fact_check_urls: 8
+  cited_fact_checks_in_store: 0
+- host: srilanka.factcrescendo.com
+  scope: domain
+  store_docs: 1
+  store_blocked: 1
+  cited_by:
+    averimatec:
+    - train
+    - val
+  fact_check_urls: 15
+  cited_fact_checks_in_store: 0
+- host: telugupost.com
+  scope: domain
+  store_docs: 0
+  store_blocked: 0
+  cited_by:
+    averimatec:
+    - train
+    - val
+  fact_check_urls: 18
+  cited_fact_checks_in_store: 0
+- host: thedispatch.com
+  scope: domain
+  store_docs: 0
+  store_blocked: 0
+  cited_by:
+    averimatec:
+    - train
+  fact_check_urls: 1
+  cited_fact_checks_in_store: 0
+- host: theferret.scot
+  scope: domain
+  store_docs: 0
+  store_blocked: 0
+  cited_by:
+    averitec:
+    - train
+  fact_check_urls: 2
+  cited_fact_checks_in_store: 0
+- host: thegazette.com
+  scope: domain
+  store_docs: 18
+  store_blocked: 18
+  cited_by:
+    averitec:
+    - dev
+    - train
+  fact_check_urls: 10
+  cited_fact_checks_in_store: 0
+- host: thejournal.ie
+  scope: docs
+  doc_ids: []
+  store_docs: 127
+  store_blocked: 0
+  decided: 'the person, 2026-10-28: block only its cited fact-checks, not the host whole'
+  cited_by:
+    averitec:
+    - train
+    factify2:
+    - train
+    - val
+  fact_check_urls: 6
+  cited_fact_checks_in_store: 0
+- host: thelogicalindian.com
+  scope: domain
+  store_docs: 7
+  store_blocked: 7
+  cited_by:
+    averitec:
+    - dev
+    - train
+    factify2:
+    - test
+    - train
+    - val
+  fact_check_urls: 50
+  cited_fact_checks_in_store: 1
+- host: thequint.com
+  scope: path
+  paths:
+  - /news/webqoof
+  section_share: 1.0
+  store_docs: 345
+  store_blocked: 7
+  cited_by:
+    averimatec:
+    - train
+    - val
+    averitec:
+    - dev
+    - train
+    factify2:
+    - test
+    - train
+    - val
+  fact_check_urls: 63
+  cited_fact_checks_in_store: 0
+- host: thip.media
+  scope: domain
+  store_docs: 1
+  store_blocked: 1
+  cited_by:
+    averimatec:
+    - train
+    - val
+  fact_check_urls: 3
+  cited_fact_checks_in_store: 0
+- host: tjekdet.dk
+  scope: domain
+  store_docs: 0
+  store_blocked: 0
+  cited_by:
+    m4fc:
+    - test
+    - train
+  fact_check_urls: 29
+  cited_fact_checks_in_store: 0
+- host: turnbackhoax.id
+  scope: domain
+  store_docs: 2
+  store_blocked: 2
+  added_by_hand: 'the person, 2026-10-29: a fact-checker no dataset of ours cites, found by name by `residual`;
+    block the host whole'
+  cited_by: {}
+  fact_check_urls: 0
+  cited_fact_checks_in_store: 0
+- host: usatoday.com
+  scope: path
+  paths:
+  - /story/news/factcheck
+  section_share: 1.0
+  store_docs: 1205
+  store_blocked: 11
+  cited_by:
+    averimatec:
+    - train
+    - val
+    averitec:
+    - dev
+    - train
+  fact_check_urls: 102
+  cited_fact_checks_in_store: 1
+- host: verafiles.org
+  scope: domain
+  store_docs: 1
+  store_blocked: 1
+  cited_by:
+    averimatec:
+    - train
+    - val
+    averitec:
+    - dev
+    - train
+    factify2:
+    - val
+  fact_check_urls: 37
+  cited_fact_checks_in_store: 0
+- host: verify-sy.com
+  scope: domain
+  store_docs: 0
+  store_blocked: 0
+  cited_by:
+    m4fc:
+    - dev
+    - test
+    - train
+  fact_check_urls: 42
+  cited_fact_checks_in_store: 0
+- host: verifythis.com
+  scope: domain
+  store_docs: 0
+  store_blocked: 0
+  cited_by:
+    averimatec:
+    - val
+  fact_check_urls: 1
+  cited_fact_checks_in_store: 0
+- host: vishvasnews.com
+  scope: domain
+  store_docs: 2
+  store_blocked: 2
+  cited_by:
+    averimatec:
+    - train
+    - val
+    averitec:
+    - dev
+    - train
+    factify2:
+    - test
+    - val
+  fact_check_urls: 72
+  cited_fact_checks_in_store: 0
+- host: washingtonpost.com
+  scope: docs
+  doc_ids: []
+  store_docs: 1547
+  store_blocked: 0
+  decided: 'the person, 2026-10-28: block only its cited fact-checks, not the host whole'
+  cited_by:
+    averitec:
+    - dev
+    - train
+    factify2:
+    - test
+    - train
+    - val
+  fact_check_urls: 110
+  cited_fact_checks_in_store: 0
+- host: weareiowa.com
+  scope: path
+  paths:
+  - /article/news/verify
+  section_share: 1.0
+  store_docs: 68
+  store_blocked: 1
+  cited_by:
+    averimatec:
+    - train
+  fact_check_urls: 1
+  cited_fact_checks_in_store: 0
+- host: wnep.com
+  scope: path
+  paths:
+  - /article/news/verify
+  section_share: 1.0
+  store_docs: 110
+  store_blocked: 1
+  cited_by:
+    averimatec:
+    - train
+  fact_check_urls: 1
+  cited_fact_checks_in_store: 0
+- host: wqad.com
+  scope: path
+  paths:
+  - /article/news/verify
+  section_share: 1.0
+  store_docs: 112
+  store_blocked: 1
+  cited_by:
+    averimatec:
+    - train
+  fact_check_urls: 1
+  cited_fact_checks_in_store: 0
+- host: wthr.com
+  scope: domain
+  store_docs: 33
+  store_blocked: 33
+  cited_by:
+    averimatec:
+    - train
+  fact_check_urls: 1
+  cited_fact_checks_in_store: 0
+- host: wtol.com
+  scope: path
+  paths:
+  - /article/news/verify
+  section_share: 1.0
+  store_docs: 69
+  store_blocked: 1
+  cited_by:
+    averimatec:
+    - train
+  fact_check_urls: 1
+  cited_fact_checks_in_store: 0
+- host: youturn.in
+  scope: domain
+  store_docs: 0
+  store_blocked: 0
+  cited_by:
+    m4fc:
+    - dev
+    - test
+    - train
+  fact_check_urls: 59
+  cited_fact_checks_in_store: 0
+- host: zimfact.org
+  scope: domain
+  store_docs: 0
+  store_blocked: 0
+  cited_by:
+    averitec:
+    - dev
+    - train
+  fact_check_urls: 4
+  cited_fact_checks_in_store: 0

@@ -19,6 +19,7 @@ and must never be confused in practice.
 | [counts_ledger.md](counts_ledger.md) | Row and file counts at each pipeline stage — the arithmetic that has to reconcile |
 | [evidence_store.md](evidence_store.md) | Design and contents of `data/bible/` |
 | [gallery_calibration.md](gallery_calibration.md) | The entity gallery's full calibration: the unset threshold, the look-alike finding, accuracy by figure, what widening would cost |
+| [related_work.md](related_work.md) | Prior work behind design decisions: time-filtered evidence, and COVE, the consistency block's closest prior |
 
 ## Conventions
 

@@ -1,0 +1,1241 @@
+{
+  "generated": "2026-10-29",
+  "queries": 200,
+  "k": 20,
+  "index": {
+    "bm25.sqlite": {
+      "bytes": 13387153408,
+      "mtime_ns": 1789081273740869500
+    },
+    "temporal.sqlite": {
+      "bytes": 439357440,
+      "mtime_ns": 1789081273889308400
+    }
+  },
+  "profile": [
+    {
+      "run_seconds": 83.14,
+      "terms": 4,
+      "matched": 854081,
+      "pass_date": 655156,
+      "match": 0.079,
+      "ranking": 0.799,
+      "content_fetch": 116.371,
+      "temporal_join": 3.463,
+      "e0_sql": 123.469,
+      "e0_python": 9.9e-05,
+      "e1": 3.104,
+      "match_again": 0.149,
+      "e1_equals_e0": true
+    },
+    {
+      "run_seconds": 94.06,
+      "terms": 12,
+      "matched": 1077624,
+      "pass_date": 1057971,
+      "match": 1.148,
+      "ranking": 0.691,
+      "content_fetch": 127.052,
+      "temporal_join": 5.163,
+      "e0_sql": 143.342,
+      "e0_python": 7.7e-05,
+      "e1": 7.337,
+      "match_again": 0.477,
+      "e1_equals_e0": true
+    },
+    {
+      "run_seconds": 101.02,
+      "terms": 21,
+      "matched": 1031911,
+      "pass_date": 883287,
+      "match": 2.181,
+      "ranking": 12.094,
+      "content_fetch": 131.165,
+      "temporal_join": 2.438,
+      "e0_sql": 138.607,
+      "e0_python": 7.8e-05,
+      "e1": 16.291,
+      "match_again": 0.841,
+      "e1_equals_e0": true
+    }
+  ],
+  "e1_equivalence": {
+    "queries": 200,
+    "identical": 200,
+    "ties_reordered_only": 0,
+    "differ": 0,
+    "top1_score_equal": 200,
+    "profiled_e0_equals_e1": [
+      3,
+      3
+    ]
+  },
+  "options": {
+    "E1": {
+      "seconds": {
+        "n": 200,
+        "mean": 3.03,
+        "median": 2.591,
+        "p90": 5.253,
+        "min": 0.055,
+        "max": 12.954
+      },
+      "terms": {
+        "n": 200,
+        "mean": 13.105,
+        "median": 13.0,
+        "p90": 20,
+        "min": 3,
+        "max": 26
+      },
+      "fell_back": 0,
+      "fewer_than_k": 0,
+      "overlap_at_20": {
+        "mean": 1.0,
+        "full": 200,
+        "n": 200
+      },
+      "overlap_at_5": {
+        "mean": 1.0,
+        "full": 200,
+        "n": 200
+      },
+      "top1_same": 200,
+      "entities_in_top5": {
+        "all": {
+          "queries": 200,
+          "1+": 160,
+          "2+": 95
+        },
+        "india": {
+          "queries": 48,
+          "1+": 44,
+          "2+": 27
+        }
+      },
+      "entities_against_baseline": {
+        "all": {
+          "1+": {
+            "gained": 0,
+            "lost": 0
+          },
+          "2+": {
+            "gained": 0,
+            "lost": 0
+          }
+        },
+        "india": {
+          "1+": {
+            "gained": 0,
+            "lost": 0
+          },
+          "2+": {
+            "gained": 0,
+            "lost": 0
+          }
+        }
+      },
+      "leak_rules": "none"
+    },
+    "E1+": {
+      "seconds": {
+        "n": 200,
+        "mean": 4.026,
+        "median": 3.074,
+        "p90": 7.55,
+        "min": 0.021,
+        "max": 23.538
+      },
+      "terms": {
+        "n": 200,
+        "mean": 13.105,
+        "median": 13.0,
+        "p90": 20,
+        "min": 3,
+        "max": 26
+      },
+      "fell_back": 0,
+      "fewer_than_k": 0,
+      "overlap_at_20": {
+        "mean": 1.0,
+        "full": 200,
+        "n": 200
+      },
+      "overlap_at_5": {
+        "mean": 1.0,
+        "full": 200,
+        "n": 200
+      },
+      "top1_same": 200,
+      "entities_in_top5": {
+        "all": {
+          "queries": 200,
+          "1+": 160,
+          "2+": 95
+        },
+        "india": {
+          "queries": 48,
+          "1+": 44,
+          "2+": 27
+        }
+      },
+      "entities_against_baseline": {
+        "all": {
+          "1+": {
+            "gained": 0,
+            "lost": 0
+          },
+          "2+": {
+            "gained": 0,
+            "lost": 0
+          }
+        },
+        "india": {
+          "1+": {
+            "gained": 0,
+            "lost": 0
+          },
+          "2+": {
+            "gained": 0,
+            "lost": 0
+          }
+        }
+      },
+      "leak_rules": "none"
+    },
+    "P1": {
+      "seconds": {
+        "n": 200,
+        "mean": 2.946,
+        "median": 2.637,
+        "p90": 5.084,
+        "min": 0.078,
+        "max": 12.842
+      },
+      "terms": {
+        "n": 200,
+        "mean": 10.78,
+        "median": 11.0,
+        "p90": 16,
+        "min": 2,
+        "max": 21
+      },
+      "fell_back": 0,
+      "fewer_than_k": 0,
+      "overlap_at_20": {
+        "mean": 1.0,
+        "full": 200,
+        "n": 200
+      },
+      "overlap_at_5": {
+        "mean": 1.0,
+        "full": 200,
+        "n": 200
+      },
+      "top1_same": 200,
+      "entities_in_top5": {
+        "all": {
+          "queries": 200,
+          "1+": 160,
+          "2+": 95
+        },
+        "india": {
+          "queries": 48,
+          "1+": 44,
+          "2+": 27
+        }
+      },
+      "entities_against_baseline": {
+        "all": {
+          "1+": {
+            "gained": 0,
+            "lost": 0
+          },
+          "2+": {
+            "gained": 0,
+            "lost": 0
+          }
+        },
+        "india": {
+          "1+": {
+            "gained": 0,
+            "lost": 0
+          },
+          "2+": {
+            "gained": 0,
+            "lost": 0
+          }
+        }
+      },
+      "leak_rules": "none"
+    },
+    "P2": {
+      "seconds": {
+        "n": 200,
+        "mean": 0.102,
+        "median": 0.093,
+        "p90": 0.175,
+        "min": 0.001,
+        "max": 0.343
+      },
+      "terms": {
+        "n": 200,
+        "mean": 3.26,
+        "median": 3.0,
+        "p90": 5,
+        "min": 1,
+        "max": 8
+      },
+      "fell_back": 5,
+      "fewer_than_k": 1,
+      "overlap_at_20": {
+        "mean": 0.3377,
+        "full": 3,
+        "n": 200
+      },
+      "overlap_at_5": {
+        "mean": 0.334,
+        "full": 14,
+        "n": 200
+      },
+      "top1_same": 62,
+      "entities_in_top5": {
+        "all": {
+          "queries": 200,
+          "1+": 150,
+          "2+": 79
+        },
+        "india": {
+          "queries": 48,
+          "1+": 42,
+          "2+": 21
+        }
+      },
+      "entities_against_baseline": {
+        "all": {
+          "1+": {
+            "gained": 8,
+            "lost": 18
+          },
+          "2+": {
+            "gained": 4,
+            "lost": 20
+          }
+        },
+        "india": {
+          "1+": {
+            "gained": 1,
+            "lost": 3
+          },
+          "2+": {
+            "gained": 1,
+            "lost": 7
+          }
+        }
+      },
+      "leak_rules": "none"
+    },
+    "P3": {
+      "seconds": {
+        "n": 200,
+        "mean": 2.698,
+        "median": 1.776,
+        "p90": 6.106,
+        "min": 0.102,
+        "max": 10.195
+      },
+      "terms": {
+        "n": 200,
+        "mean": 7.835,
+        "median": 8.0,
+        "p90": 11,
+        "min": 3,
+        "max": 14
+      },
+      "fell_back": 0,
+      "fewer_than_k": 0,
+      "overlap_at_20": {
+        "mean": 0.7863,
+        "full": 87,
+        "n": 200
+      },
+      "overlap_at_5": {
+        "mean": 0.778,
+        "full": 107,
+        "n": 200
+      },
+      "top1_same": 154,
+      "entities_in_top5": {
+        "all": {
+          "queries": 200,
+          "1+": 165,
+          "2+": 92
+        },
+        "india": {
+          "queries": 48,
+          "1+": 43,
+          "2+": 27
+        }
+      },
+      "entities_against_baseline": {
+        "all": {
+          "1+": {
+            "gained": 6,
+            "lost": 1
+          },
+          "2+": {
+            "gained": 3,
+            "lost": 6
+          }
+        },
+        "india": {
+          "1+": {
+            "gained": 0,
+            "lost": 1
+          },
+          "2+": {
+            "gained": 0,
+            "lost": 0
+          }
+        }
+      },
+      "leak_rules": "none"
+    },
+    "P4": {
+      "seconds": {
+        "n": 200,
+        "mean": 1.705,
+        "median": 0.888,
+        "p90": 4.125,
+        "min": 0.079,
+        "max": 8.028
+      },
+      "terms": {
+        "n": 200,
+        "mean": 7.625,
+        "median": 8.0,
+        "p90": 8,
+        "min": 3,
+        "max": 8
+      },
+      "fell_back": 0,
+      "fewer_than_k": 0,
+      "overlap_at_20": {
+        "mean": 0.7985,
+        "full": 79,
+        "n": 200
+      },
+      "overlap_at_5": {
+        "mean": 0.782,
+        "full": 103,
+        "n": 200
+      },
+      "top1_same": 159,
+      "entities_in_top5": {
+        "all": {
+          "queries": 200,
+          "1+": 163,
+          "2+": 94
+        },
+        "india": {
+          "queries": 48,
+          "1+": 43,
+          "2+": 28
+        }
+      },
+      "entities_against_baseline": {
+        "all": {
+          "1+": {
+            "gained": 5,
+            "lost": 2
+          },
+          "2+": {
+            "gained": 4,
+            "lost": 5
+          }
+        },
+        "india": {
+          "1+": {
+            "gained": 0,
+            "lost": 1
+          },
+          "2+": {
+            "gained": 1,
+            "lost": 0
+          }
+        }
+      },
+      "leak_rules": "none"
+    },
+    "L (earlier rules)": {
+      "seconds": {
+        "n": 200,
+        "mean": 5.178,
+        "median": 4.143,
+        "p90": 9.965,
+        "min": 0.111,
+        "max": 22.945
+      },
+      "terms": {
+        "n": 200,
+        "mean": 13.105,
+        "median": 13.0,
+        "p90": 20,
+        "min": 3,
+        "max": 26
+      },
+      "fell_back": 0,
+      "fewer_than_k": 0,
+      "overlap_at_20": {
+        "mean": 0.997,
+        "full": 191,
+        "n": 200
+      },
+      "overlap_at_5": {
+        "mean": 0.998,
+        "full": 198,
+        "n": 200
+      },
+      "top1_same": 200,
+      "entities_in_top5": {
+        "all": {
+          "queries": 200,
+          "1+": 160,
+          "2+": 95
+        },
+        "india": {
+          "queries": 48,
+          "1+": 44,
+          "2+": 27
+        }
+      },
+      "entities_against_baseline": {
+        "all": {
+          "1+": {
+            "gained": 0,
+            "lost": 0
+          },
+          "2+": {
+            "gained": 0,
+            "lost": 0
+          }
+        },
+        "india": {
+          "1+": {
+            "gained": 0,
+            "lost": 0
+          },
+          "2+": {
+            "gained": 0,
+            "lost": 0
+          }
+        }
+      },
+      "leak_rules": "earlier: 93 host rows, 1 doc ids, 0 path words"
+    }
+  },
+  "session": {
+    "processes": [
+      "2026-10-29T03:37:43 pid 25156"
+    ],
+    "order": "williams",
+    "options": {
+      "L": {
+        "seconds": {
+          "n": 200,
+          "mean": 6.85,
+          "median": 6.109,
+          "p90": 11.979,
+          "min": 0.048,
+          "max": 21.642
+        },
+        "terms": {
+          "n": 200,
+          "mean": 13.105,
+          "median": 13.0,
+          "p90": 20,
+          "min": 3,
+          "max": 26
+        },
+        "fell_back": 0,
+        "fewer_than_k": 0,
+        "overlap_at_20": {
+          "mean": 1.0,
+          "full": 200,
+          "n": 200
+        },
+        "overlap_at_5": {
+          "mean": 1.0,
+          "full": 200,
+          "n": 200
+        },
+        "top1_same": 200,
+        "entities_in_top5": {
+          "all": {
+            "queries": 200,
+            "1+": 160,
+            "2+": 95
+          },
+          "india": {
+            "queries": 48,
+            "1+": 44,
+            "2+": 27
+          }
+        },
+        "entities_against_baseline": {
+          "all": {
+            "1+": {
+              "gained": 0,
+              "lost": 0
+            },
+            "2+": {
+              "gained": 0,
+              "lost": 0
+            }
+          },
+          "india": {
+            "1+": {
+              "gained": 0,
+              "lost": 0
+            },
+            "2+": {
+              "gained": 0,
+              "lost": 0
+            }
+          }
+        },
+        "seconds_by_position": [
+          {
+            "n": 40,
+            "mean": 6.831,
+            "median": 6.686,
+            "p90": 11.347,
+            "min": 0.1,
+            "max": 17.2
+          },
+          {
+            "n": 40,
+            "mean": 7.445,
+            "median": 6.744,
+            "p90": 13.454,
+            "min": 1.621,
+            "max": 21.337
+          },
+          {
+            "n": 40,
+            "mean": 6.717,
+            "median": 6.329,
+            "p90": 11.885,
+            "min": 1.825,
+            "max": 17.505
+          },
+          {
+            "n": 40,
+            "mean": 6.739,
+            "median": 5.925,
+            "p90": 12.27,
+            "min": 0.048,
+            "max": 17.571
+          },
+          {
+            "n": 40,
+            "mean": 6.518,
+            "median": 5.684,
+            "p90": 11.235,
+            "min": 1.374,
+            "max": 21.642
+          }
+        ]
+      },
+      "L+P2": {
+        "seconds": {
+          "n": 200,
+          "mean": 0.09,
+          "median": 0.079,
+          "p90": 0.158,
+          "min": 0.001,
+          "max": 0.257
+        },
+        "terms": {
+          "n": 200,
+          "mean": 3.26,
+          "median": 3.0,
+          "p90": 5,
+          "min": 1,
+          "max": 8
+        },
+        "fell_back": 5,
+        "fewer_than_k": 1,
+        "overlap_at_20": {
+          "mean": 0.3375,
+          "full": 3,
+          "n": 200
+        },
+        "overlap_at_5": {
+          "mean": 0.334,
+          "full": 14,
+          "n": 200
+        },
+        "top1_same": 62,
+        "entities_in_top5": {
+          "all": {
+            "queries": 200,
+            "1+": 150,
+            "2+": 79
+          },
+          "india": {
+            "queries": 48,
+            "1+": 42,
+            "2+": 21
+          }
+        },
+        "entities_against_baseline": {
+          "all": {
+            "1+": {
+              "gained": 8,
+              "lost": 18
+            },
+            "2+": {
+              "gained": 4,
+              "lost": 20
+            }
+          },
+          "india": {
+            "1+": {
+              "gained": 1,
+              "lost": 3
+            },
+            "2+": {
+              "gained": 1,
+              "lost": 7
+            }
+          }
+        },
+        "seconds_by_position": [
+          {
+            "n": 40,
+            "mean": 0.095,
+            "median": 0.085,
+            "p90": 0.169,
+            "min": 0.01,
+            "max": 0.257
+          },
+          {
+            "n": 40,
+            "mean": 0.085,
+            "median": 0.078,
+            "p90": 0.165,
+            "min": 0.001,
+            "max": 0.209
+          },
+          {
+            "n": 40,
+            "mean": 0.088,
+            "median": 0.075,
+            "p90": 0.146,
+            "min": 0.013,
+            "max": 0.188
+          },
+          {
+            "n": 40,
+            "mean": 0.092,
+            "median": 0.081,
+            "p90": 0.148,
+            "min": 0.028,
+            "max": 0.253
+          },
+          {
+            "n": 40,
+            "mean": 0.091,
+            "median": 0.078,
+            "p90": 0.145,
+            "min": 0.016,
+            "max": 0.229
+          }
+        ]
+      },
+      "L+P3": {
+        "seconds": {
+          "n": 200,
+          "mean": 1.741,
+          "median": 1.086,
+          "p90": 4.15,
+          "min": 0.048,
+          "max": 7.454
+        },
+        "terms": {
+          "n": 200,
+          "mean": 7.835,
+          "median": 8.0,
+          "p90": 11,
+          "min": 3,
+          "max": 14
+        },
+        "fell_back": 0,
+        "fewer_than_k": 0,
+        "overlap_at_20": {
+          "mean": 0.7863,
+          "full": 87,
+          "n": 200
+        },
+        "overlap_at_5": {
+          "mean": 0.779,
+          "full": 107,
+          "n": 200
+        },
+        "top1_same": 154,
+        "entities_in_top5": {
+          "all": {
+            "queries": 200,
+            "1+": 165,
+            "2+": 92
+          },
+          "india": {
+            "queries": 48,
+            "1+": 43,
+            "2+": 27
+          }
+        },
+        "entities_against_baseline": {
+          "all": {
+            "1+": {
+              "gained": 6,
+              "lost": 1
+            },
+            "2+": {
+              "gained": 3,
+              "lost": 6
+            }
+          },
+          "india": {
+            "1+": {
+              "gained": 0,
+              "lost": 1
+            },
+            "2+": {
+              "gained": 0,
+              "lost": 0
+            }
+          }
+        },
+        "seconds_by_position": [
+          {
+            "n": 40,
+            "mean": 1.852,
+            "median": 1.07,
+            "p90": 4.088,
+            "min": 0.194,
+            "max": 6.792
+          },
+          {
+            "n": 40,
+            "mean": 1.6,
+            "median": 0.866,
+            "p90": 3.852,
+            "min": 0.098,
+            "max": 7.454
+          },
+          {
+            "n": 40,
+            "mean": 1.796,
+            "median": 0.998,
+            "p90": 4.556,
+            "min": 0.048,
+            "max": 6.042
+          },
+          {
+            "n": 40,
+            "mean": 1.668,
+            "median": 1.242,
+            "p90": 3.434,
+            "min": 0.075,
+            "max": 6.369
+          },
+          {
+            "n": 40,
+            "mean": 1.786,
+            "median": 1.34,
+            "p90": 3.467,
+            "min": 0.131,
+            "max": 5.988
+          }
+        ]
+      },
+      "L+P4": {
+        "seconds": {
+          "n": 200,
+          "mean": 1.514,
+          "median": 0.848,
+          "p90": 3.953,
+          "min": 0.039,
+          "max": 6.43
+        },
+        "terms": {
+          "n": 200,
+          "mean": 7.625,
+          "median": 8.0,
+          "p90": 8,
+          "min": 3,
+          "max": 8
+        },
+        "fell_back": 0,
+        "fewer_than_k": 0,
+        "overlap_at_20": {
+          "mean": 0.7977,
+          "full": 79,
+          "n": 200
+        },
+        "overlap_at_5": {
+          "mean": 0.782,
+          "full": 103,
+          "n": 200
+        },
+        "top1_same": 159,
+        "entities_in_top5": {
+          "all": {
+            "queries": 200,
+            "1+": 163,
+            "2+": 94
+          },
+          "india": {
+            "queries": 48,
+            "1+": 43,
+            "2+": 28
+          }
+        },
+        "entities_against_baseline": {
+          "all": {
+            "1+": {
+              "gained": 5,
+              "lost": 2
+            },
+            "2+": {
+              "gained": 4,
+              "lost": 5
+            }
+          },
+          "india": {
+            "1+": {
+              "gained": 0,
+              "lost": 1
+            },
+            "2+": {
+              "gained": 1,
+              "lost": 0
+            }
+          }
+        },
+        "seconds_by_position": [
+          {
+            "n": 40,
+            "mean": 1.475,
+            "median": 0.808,
+            "p90": 4.062,
+            "min": 0.056,
+            "max": 5.438
+          },
+          {
+            "n": 40,
+            "mean": 1.657,
+            "median": 1.222,
+            "p90": 3.889,
+            "min": 0.128,
+            "max": 4.714
+          },
+          {
+            "n": 40,
+            "mean": 1.571,
+            "median": 0.719,
+            "p90": 3.691,
+            "min": 0.145,
+            "max": 6.174
+          },
+          {
+            "n": 40,
+            "mean": 1.387,
+            "median": 0.688,
+            "p90": 3.616,
+            "min": 0.039,
+            "max": 5.532
+          },
+          {
+            "n": 40,
+            "mean": 1.482,
+            "median": 0.805,
+            "p90": 4.439,
+            "min": 0.093,
+            "max": 6.43
+          }
+        ]
+      },
+      "L+P4b": {
+        "seconds": {
+          "n": 200,
+          "mean": 1.019,
+          "median": 0.678,
+          "p90": 2.593,
+          "min": 0.038,
+          "max": 4.254
+        },
+        "terms": {
+          "n": 200,
+          "mean": 7.335,
+          "median": 8.0,
+          "p90": 8,
+          "min": 2,
+          "max": 8
+        },
+        "fell_back": 0,
+        "fewer_than_k": 0,
+        "overlap_at_20": {
+          "mean": 0.7977,
+          "full": 79,
+          "n": 200
+        },
+        "overlap_at_5": {
+          "mean": 0.782,
+          "full": 103,
+          "n": 200
+        },
+        "top1_same": 159,
+        "entities_in_top5": {
+          "all": {
+            "queries": 200,
+            "1+": 163,
+            "2+": 94
+          },
+          "india": {
+            "queries": 48,
+            "1+": 43,
+            "2+": 28
+          }
+        },
+        "entities_against_baseline": {
+          "all": {
+            "1+": {
+              "gained": 5,
+              "lost": 2
+            },
+            "2+": {
+              "gained": 4,
+              "lost": 5
+            }
+          },
+          "india": {
+            "1+": {
+              "gained": 0,
+              "lost": 1
+            },
+            "2+": {
+              "gained": 1,
+              "lost": 0
+            }
+          }
+        },
+        "seconds_by_position": [
+          {
+            "n": 40,
+            "mean": 1.119,
+            "median": 0.758,
+            "p90": 2.662,
+            "min": 0.141,
+            "max": 3.351
+          },
+          {
+            "n": 40,
+            "mean": 0.84,
+            "median": 0.4,
+            "p90": 1.993,
+            "min": 0.053,
+            "max": 3.649
+          },
+          {
+            "n": 40,
+            "mean": 1.005,
+            "median": 0.636,
+            "p90": 2.496,
+            "min": 0.136,
+            "max": 4.254
+          },
+          {
+            "n": 40,
+            "mean": 1.009,
+            "median": 0.738,
+            "p90": 2.518,
+            "min": 0.093,
+            "max": 3.31
+          },
+          {
+            "n": 40,
+            "mean": 1.123,
+            "median": 0.728,
+            "p90": 2.586,
+            "min": 0.038,
+            "max": 3.917
+          }
+        ]
+      }
+    }
+  },
+  "session_queries_done": 200,
+  "default": {
+    "seconds": {
+      "n": 200,
+      "mean": 1.623,
+      "median": 1.328,
+      "p90": 3.12,
+      "min": 0.115,
+      "max": 5.436
+    },
+    "terms": {
+      "n": 200,
+      "mean": 7.335,
+      "median": 8.0,
+      "p90": 8,
+      "min": 2,
+      "max": 8
+    },
+    "fell_back": 0,
+    "fewer_than_k": 0,
+    "overlap_at_20": {
+      "mean": 0.7977,
+      "full": 79,
+      "n": 200
+    },
+    "overlap_at_5": {
+      "mean": 0.782,
+      "full": 103,
+      "n": 200
+    },
+    "top1_same": 159,
+    "entities_in_top5": {
+      "all": {
+        "queries": 200,
+        "1+": 163,
+        "2+": 94
+      },
+      "india": {
+        "queries": 48,
+        "1+": 43,
+        "2+": 28
+      }
+    },
+    "entities_against_baseline": {
+      "all": {
+        "1+": {
+          "gained": 5,
+          "lost": 2
+        },
+        "2+": {
+          "gained": 4,
+          "lost": 5
+        }
+      },
+      "india": {
+        "1+": {
+          "gained": 0,
+          "lost": 1
+        },
+        "2+": {
+          "gained": 1,
+          "lost": 0
+        }
+      }
+    },
+    "processes": [
+      "2026-10-29T14:16:36 pid 3036"
+    ],
+    "count_seconds": {
+      "n": 200,
+      "mean": 0.403,
+      "median": 0.368,
+      "p90": 0.688,
+      "min": 0.031,
+      "max": 1.264
+    },
+    "sql_seconds": {
+      "n": 200,
+      "mean": 1.22,
+      "median": 0.906,
+      "p90": 2.749,
+      "min": 0.039,
+      "max": 4.46
+    },
+    "same_terms_as_session": 200,
+    "same_hits_as_session": 200
+  },
+  "default_queries_done": 200,
+  "rules_added": {
+    "queries": 200,
+    "queries_changed": 5,
+    "hits_removed": 6,
+    "removed_by_todays_rules": 6,
+    "queries_explained": 200,
+    "removed_by_rule": {
+      "host": 1,
+      "word": 5
+    },
+    "rules_since": {
+      "added": {
+        "sources": 5,
+        "doc_ids": 0,
+        "words": 19
+      },
+      "removed": {
+        "sources": 0,
+        "doc_ids": 0,
+        "words": 0
+      }
+    },
+    "removed_by_host": {
+      "asianage.com": 2,
+      "smhoaxslayer.com": 1,
+      "thesun.co.uk": 1,
+      "scotsman.com": 1,
+      "neworleanscitybusiness.com": 1
+    }
+  },
+  "leak_rules_on_e1": {
+    "m4fc_org_hits_in_e1": {
+      "queries": 7,
+      "hits": 12,
+      "fact_check_pages": 0,
+      "news_pages": 12,
+      "own_org_queries": 3
+    },
+    "queries_changed": 13,
+    "hits_removed": {
+      "blocked: host": 8,
+      "dated on the bound": 5,
+      "blocked: word": 5
+    },
+    "removed_by_host": {
+      "polygraph.info": 3,
+      "asianage.com": 2,
+      "smhoaxslayer.com": 1,
+      "thesun.co.uk": 1,
+      "checkyourfact.com": 1,
+      "politifact.com": 1,
+      "scotsman.com": 1,
+      "thelogicalindian.com": 1,
+      "neworleanscitybusiness.com": 1,
+      "boomlive.in": 1
+    }
+  },
+  "df": {
+    "index": {
+      "bm25.sqlite": {
+        "bytes": 13387153408,
+        "mtime_ns": 1789081273740869500
+      },
+      "temporal.sqlite": {
+        "bytes": 439357440,
+        "mtime_ns": 1789081273889308400
+      }
+    },
+    "n_docs": 1368613,
+    "tokens": 1347,
+    "seconds": 20.4,
+    "over_1s": []
+  }
+}

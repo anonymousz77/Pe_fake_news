@@ -1,0 +1,4052 @@
+{
+  "hostname_factify2": {
+    "written_at": "2026-11-10T17:31:17+00:00",
+    "dataset": "factify2",
+    "split": "source-disjoint test (data/processed/splits)",
+    "population": "usable records",
+    "reproduces": {
+      "file": "factify2_domain_only_final.json",
+      "source_disjoint": {
+        "domain_only_test_accuracy": 0.1266,
+        "majority_baseline": 0.5686,
+        "uniform_baseline": 0.2,
+        "unseen_domain_rate": 0.5119,
+        "test_pairs": 13045
+      },
+      "random_70_15_15": {
+        "domain_only_test_accuracy": 0.4027,
+        "majority_baseline": 0.2216,
+        "uniform_baseline": 0.2,
+        "unseen_domain_rate": 0.0111,
+        "test_pairs": 6742
+      }
+    },
+    "classifier": "majority label per host, fitted on train; an unseen host gets the train majority (Insufficient_Multimodal)",
+    "by_pair": {
+      "rows": 13045,
+      "clusters": 10325,
+      "classes": [
+        "Insufficient_Multimodal",
+        "Insufficient_Text",
+        "Refute",
+        "Support_Multimodal",
+        "Support_Text"
+      ],
+      "accuracy": {
+        "value": 0.1266,
+        "ci": [
+          0.1206,
+          0.1328
+        ]
+      },
+      "macro_f1": {
+        "value": 0.1334,
+        "ci": [
+          0.1274,
+          0.1395
+        ]
+      },
+      "per_class": {
+        "Insufficient_Multimodal": {
+          "support": 1609,
+          "precision": {
+            "value": 0.0301,
+            "ci": [
+              0.0251,
+              0.0352
+            ]
+          },
+          "recall": {
+            "value": 0.1355,
+            "ci": [
+              0.1153,
+              0.1562
+            ]
+          },
+          "f1": {
+            "value": 0.0492,
+            "ci": [
+              0.0414,
+              0.0572
+            ]
+          }
+        },
+        "Insufficient_Text": {
+          "support": 1382,
+          "precision": {
+            "value": 0.2062,
+            "ci": [
+              0.1789,
+              0.2332
+            ]
+          },
+          "recall": {
+            "value": 0.1295,
+            "ci": [
+              0.1138,
+              0.1452
+            ]
+          },
+          "f1": {
+            "value": 0.1591,
+            "ci": [
+              0.1395,
+              0.178
+            ]
+          }
+        },
+        "Refute": {
+          "support": 7417,
+          "precision": {
+            "value": 0.75,
+            "ci": [
+              0.4667,
+              1.0
+            ]
+          },
+          "recall": {
+            "value": 0.0012,
+            "ci": [
+              0.0005,
+              0.002
+            ]
+          },
+          "f1": {
+            "value": 0.0024,
+            "ci": [
+              0.0011,
+              0.004
+            ]
+          }
+        },
+        "Support_Multimodal": {
+          "support": 1427,
+          "precision": {
+            "value": 0.2665,
+            "ci": [
+              0.2541,
+              0.2801
+            ]
+          },
+          "recall": {
+            "value": 0.8444,
+            "ci": [
+              0.8249,
+              0.8641
+            ]
+          },
+          "f1": {
+            "value": 0.4052,
+            "ci": [
+              0.3896,
+              0.4211
+            ]
+          }
+        },
+        "Support_Text": {
+          "support": 1210,
+          "precision": {
+            "value": 0.1046,
+            "ci": [
+              0.074,
+              0.1379
+            ]
+          },
+          "recall": {
+            "value": 0.0339,
+            "ci": [
+              0.0237,
+              0.045
+            ]
+          },
+          "f1": {
+            "value": 0.0512,
+            "ci": [
+              0.0358,
+              0.0677
+            ]
+          }
+        }
+      },
+      "applicable_majority": {
+        "label": "Refute",
+        "share": 0.5686,
+        "n": 13045
+      },
+      "unseen_host_rate": 0.5119
+    },
+    "by_record": {
+      "host": "the claim image's",
+      "rows": 10325,
+      "classes": [
+        "Insufficient_Multimodal",
+        "Insufficient_Text",
+        "Refute",
+        "Support_Multimodal",
+        "Support_Text"
+      ],
+      "majority_predicts": "Support_Multimodal",
+      "model": {
+        "accuracy": {
+          "value": 0.1358,
+          "ci": [
+            0.1294,
+            0.1426
+          ]
+        },
+        "macro_f1": {
+          "value": 0.098,
+          "ci": [
+            0.0919,
+            0.104
+          ]
+        },
+        "per_class": {
+          "Insufficient_Multimodal": {
+            "support": 1265,
+            "precision": {
+              "value": 0.3975,
+              "ci": [
+                0.3571,
+                0.4375
+              ]
+            },
+            "recall": {
+              "value": 0.1763,
+              "ci": [
+                0.1557,
+                0.1973
+              ]
+            },
+            "f1": {
+              "value": 0.2442,
+              "ci": [
+                0.2183,
+                0.2697
+              ]
+            }
+          },
+          "Insufficient_Text": {
+            "support": 1191,
+            "precision": {
+              "value": 0.0272,
+              "ci": [
+                0.0104,
+                0.0459
+              ]
+            },
+            "recall": {
+              "value": 0.0076,
+              "ci": [
+                0.0027,
+                0.0128
+              ]
+            },
+            "f1": {
+              "value": 0.0118,
+              "ci": [
+                0.0042,
+                0.02
+              ]
+            }
+          },
+          "Refute": {
+            "support": 5620,
+            "precision": {
+              "value": 0.875,
+              "ci": [
+                0.5714,
+                1.0
+              ]
+            },
+            "recall": {
+              "value": 0.0012,
+              "ci": [
+                0.0004,
+                0.0022
+              ]
+            },
+            "f1": {
+              "value": 0.0025,
+              "ci": [
+                0.0007,
+                0.0043
+              ]
+            }
+          },
+          "Support_Multimodal": {
+            "support": 1259,
+            "precision": {
+              "value": 0.1275,
+              "ci": [
+                0.1207,
+                0.1344
+              ]
+            },
+            "recall": {
+              "value": 0.9198,
+              "ci": [
+                0.9051,
+                0.9339
+              ]
+            },
+            "f1": {
+              "value": 0.224,
+              "ci": [
+                0.2133,
+                0.2347
+              ]
+            }
+          },
+          "Support_Text": {
+            "support": 990,
+            "precision": {
+              "value": 0.0146,
+              "ci": [
+                0.003,
+                0.0285
+              ]
+            },
+            "recall": {
+              "value": 0.0051,
+              "ci": [
+                0.001,
+                0.0099
+              ]
+            },
+            "f1": {
+              "value": 0.0075,
+              "ci": [
+                0.0015,
+                0.0147
+              ]
+            }
+          }
+        }
+      },
+      "majority": {
+        "accuracy": {
+          "value": 0.1219,
+          "ci": [
+            0.1155,
+            0.1284
+          ]
+        },
+        "macro_f1": {
+          "value": 0.0435,
+          "ci": [
+            0.0414,
+            0.0455
+          ]
+        },
+        "per_class": {
+          "Insufficient_Multimodal": {
+            "support": 1265,
+            "precision": {
+              "value": 0.0,
+              "ci": [
+                0.0,
+                0.0
+              ]
+            },
+            "recall": {
+              "value": 0.0,
+              "ci": [
+                0.0,
+                0.0
+              ]
+            },
+            "f1": {
+              "value": 0.0,
+              "ci": [
+                0.0,
+                0.0
+              ]
+            }
+          },
+          "Insufficient_Text": {
+            "support": 1191,
+            "precision": {
+              "value": 0.0,
+              "ci": [
+                0.0,
+                0.0
+              ]
+            },
+            "recall": {
+              "value": 0.0,
+              "ci": [
+                0.0,
+                0.0
+              ]
+            },
+            "f1": {
+              "value": 0.0,
+              "ci": [
+                0.0,
+                0.0
+              ]
+            }
+          },
+          "Refute": {
+            "support": 5620,
+            "precision": {
+              "value": 0.0,
+              "ci": [
+                0.0,
+                0.0
+              ]
+            },
+            "recall": {
+              "value": 0.0,
+              "ci": [
+                0.0,
+                0.0
+              ]
+            },
+            "f1": {
+              "value": 0.0,
+              "ci": [
+                0.0,
+                0.0
+              ]
+            }
+          },
+          "Support_Multimodal": {
+            "support": 1259,
+            "precision": {
+              "value": 0.1219,
+              "ci": [
+                0.1155,
+                0.1284
+              ]
+            },
+            "recall": {
+              "value": 1.0,
+              "ci": [
+                1.0,
+                1.0
+              ]
+            },
+            "f1": {
+              "value": 0.2174,
+              "ci": [
+                0.2072,
+                0.2276
+              ]
+            }
+          },
+          "Support_Text": {
+            "support": 990,
+            "precision": {
+              "value": 0.0,
+              "ci": [
+                0.0,
+                0.0
+              ]
+            },
+            "recall": {
+              "value": 0.0,
+              "ci": [
+                0.0,
+                0.0
+              ]
+            },
+            "f1": {
+              "value": 0.0,
+              "ci": [
+                0.0,
+                0.0
+              ]
+            }
+          }
+        }
+      },
+      "applicable_majority": {
+        "label": "Refute",
+        "share": 0.5443,
+        "n": 10325
+      },
+      "unseen_host_rate": 0.4738
+    },
+    "train_refute_records": 15,
+    "note": "Per class always (CLAUDE.md, Factify2 rule 3). The source-disjoint train split holds 15 usable Refute records, so a trained classifier's Refute recall is near 0 by construction."
+  },
+  "m4fc_official_test": {
+    "written_at": "2026-11-11T19:50:46+00:00",
+    "records": 1468,
+    "classes": {
+      "false (out-of-context)": 833,
+      "false (manipulated/fake)": 379,
+      "false (ai-generated)": 158,
+      "true": 98
+    },
+    "read": "2026-11-11T19:47:29+00:00",
+    "system_sha256": "5eb6f48b78f0b5db86b1a101d5593195b84dc1c8af503c1e95fa8f62c30ea237",
+    "auroc": {
+      "false vs true": {
+        "clip_l14_cosine": {
+          "positive": "false",
+          "negative": "true",
+          "records": 1468,
+          "clusters": 1468,
+          "auroc": 0.5882,
+          "ci95": [
+            0.5332,
+            0.6409
+          ],
+          "resamples": 2000,
+          "vs_clip_l14": null
+        },
+        "muse_img_dt": {
+          "positive": "false",
+          "negative": "true",
+          "records": 1468,
+          "clusters": 1468,
+          "auroc": 0.5508,
+          "ci95": [
+            0.4959,
+            0.6047
+          ],
+          "resamples": 2000,
+          "vs_clip_l14": {
+            "records": 1468,
+            "clusters": 1468,
+            "positive": "false",
+            "negative": "true",
+            "auroc_muse_img_dt": 0.5508,
+            "auroc_clip_l14_cosine": 0.5882,
+            "delta": -0.0374,
+            "delta_ci95": [
+              -0.1023,
+              0.0243
+            ],
+            "resamples": 2000,
+            "excludes_zero": false
+          }
+        },
+        "muse_img_rf": {
+          "positive": "false",
+          "negative": "true",
+          "records": 1468,
+          "clusters": 1468,
+          "auroc": 0.521,
+          "ci95": [
+            0.4726,
+            0.5731
+          ],
+          "resamples": 2000,
+          "vs_clip_l14": {
+            "records": 1468,
+            "clusters": 1468,
+            "positive": "false",
+            "negative": "true",
+            "auroc_muse_img_rf": 0.521,
+            "auroc_clip_l14_cosine": 0.5882,
+            "delta": -0.0673,
+            "delta_ci95": [
+              -0.1327,
+              0.0003
+            ],
+            "resamples": 2000,
+            "excludes_zero": false
+          }
+        },
+        "muse_img_mlp": {
+          "positive": "false",
+          "negative": "true",
+          "records": 1468,
+          "clusters": 1468,
+          "auroc": 0.5882,
+          "ci95": [
+            0.5332,
+            0.6409
+          ],
+          "resamples": 2000,
+          "vs_clip_l14": {
+            "records": 1468,
+            "clusters": 1468,
+            "positive": "false",
+            "negative": "true",
+            "auroc_muse_img_mlp": 0.5882,
+            "auroc_clip_l14_cosine": 0.5882,
+            "delta": 0.0,
+            "delta_ci95": [
+              0.0,
+              0.0
+            ],
+            "resamples": 2000,
+            "excludes_zero": false
+          }
+        },
+        "muse_img_text_evidence_dt": {
+          "positive": "false",
+          "negative": "true",
+          "records": 1468,
+          "clusters": 1468,
+          "auroc": 0.6173,
+          "ci95": [
+            0.5544,
+            0.6732
+          ],
+          "resamples": 2000,
+          "vs_clip_l14": {
+            "records": 1468,
+            "clusters": 1468,
+            "positive": "false",
+            "negative": "true",
+            "auroc_muse_img_text_evidence_dt": 0.6173,
+            "auroc_clip_l14_cosine": 0.5882,
+            "delta": 0.0291,
+            "delta_ci95": [
+              -0.0363,
+              0.0935
+            ],
+            "resamples": 2000,
+            "excludes_zero": false
+          }
+        },
+        "muse_img_text_evidence_rf": {
+          "positive": "false",
+          "negative": "true",
+          "records": 1468,
+          "clusters": 1468,
+          "auroc": 0.6192,
+          "ci95": [
+            0.557,
+            0.6767
+          ],
+          "resamples": 2000,
+          "vs_clip_l14": {
+            "records": 1468,
+            "clusters": 1468,
+            "positive": "false",
+            "negative": "true",
+            "auroc_muse_img_text_evidence_rf": 0.6192,
+            "auroc_clip_l14_cosine": 0.5882,
+            "delta": 0.031,
+            "delta_ci95": [
+              -0.0326,
+              0.0966
+            ],
+            "resamples": 2000,
+            "excludes_zero": false
+          }
+        },
+        "muse_img_text_evidence_mlp": {
+          "positive": "false",
+          "negative": "true",
+          "records": 1468,
+          "clusters": 1468,
+          "auroc": 0.6701,
+          "ci95": [
+            0.6041,
+            0.7277
+          ],
+          "resamples": 2000,
+          "vs_clip_l14": {
+            "records": 1468,
+            "clusters": 1468,
+            "positive": "false",
+            "negative": "true",
+            "auroc_muse_img_text_evidence_mlp": 0.6701,
+            "auroc_clip_l14_cosine": 0.5882,
+            "delta": 0.0819,
+            "delta_ci95": [
+              0.008,
+              0.1516
+            ],
+            "resamples": 2000,
+            "excludes_zero": true
+          }
+        },
+        "text_only_p_false": {
+          "positive": "false",
+          "negative": "true",
+          "records": 1468,
+          "clusters": 1468,
+          "auroc": 0.7838,
+          "ci95": [
+            0.7409,
+            0.8264
+          ],
+          "resamples": 2000,
+          "vs_clip_l14": {
+            "records": 1468,
+            "clusters": 1468,
+            "positive": "false",
+            "negative": "true",
+            "auroc_text_only_p_false": 0.7838,
+            "auroc_clip_l14_cosine": 0.5882,
+            "delta": 0.1955,
+            "delta_ci95": [
+              0.1244,
+              0.2633
+            ],
+            "resamples": 2000,
+            "excludes_zero": true
+          }
+        },
+        "system_routed_from_its_report": 0.6685
+      },
+      "false (out-of-context) vs true": {
+        "clip_l14_cosine": {
+          "positive": "false (out-of-context)",
+          "negative": "true",
+          "records": 931,
+          "clusters": 931,
+          "auroc": 0.6351,
+          "ci95": [
+            0.5782,
+            0.6896
+          ],
+          "resamples": 2000,
+          "vs_clip_l14": null
+        },
+        "muse_img_dt": {
+          "positive": "false (out-of-context)",
+          "negative": "true",
+          "records": 931,
+          "clusters": 931,
+          "auroc": 0.5717,
+          "ci95": [
+            0.5119,
+            0.6292
+          ],
+          "resamples": 2000,
+          "vs_clip_l14": {
+            "records": 931,
+            "clusters": 931,
+            "positive": "false (out-of-context)",
+            "negative": "true",
+            "auroc_muse_img_dt": 0.5717,
+            "auroc_clip_l14_cosine": 0.6351,
+            "delta": -0.0634,
+            "delta_ci95": [
+              -0.128,
+              0.0001
+            ],
+            "resamples": 2000,
+            "excludes_zero": false
+          }
+        },
+        "muse_img_rf": {
+          "positive": "false (out-of-context)",
+          "negative": "true",
+          "records": 931,
+          "clusters": 931,
+          "auroc": 0.5272,
+          "ci95": [
+            0.477,
+            0.5816
+          ],
+          "resamples": 2000,
+          "vs_clip_l14": {
+            "records": 931,
+            "clusters": 931,
+            "positive": "false (out-of-context)",
+            "negative": "true",
+            "auroc_muse_img_rf": 0.5272,
+            "auroc_clip_l14_cosine": 0.6351,
+            "delta": -0.108,
+            "delta_ci95": [
+              -0.1714,
+              -0.0411
+            ],
+            "resamples": 2000,
+            "excludes_zero": true
+          }
+        },
+        "muse_img_mlp": {
+          "positive": "false (out-of-context)",
+          "negative": "true",
+          "records": 931,
+          "clusters": 931,
+          "auroc": 0.6351,
+          "ci95": [
+            0.5782,
+            0.6896
+          ],
+          "resamples": 2000,
+          "vs_clip_l14": {
+            "records": 931,
+            "clusters": 931,
+            "positive": "false (out-of-context)",
+            "negative": "true",
+            "auroc_muse_img_mlp": 0.6351,
+            "auroc_clip_l14_cosine": 0.6351,
+            "delta": 0.0,
+            "delta_ci95": [
+              0.0,
+              0.0
+            ],
+            "resamples": 2000,
+            "excludes_zero": false
+          }
+        },
+        "muse_img_text_evidence_dt": {
+          "positive": "false (out-of-context)",
+          "negative": "true",
+          "records": 931,
+          "clusters": 931,
+          "auroc": 0.6412,
+          "ci95": [
+            0.5804,
+            0.6992
+          ],
+          "resamples": 2000,
+          "vs_clip_l14": {
+            "records": 931,
+            "clusters": 931,
+            "positive": "false (out-of-context)",
+            "negative": "true",
+            "auroc_muse_img_text_evidence_dt": 0.6412,
+            "auroc_clip_l14_cosine": 0.6351,
+            "delta": 0.0061,
+            "delta_ci95": [
+              -0.0599,
+              0.0733
+            ],
+            "resamples": 2000,
+            "excludes_zero": false
+          }
+        },
+        "muse_img_text_evidence_rf": {
+          "positive": "false (out-of-context)",
+          "negative": "true",
+          "records": 931,
+          "clusters": 931,
+          "auroc": 0.6491,
+          "ci95": [
+            0.5909,
+            0.7064
+          ],
+          "resamples": 2000,
+          "vs_clip_l14": {
+            "records": 931,
+            "clusters": 931,
+            "positive": "false (out-of-context)",
+            "negative": "true",
+            "auroc_muse_img_text_evidence_rf": 0.6491,
+            "auroc_clip_l14_cosine": 0.6351,
+            "delta": 0.014,
+            "delta_ci95": [
+              -0.0479,
+              0.0764
+            ],
+            "resamples": 2000,
+            "excludes_zero": false
+          }
+        },
+        "muse_img_text_evidence_mlp": {
+          "positive": "false (out-of-context)",
+          "negative": "true",
+          "records": 931,
+          "clusters": 931,
+          "auroc": 0.7039,
+          "ci95": [
+            0.6437,
+            0.7625
+          ],
+          "resamples": 2000,
+          "vs_clip_l14": {
+            "records": 931,
+            "clusters": 931,
+            "positive": "false (out-of-context)",
+            "negative": "true",
+            "auroc_muse_img_text_evidence_mlp": 0.7039,
+            "auroc_clip_l14_cosine": 0.6351,
+            "delta": 0.0688,
+            "delta_ci95": [
+              -0.0002,
+              0.1372
+            ],
+            "resamples": 2000,
+            "excludes_zero": false
+          }
+        },
+        "text_only_p_false": {
+          "positive": "false (out-of-context)",
+          "negative": "true",
+          "records": 931,
+          "clusters": 931,
+          "auroc": 0.8186,
+          "ci95": [
+            0.7766,
+            0.8572
+          ],
+          "resamples": 2000,
+          "vs_clip_l14": {
+            "records": 931,
+            "clusters": 931,
+            "positive": "false (out-of-context)",
+            "negative": "true",
+            "auroc_text_only_p_false": 0.8186,
+            "auroc_clip_l14_cosine": 0.6351,
+            "delta": 0.1834,
+            "delta_ci95": [
+              0.1166,
+              0.2543
+            ],
+            "resamples": 2000,
+            "excludes_zero": true
+          }
+        },
+        "system_routed_from_its_report": 0.6937
+      }
+    }
+  },
+  "m4fc_source_audit": {
+    "written_at": "2026-11-11T23:55:03+00:00",
+    "records": {
+      "train (5-fold CV)": {
+        "false": 2345,
+        "true": 164
+      },
+      "val (fitted on train)": {
+        "false": 465,
+        "true": 31
+      },
+      "train + val (out of sample)": {
+        "false": 2810,
+        "true": 195
+      }
+    },
+    "auroc_false_vs_true": {
+      "train (5-fold CV)": {
+        "text_only": {
+          "positive": "false",
+          "negative": "true",
+          "records": 2509,
+          "clusters": 2504,
+          "auroc": 0.7604,
+          "ci95": [
+            0.7206,
+            0.7993
+          ],
+          "resamples": 2000
+        },
+        "org_only": {
+          "positive": "false",
+          "negative": "true",
+          "records": 2509,
+          "clusters": 2504,
+          "auroc": 0.9181,
+          "ci95": [
+            0.8947,
+            0.938
+          ],
+          "resamples": 2000
+        },
+        "language_only": {
+          "positive": "false",
+          "negative": "true",
+          "records": 2509,
+          "clusters": 2504,
+          "auroc": 0.6783,
+          "ci95": [
+            0.6377,
+            0.7168
+          ],
+          "resamples": 2000
+        },
+        "fc_language_only": {
+          "positive": "false",
+          "negative": "true",
+          "records": 2509,
+          "clusters": 2504,
+          "auroc": 0.7105,
+          "ci95": [
+            0.6737,
+            0.7458
+          ],
+          "resamples": 2000
+        }
+      },
+      "val (fitted on train)": {
+        "text_only": {
+          "positive": "false",
+          "negative": "true",
+          "records": 496,
+          "clusters": 495,
+          "auroc": 0.8065,
+          "ci95": [
+            0.7104,
+            0.8887
+          ],
+          "resamples": 2000
+        },
+        "org_only": {
+          "positive": "false",
+          "negative": "true",
+          "records": 496,
+          "clusters": 495,
+          "auroc": 0.9535,
+          "ci95": [
+            0.8945,
+            0.986
+          ],
+          "resamples": 2000
+        },
+        "language_only": {
+          "positive": "false",
+          "negative": "true",
+          "records": 496,
+          "clusters": 495,
+          "auroc": 0.7566,
+          "ci95": [
+            0.6807,
+            0.8319
+          ],
+          "resamples": 2000
+        },
+        "fc_language_only": {
+          "positive": "false",
+          "negative": "true",
+          "records": 496,
+          "clusters": 495,
+          "auroc": 0.7567,
+          "ci95": [
+            0.6674,
+            0.8377
+          ],
+          "resamples": 2000
+        }
+      },
+      "train + val (out of sample)": {
+        "text_only": {
+          "positive": "false",
+          "negative": "true",
+          "records": 3005,
+          "clusters": 2999,
+          "auroc": 0.7687,
+          "ci95": [
+            0.7329,
+            0.8014
+          ],
+          "resamples": 2000
+        },
+        "org_only": {
+          "positive": "false",
+          "negative": "true",
+          "records": 3005,
+          "clusters": 2999,
+          "auroc": 0.9229,
+          "ci95": [
+            0.9021,
+            0.9413
+          ],
+          "resamples": 2000
+        },
+        "language_only": {
+          "positive": "false",
+          "negative": "true",
+          "records": 3005,
+          "clusters": 2999,
+          "auroc": 0.6885,
+          "ci95": [
+            0.6537,
+            0.7249
+          ],
+          "resamples": 2000
+        },
+        "fc_language_only": {
+          "positive": "false",
+          "negative": "true",
+          "records": 3005,
+          "clusters": 2999,
+          "auroc": 0.7173,
+          "ci95": [
+            0.6829,
+            0.7505
+          ],
+          "resamples": 2000
+        }
+      }
+    },
+    "within_org_text_only": {
+      "train (5-fold CV)": {
+        "auroc": 0.5832,
+        "ci95": [
+          0.5271,
+          0.6395
+        ],
+        "records": 2509
+      },
+      "val (fitted on train)": {
+        "auroc": 0.678,
+        "ci95": [
+          0.4932,
+          0.8418
+        ],
+        "records": 496
+      },
+      "train + val (out of sample)": {
+        "auroc": 0.5954,
+        "ci95": [
+          0.5397,
+          0.6496
+        ],
+        "records": 3005
+      }
+    },
+    "by_org": {
+      "correctiv.org": {
+        "true": 10,
+        "false": 139,
+        "text_only": {
+          "positive": "false",
+          "negative": "true",
+          "records": 149,
+          "clusters": 148,
+          "auroc": 0.6065,
+          "ci95": [
+            0.3756,
+            0.8274
+          ],
+          "resamples": 2000
+        }
+      },
+      "poligrafo.sapo.pt": {
+        "true": 60,
+        "false": 142,
+        "text_only": {
+          "positive": "false",
+          "negative": "true",
+          "records": 202,
+          "clusters": 202,
+          "auroc": 0.6387,
+          "ci95": [
+            0.5522,
+            0.7216
+          ],
+          "resamples": 2000
+        }
+      },
+      "snopes.com": {
+        "true": 100,
+        "false": 103,
+        "text_only": {
+          "positive": "false",
+          "negative": "true",
+          "records": 203,
+          "clusters": 203,
+          "auroc": 0.5399,
+          "ci95": [
+            0.4582,
+            0.623
+          ],
+          "resamples": 2000
+        }
+      }
+    },
+    "true_share_by_org": {
+      "211check.org": {
+        "train": {
+          "k": 0,
+          "n": 5,
+          "rate": 0.0,
+          "wilson95": [
+            0.0,
+            0.4345
+          ]
+        },
+        "val": {
+          "k": 1,
+          "n": 7,
+          "rate": 0.1429,
+          "wilson95": [
+            0.0257,
+            0.5131
+          ]
+        }
+      },
+      "congocheck.net": {
+        "train": {
+          "k": 3,
+          "n": 129,
+          "rate": 0.0233,
+          "wilson95": [
+            0.0079,
+            0.0661
+          ]
+        },
+        "val": {
+          "k": 0,
+          "n": 33,
+          "rate": 0.0,
+          "wilson95": [
+            0.0,
+            0.1043
+          ]
+        }
+      },
+      "correctiv.org": {
+        "train": {
+          "k": 7,
+          "n": 134,
+          "rate": 0.0522,
+          "wilson95": [
+            0.0255,
+            0.1039
+          ]
+        },
+        "val": {
+          "k": 3,
+          "n": 15,
+          "rate": 0.2,
+          "wilson95": [
+            0.0705,
+            0.4519
+          ]
+        }
+      },
+      "dfrac.org": {
+        "train": {
+          "k": 0,
+          "n": 83,
+          "rate": 0.0,
+          "wilson95": [
+            0.0,
+            0.0442
+          ]
+        },
+        "val": {
+          "k": 0,
+          "n": 21,
+          "rate": 0.0,
+          "wilson95": [
+            0.0,
+            0.1546
+          ]
+        }
+      },
+      "dogrula.org": {
+        "train": {
+          "k": 0,
+          "n": 23,
+          "rate": 0.0,
+          "wilson95": [
+            0.0,
+            0.1431
+          ]
+        },
+        "val": {
+          "k": 0,
+          "n": 10,
+          "rate": 0.0,
+          "wilson95": [
+            0.0,
+            0.2775
+          ]
+        }
+      },
+      "dubawa.org": {
+        "train": {
+          "k": 3,
+          "n": 39,
+          "rate": 0.0769,
+          "wilson95": [
+            0.0265,
+            0.2032
+          ]
+        },
+        "val": {
+          "k": 0,
+          "n": 1,
+          "rate": 0.0,
+          "wilson95": [
+            0.0,
+            0.7935
+          ]
+        }
+      },
+      "factcheckcenter.jp": {
+        "train": {
+          "k": 0,
+          "n": 0,
+          "rate": null,
+          "wilson95": null
+        },
+        "val": {
+          "k": 2,
+          "n": 6,
+          "rate": 0.3333,
+          "wilson95": [
+            0.0968,
+            0.7
+          ]
+        }
+      },
+      "factly.in": {
+        "train": {
+          "k": 2,
+          "n": 347,
+          "rate": 0.0058,
+          "wilson95": [
+            0.0016,
+            0.0208
+          ]
+        },
+        "val": {
+          "k": 0,
+          "n": 61,
+          "rate": 0.0,
+          "wilson95": [
+            0.0,
+            0.0592
+          ]
+        }
+      },
+      "fatabyyano.net": {
+        "train": {
+          "k": 1,
+          "n": 411,
+          "rate": 0.0024,
+          "wilson95": [
+            0.0004,
+            0.0137
+          ]
+        },
+        "val": {
+          "k": 0,
+          "n": 70,
+          "rate": 0.0,
+          "wilson95": [
+            0.0,
+            0.052
+          ]
+        }
+      },
+      "indiatoday.in": {
+        "train": {
+          "k": 1,
+          "n": 259,
+          "rate": 0.0039,
+          "wilson95": [
+            0.0007,
+            0.0215
+          ]
+        },
+        "val": {
+          "k": 0,
+          "n": 19,
+          "rate": 0.0,
+          "wilson95": [
+            0.0,
+            0.1682
+          ]
+        }
+      },
+      "knack.be": {
+        "train": {
+          "k": 8,
+          "n": 46,
+          "rate": 0.1739,
+          "wilson95": [
+            0.0909,
+            0.3072
+          ]
+        },
+        "val": {
+          "k": 0,
+          "n": 8,
+          "rate": 0.0,
+          "wilson95": [
+            0.0,
+            0.3244
+          ]
+        }
+      },
+      "larepublica.pe": {
+        "train": {
+          "k": 1,
+          "n": 143,
+          "rate": 0.007,
+          "wilson95": [
+            0.0012,
+            0.0385
+          ]
+        },
+        "val": {
+          "k": 0,
+          "n": 18,
+          "rate": 0.0,
+          "wilson95": [
+            0.0,
+            0.1759
+          ]
+        }
+      },
+      "leadstories.com": {
+        "train": {
+          "k": 0,
+          "n": 169,
+          "rate": 0.0,
+          "wilson95": [
+            0.0,
+            0.0222
+          ]
+        },
+        "val": {
+          "k": 0,
+          "n": 31,
+          "rate": 0.0,
+          "wilson95": [
+            0.0,
+            0.1103
+          ]
+        }
+      },
+      "mythdetector.ge": {
+        "train": {
+          "k": 0,
+          "n": 38,
+          "rate": 0.0,
+          "wilson95": [
+            0.0,
+            0.0918
+          ]
+        },
+        "val": {
+          "k": 0,
+          "n": 7,
+          "rate": 0.0,
+          "wilson95": [
+            0.0,
+            0.3543
+          ]
+        }
+      },
+      "pesacheck.org": {
+        "train": {
+          "k": 0,
+          "n": 271,
+          "rate": 0.0,
+          "wilson95": [
+            0.0,
+            0.014
+          ]
+        },
+        "val": {
+          "k": 0,
+          "n": 145,
+          "rate": 0.0,
+          "wilson95": [
+            0.0,
+            0.0258
+          ]
+        }
+      },
+      "poligrafo.sapo.pt": {
+        "train": {
+          "k": 45,
+          "n": 172,
+          "rate": 0.2616,
+          "wilson95": [
+            0.2017,
+            0.332
+          ]
+        },
+        "val": {
+          "k": 15,
+          "n": 30,
+          "rate": 0.5,
+          "wilson95": [
+            0.3315,
+            0.6685
+          ]
+        }
+      },
+      "snopes.com": {
+        "train": {
+          "k": 90,
+          "n": 191,
+          "rate": 0.4712,
+          "wilson95": [
+            0.4017,
+            0.5419
+          ]
+        },
+        "val": {
+          "k": 10,
+          "n": 12,
+          "rate": 0.8333,
+          "wilson95": [
+            0.552,
+            0.953
+          ]
+        }
+      },
+      "tjekdet.dk": {
+        "train": {
+          "k": 3,
+          "n": 24,
+          "rate": 0.125,
+          "wilson95": [
+            0.0434,
+            0.31
+          ]
+        },
+        "val": {
+          "k": 0,
+          "n": 0,
+          "rate": null,
+          "wilson95": null
+        }
+      },
+      "verify-sy.com": {
+        "train": {
+          "k": 0,
+          "n": 15,
+          "rate": 0.0,
+          "wilson95": [
+            0.0,
+            0.2039
+          ]
+        },
+        "val": {
+          "k": 0,
+          "n": 2,
+          "rate": 0.0,
+          "wilson95": [
+            0.0,
+            0.6576
+          ]
+        }
+      },
+      "youturn.in": {
+        "train": {
+          "k": 0,
+          "n": 10,
+          "rate": 0.0,
+          "wilson95": [
+            0.0,
+            0.2775
+          ]
+        },
+        "val": {
+          "k": 0,
+          "n": 0,
+          "rate": null,
+          "wilson95": null
+        }
+      }
+    },
+    "large_org_rule": "at least 10 true and 10 false records, out of sample, over train and val",
+    "language_source": "claim_language and fc_language from raw M4FC.json, filtered to the train and val records' ids on load; no field of a test row is used"
+  },
+  "muse": {
+    "written_at": "2026-11-10T22:52:49+00:00",
+    "adaptation": "trained on M4FC train (NewsCLIPpings is not held); VERITE gets image-caption similarity only (no date, no evidence); M4FC's evidence is the text side's dated retrieval, its top five titles; no evidence image; class weights balanced",
+    "encoder": {
+      "model": "openai/clip-vit-large-patch14",
+      "revision": "32bd64288804d66eefd0ccbe215aa642df71cc41",
+      "weights_sha256": "a2bf730a0c7debf160f7a6b50b3aaf3703e7e88ac73de7a314903141db026dcb",
+      "dtype": "float32",
+      "image": "match_images.clip_load, then the processor's 224",
+      "text": "cut at CLIP's 77 tokens",
+      "software": {
+        "torch": "2.14.0+cu126",
+        "transformers": "5.17.0",
+        "pillow": "12.3.0"
+      }
+    },
+    "train": {
+      "true": 164,
+      "out_of_context": 1836
+    },
+    "dt": {
+      "max_depth": 7,
+      "random_state": 42,
+      "class_weight": "balanced"
+    },
+    "rf": {
+      "random_state": 42,
+      "class_weight": "balanced",
+      "n_estimators": "sklearn default (100)"
+    },
+    "mlp": {
+      "hidden": 768,
+      "activation": "gelu",
+      "epochs": 50,
+      "early_stop": 10,
+      "batch": 512,
+      "lr_options": [
+        0.0001,
+        5e-05
+      ],
+      "weight_decay": 0.01,
+      "eps": 1e-08,
+      "seed": 0,
+      "loss": "BCE with logits, pos_weight = negatives / positives",
+      "selection": "balanced accuracy on a 15% stratified holdout of train"
+    },
+    "variants": {
+      "clip_l14_cosine": {
+        "features": [
+          "img_txt"
+        ],
+        "classifier": "none (minus the cosine)",
+        "threshold": {
+          "threshold": -0.2853931784629822,
+          "balanced_accuracy": 0.621,
+          "true": 164,
+          "out_of_context": 1836
+        },
+        "m4fc_val": {
+          "auroc": [
+            {
+              "positive": "false (out-of-context)",
+              "negative": "true",
+              "records": 373,
+              "clusters": 373,
+              "auroc": 0.5972,
+              "ci95": [
+                0.4985,
+                0.7035
+              ],
+              "resamples": 2000
+            }
+          ],
+          "flagged": {
+            "false (out-of-context)": {
+              "k": 199,
+              "n": 342,
+              "rate": 0.5819,
+              "wilson95": [
+                0.529,
+                0.633
+              ]
+            },
+            "true": {
+              "k": 14,
+              "n": 31,
+              "rate": 0.4516,
+              "wilson95": [
+                0.2916,
+                0.6223
+              ]
+            }
+          },
+          "balanced_accuracy_ooc": 0.5652
+        },
+        "verite": {
+          "auroc": [
+            {
+              "positive": "out-of-context",
+              "negative": "true",
+              "records": 588,
+              "clusters": 332,
+              "auroc": 0.8524,
+              "ci95": [
+                0.8242,
+                0.8779
+              ],
+              "resamples": 2000
+            },
+            {
+              "positive": "miscaptioned",
+              "negative": "true",
+              "records": 578,
+              "clusters": 289,
+              "auroc": 0.5655,
+              "ci95": [
+                0.5279,
+                0.6034
+              ],
+              "resamples": 2000
+            }
+          ],
+          "flagged": {
+            "miscaptioned": {
+              "k": 121,
+              "n": 289,
+              "rate": 0.4187,
+              "wilson95": [
+                0.3632,
+                0.4763
+              ]
+            },
+            "out-of-context": {
+              "k": 245,
+              "n": 299,
+              "rate": 0.8194,
+              "wilson95": [
+                0.7718,
+                0.8589
+              ]
+            },
+            "true": {
+              "k": 80,
+              "n": 289,
+              "rate": 0.2768,
+              "wilson95": [
+                0.2284,
+                0.3311
+              ]
+            }
+          },
+          "balanced_accuracy_ooc": 0.7713,
+          "balanced_accuracy_miscaptioned": 0.571
+        }
+      },
+      "muse_img_dt": {
+        "features": [
+          "img_txt"
+        ],
+        "threshold": {
+          "threshold": 0.5039848709982442,
+          "balanced_accuracy": 0.7022,
+          "true": 164,
+          "out_of_context": 1836
+        },
+        "m4fc_val": {
+          "auroc": [
+            {
+              "positive": "false (out-of-context)",
+              "negative": "true",
+              "records": 373,
+              "clusters": 373,
+              "auroc": 0.5507,
+              "ci95": [
+                0.4449,
+                0.6577
+              ],
+              "resamples": 2000
+            }
+          ],
+          "flagged": {
+            "false (out-of-context)": {
+              "k": 185,
+              "n": 342,
+              "rate": 0.5409,
+              "wilson95": [
+                0.488,
+                0.593
+              ]
+            },
+            "true": {
+              "k": 13,
+              "n": 31,
+              "rate": 0.4194,
+              "wilson95": [
+                0.2642,
+                0.5923
+              ]
+            }
+          },
+          "balanced_accuracy_ooc": 0.5608
+        },
+        "verite": {
+          "auroc": [
+            {
+              "positive": "out-of-context",
+              "negative": "true",
+              "records": 588,
+              "clusters": 332,
+              "auroc": 0.7187,
+              "ci95": [
+                0.6786,
+                0.7577
+              ],
+              "resamples": 2000
+            },
+            {
+              "positive": "miscaptioned",
+              "negative": "true",
+              "records": 578,
+              "clusters": 289,
+              "auroc": 0.5524,
+              "ci95": [
+                0.5087,
+                0.5977
+              ],
+              "resamples": 2000
+            }
+          ],
+          "flagged": {
+            "miscaptioned": {
+              "k": 120,
+              "n": 289,
+              "rate": 0.4152,
+              "wilson95": [
+                0.3599,
+                0.4728
+              ]
+            },
+            "out-of-context": {
+              "k": 220,
+              "n": 299,
+              "rate": 0.7358,
+              "wilson95": [
+                0.683,
+                0.7825
+              ]
+            },
+            "true": {
+              "k": 85,
+              "n": 289,
+              "rate": 0.2941,
+              "wilson95": [
+                0.2446,
+                0.3491
+              ]
+            }
+          },
+          "balanced_accuracy_ooc": 0.7208,
+          "balanced_accuracy_miscaptioned": 0.5605
+        }
+      },
+      "muse_img_rf": {
+        "features": [
+          "img_txt"
+        ],
+        "threshold": {
+          "threshold": 0.61,
+          "balanced_accuracy": 1.0,
+          "true": 164,
+          "out_of_context": 1836
+        },
+        "m4fc_val": {
+          "auroc": [
+            {
+              "positive": "false (out-of-context)",
+              "negative": "true",
+              "records": 373,
+              "clusters": 373,
+              "auroc": 0.4195,
+              "ci95": [
+                0.3469,
+                0.4977
+              ],
+              "resamples": 2000
+            }
+          ],
+          "flagged": {
+            "false (out-of-context)": {
+              "k": 314,
+              "n": 342,
+              "rate": 0.9181,
+              "wilson95": [
+                0.8842,
+                0.9428
+              ]
+            },
+            "true": {
+              "k": 29,
+              "n": 31,
+              "rate": 0.9355,
+              "wilson95": [
+                0.7928,
+                0.9821
+              ]
+            }
+          },
+          "balanced_accuracy_ooc": 0.4913
+        },
+        "verite": {
+          "auroc": [
+            {
+              "positive": "out-of-context",
+              "negative": "true",
+              "records": 588,
+              "clusters": 332,
+              "auroc": 0.5919,
+              "ci95": [
+                0.553,
+                0.6322
+              ],
+              "resamples": 2000
+            },
+            {
+              "positive": "miscaptioned",
+              "negative": "true",
+              "records": 578,
+              "clusters": 289,
+              "auroc": 0.5295,
+              "ci95": [
+                0.4864,
+                0.5739
+              ],
+              "resamples": 2000
+            }
+          ],
+          "flagged": {
+            "miscaptioned": {
+              "k": 270,
+              "n": 289,
+              "rate": 0.9343,
+              "wilson95": [
+                0.8996,
+                0.9575
+              ]
+            },
+            "out-of-context": {
+              "k": 283,
+              "n": 299,
+              "rate": 0.9465,
+              "wilson95": [
+                0.9149,
+                0.9668
+              ]
+            },
+            "true": {
+              "k": 258,
+              "n": 289,
+              "rate": 0.8927,
+              "wilson95": [
+                0.8518,
+                0.9234
+              ]
+            }
+          },
+          "balanced_accuracy_ooc": 0.5269,
+          "balanced_accuracy_miscaptioned": 0.5208
+        }
+      },
+      "muse_img_mlp": {
+        "features": [
+          "img_txt"
+        ],
+        "lr": 5e-05,
+        "holdout_balanced_accuracy": 0.7018,
+        "threshold": {
+          "threshold": 0.499873548746109,
+          "balanced_accuracy": 0.621,
+          "true": 164,
+          "out_of_context": 1836
+        },
+        "m4fc_val": {
+          "auroc": [
+            {
+              "positive": "false (out-of-context)",
+              "negative": "true",
+              "records": 373,
+              "clusters": 373,
+              "auroc": 0.5972,
+              "ci95": [
+                0.4985,
+                0.7035
+              ],
+              "resamples": 2000
+            }
+          ],
+          "flagged": {
+            "false (out-of-context)": {
+              "k": 199,
+              "n": 342,
+              "rate": 0.5819,
+              "wilson95": [
+                0.529,
+                0.633
+              ]
+            },
+            "true": {
+              "k": 14,
+              "n": 31,
+              "rate": 0.4516,
+              "wilson95": [
+                0.2916,
+                0.6223
+              ]
+            }
+          },
+          "balanced_accuracy_ooc": 0.5652
+        },
+        "verite": {
+          "auroc": [
+            {
+              "positive": "out-of-context",
+              "negative": "true",
+              "records": 588,
+              "clusters": 332,
+              "auroc": 0.8524,
+              "ci95": [
+                0.8242,
+                0.8779
+              ],
+              "resamples": 2000
+            },
+            {
+              "positive": "miscaptioned",
+              "negative": "true",
+              "records": 578,
+              "clusters": 289,
+              "auroc": 0.5655,
+              "ci95": [
+                0.5279,
+                0.6034
+              ],
+              "resamples": 2000
+            }
+          ],
+          "flagged": {
+            "miscaptioned": {
+              "k": 121,
+              "n": 289,
+              "rate": 0.4187,
+              "wilson95": [
+                0.3632,
+                0.4763
+              ]
+            },
+            "out-of-context": {
+              "k": 245,
+              "n": 299,
+              "rate": 0.8194,
+              "wilson95": [
+                0.7718,
+                0.8589
+              ]
+            },
+            "true": {
+              "k": 80,
+              "n": 289,
+              "rate": 0.2768,
+              "wilson95": [
+                0.2284,
+                0.3311
+              ]
+            }
+          },
+          "balanced_accuracy_ooc": 0.7713,
+          "balanced_accuracy_miscaptioned": 0.571
+        }
+      },
+      "muse_img_text_evidence_dt": {
+        "features": [
+          "img_txt",
+          "img_X_txt",
+          "txt_X_txt"
+        ],
+        "threshold": {
+          "threshold": 0.5135369496097892,
+          "balanced_accuracy": 0.7451,
+          "true": 164,
+          "out_of_context": 1836
+        },
+        "m4fc_val": {
+          "auroc": [
+            {
+              "positive": "false (out-of-context)",
+              "negative": "true",
+              "records": 373,
+              "clusters": 373,
+              "auroc": 0.6714,
+              "ci95": [
+                0.559,
+                0.7834
+              ],
+              "resamples": 2000
+            }
+          ],
+          "flagged": {
+            "false (out-of-context)": {
+              "k": 288,
+              "n": 342,
+              "rate": 0.8421,
+              "wilson95": [
+                0.7997,
+                0.8769
+              ]
+            },
+            "true": {
+              "k": 17,
+              "n": 31,
+              "rate": 0.5484,
+              "wilson95": [
+                0.3777,
+                0.7084
+              ]
+            }
+          },
+          "balanced_accuracy_ooc": 0.6468
+        }
+      },
+      "muse_img_text_evidence_rf": {
+        "features": [
+          "img_txt",
+          "img_X_txt",
+          "txt_X_txt"
+        ],
+        "threshold": {
+          "threshold": 0.75,
+          "balanced_accuracy": 1.0,
+          "true": 164,
+          "out_of_context": 1836
+        },
+        "m4fc_val": {
+          "auroc": [
+            {
+              "positive": "false (out-of-context)",
+              "negative": "true",
+              "records": 373,
+              "clusters": 373,
+              "auroc": 0.6438,
+              "ci95": [
+                0.5448,
+                0.7392
+              ],
+              "resamples": 2000
+            }
+          ],
+          "flagged": {
+            "false (out-of-context)": {
+              "k": 325,
+              "n": 342,
+              "rate": 0.9503,
+              "wilson95": [
+                0.9218,
+                0.9687
+              ]
+            },
+            "true": {
+              "k": 29,
+              "n": 31,
+              "rate": 0.9355,
+              "wilson95": [
+                0.7928,
+                0.9821
+              ]
+            }
+          },
+          "balanced_accuracy_ooc": 0.5074
+        }
+      },
+      "muse_img_text_evidence_mlp": {
+        "features": [
+          "img_txt",
+          "img_X_txt",
+          "txt_X_txt"
+        ],
+        "lr": 5e-05,
+        "holdout_balanced_accuracy": 0.6436,
+        "threshold": {
+          "threshold": 0.5059696435928345,
+          "balanced_accuracy": 0.6536,
+          "true": 164,
+          "out_of_context": 1836
+        },
+        "m4fc_val": {
+          "auroc": [
+            {
+              "positive": "false (out-of-context)",
+              "negative": "true",
+              "records": 373,
+              "clusters": 373,
+              "auroc": 0.7616,
+              "ci95": [
+                0.6625,
+                0.8554
+              ],
+              "resamples": 2000
+            }
+          ],
+          "flagged": {
+            "false (out-of-context)": {
+              "k": 251,
+              "n": 342,
+              "rate": 0.7339,
+              "wilson95": [
+                0.6847,
+                0.778
+              ]
+            },
+            "true": {
+              "k": 9,
+              "n": 31,
+              "rate": 0.2903,
+              "wilson95": [
+                0.161,
+                0.4659
+              ]
+            }
+          },
+          "balanced_accuracy_ooc": 0.7218
+        }
+      }
+    }
+  },
+  "text_only_averimatec": {
+    "written_at": "2026-11-10T17:31:28+00:00",
+    "trained_on": "averitec train",
+    "scored_on": "averimatec test",
+    "labels": "three_way",
+    "input": "the claim text only (never evidence_text)",
+    "train_rows": 2872,
+    "features": 9479,
+    "fit": {
+      "converged": true,
+      "iterations": 63,
+      "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH"
+    },
+    "settings": {
+      "tokens": "fakeddit_classes.tokens: words [a-z0-9'] + bigrams",
+      "min_df": 2,
+      "idf": "smoothed",
+      "tf": "sublinear",
+      "rows": "L2-normalised",
+      "classifier": "multinomial, class-balanced",
+      "C": 1.0
+    },
+    "train_classes": {
+      "refuted": 1742,
+      "supported": 848,
+      "not_enough_evidence": 282
+    },
+    "val_classes": {
+      "refuted": 896,
+      "not_enough_evidence": 24,
+      "supported": 17
+    },
+    "rows": 937,
+    "classes": [
+      "not_enough_evidence",
+      "refuted",
+      "supported"
+    ],
+    "majority_predicts": "refuted",
+    "model": {
+      "accuracy": {
+        "value": 0.8815,
+        "ci": [
+          0.8602,
+          0.9018
+        ]
+      },
+      "macro_f1": {
+        "value": 0.3454,
+        "ci": [
+          0.3133,
+          0.387
+        ]
+      },
+      "per_class": {
+        "not_enough_evidence": {
+          "support": 24,
+          "precision": {
+            "value": 0.0333,
+            "ci": [
+              0.0,
+              0.1176
+            ]
+          },
+          "recall": {
+            "value": 0.0417,
+            "ci": [
+              0.0,
+              0.1429
+            ]
+          },
+          "f1": {
+            "value": 0.037,
+            "ci": [
+              0.0,
+              0.1231
+            ]
+          }
+        },
+        "refuted": {
+          "support": 896,
+          "precision": {
+            "value": 0.9592,
+            "ci": [
+              0.9459,
+              0.9724
+            ]
+          },
+          "recall": {
+            "value": 0.9185,
+            "ci": [
+              0.8995,
+              0.9354
+            ]
+          },
+          "f1": {
+            "value": 0.9384,
+            "ci": [
+              0.9268,
+              0.9493
+            ]
+          }
+        },
+        "supported": {
+          "support": 17,
+          "precision": {
+            "value": 0.0408,
+            "ci": [
+              0.0,
+              0.1081
+            ]
+          },
+          "recall": {
+            "value": 0.1176,
+            "ci": [
+              0.0,
+              0.2941
+            ]
+          },
+          "f1": {
+            "value": 0.0606,
+            "ci": [
+              0.0,
+              0.1515
+            ]
+          }
+        }
+      }
+    },
+    "majority": {
+      "accuracy": {
+        "value": 0.9562,
+        "ci": [
+          0.9424,
+          0.9701
+        ]
+      },
+      "macro_f1": {
+        "value": 0.3259,
+        "ci": [
+          0.3234,
+          0.3283
+        ]
+      },
+      "per_class": {
+        "not_enough_evidence": {
+          "support": 24,
+          "precision": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "recall": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "f1": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "refuted": {
+          "support": 896,
+          "precision": {
+            "value": 0.9562,
+            "ci": [
+              0.9424,
+              0.9701
+            ]
+          },
+          "recall": {
+            "value": 1.0,
+            "ci": [
+              1.0,
+              1.0
+            ]
+          },
+          "f1": {
+            "value": 0.9776,
+            "ci": [
+              0.9703,
+              0.9848
+            ]
+          }
+        },
+        "supported": {
+          "support": 17,
+          "precision": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "recall": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "f1": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          }
+        }
+      }
+    },
+    "applicable_majority": {
+      "label": "refuted",
+      "share": 0.9562,
+      "n": 937
+    }
+  },
+  "text_only_averitec": {
+    "written_at": "2026-11-10T17:31:27+00:00",
+    "trained_on": "averitec train",
+    "scored_on": "averitec val",
+    "labels": "three_way",
+    "input": "the claim text only (never evidence_text)",
+    "train_rows": 2872,
+    "features": 9479,
+    "fit": {
+      "converged": true,
+      "iterations": 63,
+      "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH"
+    },
+    "settings": {
+      "tokens": "fakeddit_classes.tokens: words [a-z0-9'] + bigrams",
+      "min_df": 2,
+      "idf": "smoothed",
+      "tf": "sublinear",
+      "rows": "L2-normalised",
+      "classifier": "multinomial, class-balanced",
+      "C": 1.0
+    },
+    "train_classes": {
+      "refuted": 1742,
+      "supported": 848,
+      "not_enough_evidence": 282
+    },
+    "val_classes": {
+      "refuted": 305,
+      "supported": 122,
+      "not_enough_evidence": 35
+    },
+    "rows": 462,
+    "classes": [
+      "not_enough_evidence",
+      "refuted",
+      "supported"
+    ],
+    "majority_predicts": "refuted",
+    "model": {
+      "accuracy": {
+        "value": 0.645,
+        "ci": [
+          0.5996,
+          0.6905
+        ]
+      },
+      "macro_f1": {
+        "value": 0.4498,
+        "ci": [
+          0.3932,
+          0.5002
+        ]
+      },
+      "per_class": {
+        "not_enough_evidence": {
+          "support": 35,
+          "precision": {
+            "value": 0.2,
+            "ci": [
+              0.0645,
+              0.353
+            ]
+          },
+          "recall": {
+            "value": 0.1714,
+            "ci": [
+              0.054,
+              0.3043
+            ]
+          },
+          "f1": {
+            "value": 0.1846,
+            "ci": [
+              0.0597,
+              0.3031
+            ]
+          }
+        },
+        "refuted": {
+          "support": 305,
+          "precision": {
+            "value": 0.7463,
+            "ci": [
+              0.6968,
+              0.7936
+            ]
+          },
+          "recall": {
+            "value": 0.8197,
+            "ci": [
+              0.7739,
+              0.8628
+            ]
+          },
+          "f1": {
+            "value": 0.7813,
+            "ci": [
+              0.7437,
+              0.8162
+            ]
+          }
+        },
+        "supported": {
+          "support": 122,
+          "precision": {
+            "value": 0.433,
+            "ci": [
+              0.3363,
+              0.5315
+            ]
+          },
+          "recall": {
+            "value": 0.3443,
+            "ci": [
+              0.2628,
+              0.4297
+            ]
+          },
+          "f1": {
+            "value": 0.3836,
+            "ci": [
+              0.3036,
+              0.4653
+            ]
+          }
+        }
+      }
+    },
+    "majority": {
+      "accuracy": {
+        "value": 0.6602,
+        "ci": [
+          0.6169,
+          0.7014
+        ]
+      },
+      "macro_f1": {
+        "value": 0.2651,
+        "ci": [
+          0.2544,
+          0.2748
+        ]
+      },
+      "per_class": {
+        "not_enough_evidence": {
+          "support": 35,
+          "precision": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "recall": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "f1": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "refuted": {
+          "support": 305,
+          "precision": {
+            "value": 0.6602,
+            "ci": [
+              0.6169,
+              0.7014
+            ]
+          },
+          "recall": {
+            "value": 1.0,
+            "ci": [
+              1.0,
+              1.0
+            ]
+          },
+          "f1": {
+            "value": 0.7953,
+            "ci": [
+              0.7631,
+              0.8245
+            ]
+          }
+        },
+        "supported": {
+          "support": 122,
+          "precision": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "recall": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "f1": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          }
+        }
+      }
+    },
+    "applicable_majority": {
+      "label": "refuted",
+      "share": 0.6602,
+      "n": 462
+    }
+  },
+  "text_only_averitec_native": {
+    "written_at": "2026-11-10T17:31:27+00:00",
+    "trained_on": "averitec train",
+    "scored_on": "averitec val",
+    "labels": "native",
+    "input": "the claim text only (never evidence_text)",
+    "train_rows": 3067,
+    "features": 10033,
+    "fit": {
+      "converged": true,
+      "iterations": 76,
+      "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH"
+    },
+    "settings": {
+      "tokens": "fakeddit_classes.tokens: words [a-z0-9'] + bigrams",
+      "min_df": 2,
+      "idf": "smoothed",
+      "tf": "sublinear",
+      "rows": "L2-normalised",
+      "classifier": "multinomial, class-balanced",
+      "C": 1.0
+    },
+    "train_classes": {
+      "Refuted": 1742,
+      "Supported": 848,
+      "Not Enough Evidence": 282,
+      "Conflicting Evidence/Cherrypicking": 195
+    },
+    "val_classes": {
+      "Refuted": 305,
+      "Supported": 122,
+      "Conflicting Evidence/Cherrypicking": 38,
+      "Not Enough Evidence": 35
+    },
+    "rows": 500,
+    "classes": [
+      "Conflicting Evidence/Cherrypicking",
+      "Not Enough Evidence",
+      "Refuted",
+      "Supported"
+    ],
+    "majority_predicts": "Refuted",
+    "model": {
+      "accuracy": {
+        "value": 0.564,
+        "ci": [
+          0.518,
+          0.608
+        ]
+      },
+      "macro_f1": {
+        "value": 0.3557,
+        "ci": [
+          0.3042,
+          0.408
+        ]
+      },
+      "per_class": {
+        "Conflicting Evidence/Cherrypicking": {
+          "support": 38,
+          "precision": {
+            "value": 0.1724,
+            "ci": [
+              0.04,
+              0.3226
+            ]
+          },
+          "recall": {
+            "value": 0.1316,
+            "ci": [
+              0.0323,
+              0.25
+            ]
+          },
+          "f1": {
+            "value": 0.1493,
+            "ci": [
+              0.0357,
+              0.2728
+            ]
+          }
+        },
+        "Not Enough Evidence": {
+          "support": 35,
+          "precision": {
+            "value": 0.1944,
+            "ci": [
+              0.069,
+              0.3333
+            ]
+          },
+          "recall": {
+            "value": 0.2,
+            "ci": [
+              0.0714,
+              0.3448
+            ]
+          },
+          "f1": {
+            "value": 0.1972,
+            "ci": [
+              0.0702,
+              0.3236
+            ]
+          }
+        },
+        "Refuted": {
+          "support": 305,
+          "precision": {
+            "value": 0.6774,
+            "ci": [
+              0.6284,
+              0.7288
+            ]
+          },
+          "recall": {
+            "value": 0.7574,
+            "ci": [
+              0.7069,
+              0.8069
+            ]
+          },
+          "f1": {
+            "value": 0.7152,
+            "ci": [
+              0.6751,
+              0.755
+            ]
+          }
+        },
+        "Supported": {
+          "support": 122,
+          "precision": {
+            "value": 0.4149,
+            "ci": [
+              0.3146,
+              0.5111
+            ]
+          },
+          "recall": {
+            "value": 0.3197,
+            "ci": [
+              0.2362,
+              0.4
+            ]
+          },
+          "f1": {
+            "value": 0.3611,
+            "ci": [
+              0.2723,
+              0.4399
+            ]
+          }
+        }
+      }
+    },
+    "majority": {
+      "accuracy": {
+        "value": 0.61,
+        "ci": [
+          0.5679,
+          0.652
+        ]
+      },
+      "macro_f1": {
+        "value": 0.1894,
+        "ci": [
+          0.1811,
+          0.1973
+        ]
+      },
+      "per_class": {
+        "Conflicting Evidence/Cherrypicking": {
+          "support": 38,
+          "precision": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "recall": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "f1": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "Not Enough Evidence": {
+          "support": 35,
+          "precision": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "recall": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "f1": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "Refuted": {
+          "support": 305,
+          "precision": {
+            "value": 0.61,
+            "ci": [
+              0.5679,
+              0.652
+            ]
+          },
+          "recall": {
+            "value": 1.0,
+            "ci": [
+              1.0,
+              1.0
+            ]
+          },
+          "f1": {
+            "value": 0.7578,
+            "ci": [
+              0.7244,
+              0.7894
+            ]
+          }
+        },
+        "Supported": {
+          "support": 122,
+          "precision": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "recall": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "f1": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          }
+        }
+      }
+    },
+    "applicable_majority": {
+      "label": "Refuted",
+      "share": 0.61,
+      "n": 500
+    }
+  },
+  "text_only_factify2": {
+    "written_at": "2026-11-10T17:31:52+00:00",
+    "trained_on": "factify2 train",
+    "scored_on": "factify2 test",
+    "labels": "native",
+    "input": "the claim text only (never evidence_text)",
+    "train_rows": 22747,
+    "features": 81308,
+    "fit": {
+      "converged": true,
+      "iterations": 184,
+      "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH"
+    },
+    "settings": {
+      "tokens": "fakeddit_classes.tokens: words [a-z0-9'] + bigrams",
+      "min_df": 2,
+      "idf": "smoothed",
+      "tf": "sublinear",
+      "rows": "L2-normalised",
+      "classifier": "multinomial, class-balanced",
+      "C": 1.0
+    },
+    "train_classes": {
+      "Support_Multimodal": 5929,
+      "Insufficient_Multimodal": 5922,
+      "Insufficient_Text": 5653,
+      "Support_Text": 5228,
+      "Refute": 15
+    },
+    "val_classes": {
+      "Refute": 5620,
+      "Insufficient_Multimodal": 1265,
+      "Support_Multimodal": 1259,
+      "Insufficient_Text": 1191,
+      "Support_Text": 990
+    },
+    "rows": 10325,
+    "classes": [
+      "Insufficient_Multimodal",
+      "Insufficient_Text",
+      "Refute",
+      "Support_Multimodal",
+      "Support_Text"
+    ],
+    "majority_predicts": "Support_Multimodal",
+    "model": {
+      "accuracy": {
+        "value": 0.1931,
+        "ci": [
+          0.1858,
+          0.2009
+        ]
+      },
+      "macro_f1": {
+        "value": 0.209,
+        "ci": [
+          0.2013,
+          0.2171
+        ]
+      },
+      "per_class": {
+        "Insufficient_Multimodal": {
+          "support": 1265,
+          "precision": {
+            "value": 0.1653,
+            "ci": [
+              0.1542,
+              0.1763
+            ]
+          },
+          "recall": {
+            "value": 0.5913,
+            "ci": [
+              0.5637,
+              0.6193
+            ]
+          },
+          "f1": {
+            "value": 0.2584,
+            "ci": [
+              0.2432,
+              0.2729
+            ]
+          }
+        },
+        "Insufficient_Text": {
+          "support": 1191,
+          "precision": {
+            "value": 0.2639,
+            "ci": [
+              0.2457,
+              0.2823
+            ]
+          },
+          "recall": {
+            "value": 0.5172,
+            "ci": [
+              0.4886,
+              0.5446
+            ]
+          },
+          "f1": {
+            "value": 0.3495,
+            "ci": [
+              0.3292,
+              0.3699
+            ]
+          }
+        },
+        "Refute": {
+          "support": 5620,
+          "precision": {
+            "value": 1.0,
+            "ci": [
+              0.0,
+              1.0
+            ]
+          },
+          "recall": {
+            "value": 0.0002,
+            "ci": [
+              0.0,
+              0.0005
+            ]
+          },
+          "f1": {
+            "value": 0.0004,
+            "ci": [
+              0.0,
+              0.0011
+            ]
+          }
+        },
+        "Support_Multimodal": {
+          "support": 1259,
+          "precision": {
+            "value": 0.2103,
+            "ci": [
+              0.1922,
+              0.2294
+            ]
+          },
+          "recall": {
+            "value": 0.2963,
+            "ci": [
+              0.2727,
+              0.3219
+            ]
+          },
+          "f1": {
+            "value": 0.246,
+            "ci": [
+              0.2266,
+              0.2663
+            ]
+          }
+        },
+        "Support_Text": {
+          "support": 990,
+          "precision": {
+            "value": 0.1513,
+            "ci": [
+              0.1339,
+              0.169
+            ]
+          },
+          "recall": {
+            "value": 0.2586,
+            "ci": [
+              0.232,
+              0.2875
+            ]
+          },
+          "f1": {
+            "value": 0.1909,
+            "ci": [
+              0.1703,
+              0.2116
+            ]
+          }
+        }
+      }
+    },
+    "majority": {
+      "accuracy": {
+        "value": 0.1219,
+        "ci": [
+          0.1155,
+          0.1284
+        ]
+      },
+      "macro_f1": {
+        "value": 0.0435,
+        "ci": [
+          0.0414,
+          0.0455
+        ]
+      },
+      "per_class": {
+        "Insufficient_Multimodal": {
+          "support": 1265,
+          "precision": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "recall": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "f1": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "Insufficient_Text": {
+          "support": 1191,
+          "precision": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "recall": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "f1": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "Refute": {
+          "support": 5620,
+          "precision": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "recall": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "f1": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "Support_Multimodal": {
+          "support": 1259,
+          "precision": {
+            "value": 0.1219,
+            "ci": [
+              0.1155,
+              0.1284
+            ]
+          },
+          "recall": {
+            "value": 1.0,
+            "ci": [
+              1.0,
+              1.0
+            ]
+          },
+          "f1": {
+            "value": 0.2174,
+            "ci": [
+              0.2072,
+              0.2276
+            ]
+          }
+        },
+        "Support_Text": {
+          "support": 990,
+          "precision": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "recall": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "f1": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          }
+        }
+      }
+    },
+    "applicable_majority": {
+      "label": "Refute",
+      "share": 0.5443,
+      "n": 10325
+    }
+  },
+  "text_only_liar": {
+    "written_at": "2026-11-10T17:31:36+00:00",
+    "trained_on": "liar train",
+    "scored_on": "liar test",
+    "labels": "native",
+    "input": "the claim text only (never evidence_text)",
+    "train_rows": 10269,
+    "features": 26497,
+    "fit": {
+      "converged": true,
+      "iterations": 118,
+      "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH"
+    },
+    "settings": {
+      "tokens": "fakeddit_classes.tokens: words [a-z0-9'] + bigrams",
+      "min_df": 2,
+      "idf": "smoothed",
+      "tf": "sublinear",
+      "rows": "L2-normalised",
+      "classifier": "multinomial, class-balanced",
+      "C": 1.0
+    },
+    "train_classes": {
+      "half-true": 2123,
+      "false": 1998,
+      "mostly-true": 1966,
+      "true": 1683,
+      "barely-true": 1657,
+      "pants-fire": 842
+    },
+    "val_classes": {
+      "half-true": 267,
+      "false": 250,
+      "mostly-true": 249,
+      "barely-true": 214,
+      "true": 211,
+      "pants-fire": 92
+    },
+    "rows": 1283,
+    "classes": [
+      "barely-true",
+      "false",
+      "half-true",
+      "mostly-true",
+      "pants-fire",
+      "true"
+    ],
+    "majority_predicts": "half-true",
+    "model": {
+      "accuracy": {
+        "value": 0.2486,
+        "ci": [
+          0.2253,
+          0.2712
+        ]
+      },
+      "macro_f1": {
+        "value": 0.2469,
+        "ci": [
+          0.2227,
+          0.2689
+        ]
+      },
+      "per_class": {
+        "barely-true": {
+          "support": 214,
+          "precision": {
+            "value": 0.2474,
+            "ci": [
+              0.1885,
+              0.3103
+            ]
+          },
+          "recall": {
+            "value": 0.2243,
+            "ci": [
+              0.1696,
+              0.281
+            ]
+          },
+          "f1": {
+            "value": 0.2353,
+            "ci": [
+              0.1809,
+              0.2911
+            ]
+          }
+        },
+        "false": {
+          "support": 250,
+          "precision": {
+            "value": 0.3272,
+            "ci": [
+              0.267,
+              0.3937
+            ]
+          },
+          "recall": {
+            "value": 0.284,
+            "ci": [
+              0.231,
+              0.3435
+            ]
+          },
+          "f1": {
+            "value": 0.3041,
+            "ci": [
+              0.2517,
+              0.3605
+            ]
+          }
+        },
+        "half-true": {
+          "support": 267,
+          "precision": {
+            "value": 0.244,
+            "ci": [
+              0.1852,
+              0.307
+            ]
+          },
+          "recall": {
+            "value": 0.191,
+            "ci": [
+              0.1423,
+              0.2387
+            ]
+          },
+          "f1": {
+            "value": 0.2143,
+            "ci": [
+              0.1626,
+              0.2649
+            ]
+          }
+        },
+        "mostly-true": {
+          "support": 249,
+          "precision": {
+            "value": 0.2295,
+            "ci": [
+              0.1783,
+              0.2808
+            ]
+          },
+          "recall": {
+            "value": 0.2249,
+            "ci": [
+              0.1759,
+              0.2771
+            ]
+          },
+          "f1": {
+            "value": 0.2272,
+            "ci": [
+              0.1783,
+              0.2742
+            ]
+          }
+        },
+        "pants-fire": {
+          "support": 92,
+          "precision": {
+            "value": 0.1676,
+            "ci": [
+              0.1117,
+              0.2203
+            ]
+          },
+          "recall": {
+            "value": 0.3261,
+            "ci": [
+              0.2258,
+              0.4242
+            ]
+          },
+          "f1": {
+            "value": 0.2214,
+            "ci": [
+              0.1521,
+              0.282
+            ]
+          }
+        },
+        "true": {
+          "support": 211,
+          "precision": {
+            "value": 0.2625,
+            "ci": [
+              0.2076,
+              0.3185
+            ]
+          },
+          "recall": {
+            "value": 0.2986,
+            "ci": [
+              0.2368,
+              0.361
+            ]
+          },
+          "f1": {
+            "value": 0.2794,
+            "ci": [
+              0.2242,
+              0.3334
+            ]
+          }
+        }
+      }
+    },
+    "majority": {
+      "accuracy": {
+        "value": 0.2081,
+        "ci": [
+          0.1847,
+          0.2299
+        ]
+      },
+      "macro_f1": {
+        "value": 0.0574,
+        "ci": [
+          0.052,
+          0.0623
+        ]
+      },
+      "per_class": {
+        "barely-true": {
+          "support": 214,
+          "precision": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "recall": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "f1": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "false": {
+          "support": 250,
+          "precision": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "recall": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "f1": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "half-true": {
+          "support": 267,
+          "precision": {
+            "value": 0.2081,
+            "ci": [
+              0.1847,
+              0.2299
+            ]
+          },
+          "recall": {
+            "value": 1.0,
+            "ci": [
+              1.0,
+              1.0
+            ]
+          },
+          "f1": {
+            "value": 0.3445,
+            "ci": [
+              0.3118,
+              0.3739
+            ]
+          }
+        },
+        "mostly-true": {
+          "support": 249,
+          "precision": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "recall": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "f1": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "pants-fire": {
+          "support": 92,
+          "precision": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "recall": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "f1": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "true": {
+          "support": 211,
+          "precision": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "recall": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "f1": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          }
+        }
+      }
+    },
+    "applicable_majority": {
+      "label": "half-true",
+      "share": 0.2081,
+      "n": 1283
+    }
+  },
+  "text_only_m4fc": {
+    "written_at": "2026-11-10T17:31:29+00:00",
+    "trained_on": "m4fc train",
+    "scored_on": "m4fc val",
+    "labels": "three_way",
+    "input": "the claim text only (never evidence_text)",
+    "train_rows": 2524,
+    "features": 6233,
+    "fit": {
+      "converged": true,
+      "iterations": 51,
+      "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH"
+    },
+    "settings": {
+      "tokens": "fakeddit_classes.tokens: words [a-z0-9'] + bigrams",
+      "min_df": 2,
+      "idf": "smoothed",
+      "tf": "sublinear",
+      "rows": "L2-normalised",
+      "classifier": "multinomial, class-balanced",
+      "C": 1.0
+    },
+    "train_classes": {
+      "refuted": 2345,
+      "supported": 164,
+      "not_enough_evidence": 15
+    },
+    "val_classes": {
+      "refuted": 465,
+      "supported": 31,
+      "not_enough_evidence": 1
+    },
+    "rows": 497,
+    "classes": [
+      "not_enough_evidence",
+      "refuted",
+      "supported"
+    ],
+    "majority_predicts": "refuted",
+    "model": {
+      "accuracy": {
+        "value": 0.9115,
+        "ci": [
+          0.8853,
+          0.9356
+        ]
+      },
+      "macro_f1": {
+        "value": 0.4448,
+        "ci": [
+          0.3959,
+          0.7265
+        ]
+      },
+      "per_class": {
+        "not_enough_evidence": {
+          "support": 1,
+          "precision": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "recall": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "f1": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "refuted": {
+          "support": 465,
+          "precision": {
+            "value": 0.9587,
+            "ci": [
+              0.939,
+              0.9759
+            ]
+          },
+          "recall": {
+            "value": 0.9484,
+            "ci": [
+              0.9266,
+              0.9678
+            ]
+          },
+          "f1": {
+            "value": 0.9535,
+            "ci": [
+              0.9383,
+              0.9667
+            ]
+          }
+        },
+        "supported": {
+          "support": 31,
+          "precision": {
+            "value": 0.375,
+            "ci": [
+              0.2069,
+              0.5517
+            ]
+          },
+          "recall": {
+            "value": 0.3871,
+            "ci": [
+              0.2121,
+              0.56
+            ]
+          },
+          "f1": {
+            "value": 0.381,
+            "ci": [
+              0.2221,
+              0.5264
+            ]
+          }
+        }
+      }
+    },
+    "majority": {
+      "accuracy": {
+        "value": 0.9356,
+        "ci": [
+          0.9115,
+          0.9557
+        ]
+      },
+      "macro_f1": {
+        "value": 0.3222,
+        "ci": [
+          0.3183,
+          0.4882
+        ]
+      },
+      "per_class": {
+        "not_enough_evidence": {
+          "support": 1,
+          "precision": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "recall": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "f1": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "refuted": {
+          "support": 465,
+          "precision": {
+            "value": 0.9356,
+            "ci": [
+              0.9115,
+              0.9557
+            ]
+          },
+          "recall": {
+            "value": 1.0,
+            "ci": [
+              1.0,
+              1.0
+            ]
+          },
+          "f1": {
+            "value": 0.9667,
+            "ci": [
+              0.9537,
+              0.9774
+            ]
+          }
+        },
+        "supported": {
+          "support": 31,
+          "precision": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "recall": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "f1": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          }
+        }
+      }
+    },
+    "applicable_majority": {
+      "label": "refuted",
+      "share": 0.9356,
+      "n": 497
+    }
+  },
+  "text_only_mocheg": {
+    "written_at": "2026-11-10T17:31:33+00:00",
+    "trained_on": "mocheg train",
+    "scored_on": "mocheg test",
+    "labels": "three_way",
+    "input": "the claim text only (never evidence_text)",
+    "train_rows": 18279,
+    "features": 46937,
+    "fit": {
+      "converged": true,
+      "iterations": 147,
+      "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH"
+    },
+    "settings": {
+      "tokens": "fakeddit_classes.tokens: words [a-z0-9'] + bigrams",
+      "min_df": 2,
+      "idf": "smoothed",
+      "tf": "sublinear",
+      "rows": "L2-normalised",
+      "classifier": "multinomial, class-balanced",
+      "C": 1.0
+    },
+    "train_classes": {
+      "supported": 6917,
+      "refuted": 6878,
+      "not_enough_evidence": 4484
+    },
+    "val_classes": {
+      "refuted": 900,
+      "not_enough_evidence": 693,
+      "supported": 685
+    },
+    "rows": 2278,
+    "classes": [
+      "not_enough_evidence",
+      "refuted",
+      "supported"
+    ],
+    "majority_predicts": "supported",
+    "model": {
+      "accuracy": {
+        "value": 0.4658,
+        "ci": [
+          0.4451,
+          0.4868
+        ]
+      },
+      "macro_f1": {
+        "value": 0.4321,
+        "ci": [
+          0.4108,
+          0.4535
+        ]
+      },
+      "per_class": {
+        "not_enough_evidence": {
+          "support": 693,
+          "precision": {
+            "value": 0.4,
+            "ci": [
+              0.3533,
+              0.446
+            ]
+          },
+          "recall": {
+            "value": 0.254,
+            "ci": [
+              0.2216,
+              0.2874
+            ]
+          },
+          "f1": {
+            "value": 0.3107,
+            "ci": [
+              0.2751,
+              0.3474
+            ]
+          }
+        },
+        "refuted": {
+          "support": 900,
+          "precision": {
+            "value": 0.4915,
+            "ci": [
+              0.4633,
+              0.5182
+            ]
+          },
+          "recall": {
+            "value": 0.7056,
+            "ci": [
+              0.6743,
+              0.7336
+            ]
+          },
+          "f1": {
+            "value": 0.5794,
+            "ci": [
+              0.5526,
+              0.6033
+            ]
+          }
+        },
+        "supported": {
+          "support": 685,
+          "precision": {
+            "value": 0.4579,
+            "ci": [
+              0.4152,
+              0.5019
+            ]
+          },
+          "recall": {
+            "value": 0.365,
+            "ci": [
+              0.3272,
+              0.4015
+            ]
+          },
+          "f1": {
+            "value": 0.4062,
+            "ci": [
+              0.3701,
+              0.442
+            ]
+          }
+        }
+      }
+    },
+    "majority": {
+      "accuracy": {
+        "value": 0.3007,
+        "ci": [
+          0.2831,
+          0.3196
+        ]
+      },
+      "macro_f1": {
+        "value": 0.1541,
+        "ci": [
+          0.1471,
+          0.1615
+        ]
+      },
+      "per_class": {
+        "not_enough_evidence": {
+          "support": 693,
+          "precision": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "recall": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "f1": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "refuted": {
+          "support": 900,
+          "precision": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "recall": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "f1": {
+            "value": 0.0,
+            "ci": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "supported": {
+          "support": 685,
+          "precision": {
+            "value": 0.3007,
+            "ci": [
+              0.2831,
+              0.3196
+            ]
+          },
+          "recall": {
+            "value": 1.0,
+            "ci": [
+              1.0,
+              1.0
+            ]
+          },
+          "f1": {
+            "value": 0.4624,
+            "ci": [
+              0.4413,
+              0.4844
+            ]
+          }
+        }
+      }
+    },
+    "applicable_majority": {
+      "label": "refuted",
+      "share": 0.3951,
+      "n": 2278
+    }
+  }
+}

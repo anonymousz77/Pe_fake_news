@@ -1,0 +1,662 @@
+{
+  "written_at": "2026-11-11T19:46:47+00:00",
+  "post_hoc": "post hoc: v1.1 is the frozen system without its photo-branch probe, so the photo branch is the unfitted average; decided after VERITE was seen at gate E1, and after the frozen system's test was scored. v1.1 has no test number: the test report's 'routed without the probe' row is an ablation of the frozen system, declared before the test opened, and v1.1 was chosen after it was seen",
+  "system_sha256": "066e5554d9a1ec560ea59543d2170cacc3d3e77150db72e34deb6aff571ec122",
+  "derived_from": "5eb6f48b78f0b5db86b1a101d5593195b84dc1c8af503c1e95fa8f62c30ea237",
+  "test": "none: v1.1 has no test number",
+  "corpora": {
+    "m4fc val": {
+      "records": 497,
+      "auroc": [
+        {
+          "system": "v1.1",
+          "against": "clip_l14",
+          "records": 373,
+          "clusters": 373,
+          "positive": "false (out-of-context)",
+          "negative": "true",
+          "auroc_v1.1": 0.6615,
+          "auroc_clip_l14": 0.5972,
+          "delta": 0.0644,
+          "delta_ci95": [
+            -0.027,
+            0.1465
+          ],
+          "resamples": 2000,
+          "excludes_zero": false
+        },
+        {
+          "system": "v1.1",
+          "against": "clip_l14_ours",
+          "records": 373,
+          "clusters": 373,
+          "positive": "false (out-of-context)",
+          "negative": "true",
+          "auroc_v1.1": 0.6615,
+          "auroc_clip_l14_ours": 0.594,
+          "delta": 0.0675,
+          "delta_ci95": [
+            -0.0221,
+            0.1517
+          ],
+          "resamples": 2000,
+          "excludes_zero": false
+        },
+        {
+          "system": "frozen",
+          "against": "clip_l14",
+          "records": 373,
+          "clusters": 373,
+          "positive": "false (out-of-context)",
+          "negative": "true",
+          "auroc_frozen": 0.7982,
+          "auroc_clip_l14": 0.5972,
+          "delta": 0.201,
+          "delta_ci95": [
+            0.0817,
+            0.314
+          ],
+          "resamples": 2000,
+          "excludes_zero": true
+        },
+        {
+          "system": "frozen",
+          "against": "clip_l14_ours",
+          "records": 373,
+          "clusters": 373,
+          "positive": "false (out-of-context)",
+          "negative": "true",
+          "auroc_frozen": 0.7982,
+          "auroc_clip_l14_ours": 0.594,
+          "delta": 0.2042,
+          "delta_ci95": [
+            0.0864,
+            0.3173
+          ],
+          "resamples": 2000,
+          "excludes_zero": true
+        },
+        {
+          "system": "v1.1",
+          "against": "frozen",
+          "records": 373,
+          "clusters": 373,
+          "positive": "false (out-of-context)",
+          "negative": "true",
+          "auroc_v1.1": 0.6615,
+          "auroc_frozen": 0.7982,
+          "delta": -0.1366,
+          "delta_ci95": [
+            -0.2304,
+            -0.0434
+          ],
+          "resamples": 2000,
+          "excludes_zero": true
+        },
+        {
+          "system": "v1.1",
+          "against": "clip_l14",
+          "records": 496,
+          "clusters": 495,
+          "positive": "false",
+          "negative": "true",
+          "auroc_v1.1": 0.6344,
+          "auroc_clip_l14": 0.5796,
+          "delta": 0.0548,
+          "delta_ci95": [
+            -0.031,
+            0.1419
+          ],
+          "resamples": 2000,
+          "excludes_zero": false
+        },
+        {
+          "system": "v1.1",
+          "against": "clip_l14_ours",
+          "records": 496,
+          "clusters": 495,
+          "positive": "false",
+          "negative": "true",
+          "auroc_v1.1": 0.6344,
+          "auroc_clip_l14_ours": 0.5762,
+          "delta": 0.0583,
+          "delta_ci95": [
+            -0.0294,
+            0.1464
+          ],
+          "resamples": 2000,
+          "excludes_zero": false
+        },
+        {
+          "system": "frozen",
+          "against": "clip_l14",
+          "records": 496,
+          "clusters": 495,
+          "positive": "false",
+          "negative": "true",
+          "auroc_frozen": 0.7824,
+          "auroc_clip_l14": 0.5796,
+          "delta": 0.2028,
+          "delta_ci95": [
+            0.0897,
+            0.3293
+          ],
+          "resamples": 2000,
+          "excludes_zero": true
+        },
+        {
+          "system": "frozen",
+          "against": "clip_l14_ours",
+          "records": 496,
+          "clusters": 495,
+          "positive": "false",
+          "negative": "true",
+          "auroc_frozen": 0.7824,
+          "auroc_clip_l14_ours": 0.5762,
+          "delta": 0.2062,
+          "delta_ci95": [
+            0.0893,
+            0.3342
+          ],
+          "resamples": 2000,
+          "excludes_zero": true
+        },
+        {
+          "system": "v1.1",
+          "against": "frozen",
+          "records": 496,
+          "clusters": 495,
+          "positive": "false",
+          "negative": "true",
+          "auroc_v1.1": 0.6344,
+          "auroc_frozen": 0.7824,
+          "delta": -0.148,
+          "delta_ci95": [
+            -0.2502,
+            -0.0559
+          ],
+          "resamples": 2000,
+          "excludes_zero": true
+        }
+      ],
+      "by_class": {
+        "ai-generated": {
+          "v1.1": {
+            "flagged": {
+              "k": 4,
+              "n": 5,
+              "rate": 0.8,
+              "wilson95": [
+                0.3755,
+                0.9638
+              ]
+            },
+            "branches": {
+              "m4fc": 5
+            }
+          },
+          "frozen": {
+            "flagged": {
+              "k": 4,
+              "n": 5,
+              "rate": 0.8,
+              "wilson95": [
+                0.3755,
+                0.9638
+              ]
+            },
+            "branches": {
+              "m4fc": 5
+            }
+          }
+        },
+        "manipulated": {
+          "v1.1": {
+            "flagged": {
+              "k": 75,
+              "n": 118,
+              "rate": 0.6356,
+              "wilson95": [
+                0.5458,
+                0.7169
+              ]
+            },
+            "branches": {
+              "m4fc": 99,
+              "photo": 19
+            }
+          },
+          "frozen": {
+            "flagged": {
+              "k": 77,
+              "n": 118,
+              "rate": 0.6525,
+              "wilson95": [
+                0.563,
+                0.7324
+              ]
+            },
+            "branches": {
+              "m4fc": 99,
+              "photo": 19
+            }
+          }
+        },
+        "out-of-context": {
+          "v1.1": {
+            "flagged": {
+              "k": 262,
+              "n": 342,
+              "rate": 0.7661,
+              "wilson95": [
+                0.7184,
+                0.8078
+              ]
+            },
+            "branches": {
+              "m4fc": 301,
+              "photo": 41
+            }
+          },
+          "frozen": {
+            "flagged": {
+              "k": 261,
+              "n": 342,
+              "rate": 0.7632,
+              "wilson95": [
+                0.7153,
+                0.8051
+              ]
+            },
+            "branches": {
+              "m4fc": 301,
+              "photo": 41
+            }
+          }
+        },
+        "true": {
+          "v1.1": {
+            "flagged": {
+              "k": 14,
+              "n": 31,
+              "rate": 0.4516,
+              "wilson95": [
+                0.2916,
+                0.6223
+              ]
+            },
+            "branches": {
+              "m4fc": 11,
+              "photo": 20
+            }
+          },
+          "frozen": {
+            "flagged": {
+              "k": 7,
+              "n": 31,
+              "rate": 0.2258,
+              "wilson95": [
+                0.114,
+                0.3981
+              ]
+            },
+            "branches": {
+              "m4fc": 11,
+              "photo": 20
+            }
+          }
+        },
+        "unverified": {
+          "v1.1": {
+            "flagged": {
+              "k": 1,
+              "n": 1,
+              "rate": 1.0,
+              "wilson95": [
+                0.2065,
+                1.0
+              ]
+            },
+            "branches": {
+              "photo": 1
+            }
+          },
+          "frozen": {
+            "flagged": {
+              "k": 0,
+              "n": 1,
+              "rate": 0.0,
+              "wilson95": [
+                0.0,
+                0.7935
+              ]
+            },
+            "branches": {
+              "photo": 1
+            }
+          }
+        }
+      },
+      "accuracy": {},
+      "macro_f1": {
+        "v1.1": 0.5147,
+        "frozen": 0.555
+      }
+    },
+    "verite": {
+      "records": 877,
+      "auroc": [
+        {
+          "system": "v1.1",
+          "against": "clip_l14",
+          "records": 585,
+          "clusters": 330,
+          "positive": "out-of-context",
+          "negative": "true",
+          "auroc_v1.1": 0.8087,
+          "auroc_clip_l14": 0.8514,
+          "delta": -0.0427,
+          "delta_ci95": [
+            -0.0704,
+            -0.0162
+          ],
+          "resamples": 2000,
+          "excludes_zero": true
+        },
+        {
+          "system": "v1.1",
+          "against": "clip_l14_ours",
+          "records": 588,
+          "clusters": 332,
+          "positive": "out-of-context",
+          "negative": "true",
+          "auroc_v1.1": 0.8082,
+          "auroc_clip_l14_ours": 0.8524,
+          "delta": -0.0441,
+          "delta_ci95": [
+            -0.0708,
+            -0.0181
+          ],
+          "resamples": 2000,
+          "excludes_zero": true
+        },
+        {
+          "system": "frozen",
+          "against": "clip_l14",
+          "records": 585,
+          "clusters": 330,
+          "positive": "out-of-context",
+          "negative": "true",
+          "auroc_frozen": 0.5414,
+          "auroc_clip_l14": 0.8514,
+          "delta": -0.31,
+          "delta_ci95": [
+            -0.35,
+            -0.2686
+          ],
+          "resamples": 2000,
+          "excludes_zero": true
+        },
+        {
+          "system": "frozen",
+          "against": "clip_l14_ours",
+          "records": 588,
+          "clusters": 332,
+          "positive": "out-of-context",
+          "negative": "true",
+          "auroc_frozen": 0.5417,
+          "auroc_clip_l14_ours": 0.8524,
+          "delta": -0.3107,
+          "delta_ci95": [
+            -0.3518,
+            -0.2689
+          ],
+          "resamples": 2000,
+          "excludes_zero": true
+        },
+        {
+          "system": "v1.1",
+          "against": "frozen",
+          "records": 588,
+          "clusters": 332,
+          "positive": "out-of-context",
+          "negative": "true",
+          "auroc_v1.1": 0.8082,
+          "auroc_frozen": 0.5417,
+          "delta": 0.2666,
+          "delta_ci95": [
+            0.2273,
+            0.3056
+          ],
+          "resamples": 2000,
+          "excludes_zero": true
+        },
+        {
+          "system": "v1.1",
+          "against": "clip_l14",
+          "records": 575,
+          "clusters": 289,
+          "positive": "miscaptioned",
+          "negative": "true",
+          "auroc_v1.1": 0.5941,
+          "auroc_clip_l14": 0.5661,
+          "delta": 0.0281,
+          "delta_ci95": [
+            -0.0004,
+            0.0579
+          ],
+          "resamples": 2000,
+          "excludes_zero": false
+        },
+        {
+          "system": "v1.1",
+          "against": "clip_l14_ours",
+          "records": 578,
+          "clusters": 289,
+          "positive": "miscaptioned",
+          "negative": "true",
+          "auroc_v1.1": 0.5936,
+          "auroc_clip_l14_ours": 0.5664,
+          "delta": 0.0272,
+          "delta_ci95": [
+            -0.0038,
+            0.0579
+          ],
+          "resamples": 2000,
+          "excludes_zero": false
+        },
+        {
+          "system": "frozen",
+          "against": "clip_l14",
+          "records": 575,
+          "clusters": 289,
+          "positive": "miscaptioned",
+          "negative": "true",
+          "auroc_frozen": 0.5253,
+          "auroc_clip_l14": 0.5661,
+          "delta": -0.0408,
+          "delta_ci95": [
+            -0.082,
+            0.0008
+          ],
+          "resamples": 2000,
+          "excludes_zero": false
+        },
+        {
+          "system": "frozen",
+          "against": "clip_l14_ours",
+          "records": 578,
+          "clusters": 289,
+          "positive": "miscaptioned",
+          "negative": "true",
+          "auroc_frozen": 0.5249,
+          "auroc_clip_l14_ours": 0.5664,
+          "delta": -0.0415,
+          "delta_ci95": [
+            -0.0803,
+            -0.0009
+          ],
+          "resamples": 2000,
+          "excludes_zero": true
+        },
+        {
+          "system": "v1.1",
+          "against": "frozen",
+          "records": 578,
+          "clusters": 289,
+          "positive": "miscaptioned",
+          "negative": "true",
+          "auroc_v1.1": 0.5936,
+          "auroc_frozen": 0.5249,
+          "delta": 0.0687,
+          "delta_ci95": [
+            0.0306,
+            0.1046
+          ],
+          "resamples": 2000,
+          "excludes_zero": true
+        }
+      ],
+      "by_class": {
+        "miscaptioned": {
+          "v1.1": {
+            "flagged": {
+              "k": 168,
+              "n": 289,
+              "rate": 0.5813,
+              "wilson95": [
+                0.5237,
+                0.6368
+              ]
+            },
+            "branches": {
+              "m4fc": 29,
+              "photo": 260
+            }
+          },
+          "frozen": {
+            "flagged": {
+              "k": 138,
+              "n": 289,
+              "rate": 0.4775,
+              "wilson95": [
+                0.4206,
+                0.535
+              ]
+            },
+            "branches": {
+              "m4fc": 29,
+              "photo": 260
+            }
+          }
+        },
+        "out-of-context": {
+          "v1.1": {
+            "flagged": {
+              "k": 260,
+              "n": 299,
+              "rate": 0.8696,
+              "wilson95": [
+                0.8267,
+                0.9031
+              ]
+            },
+            "branches": {
+              "photo": 261,
+              "m4fc": 38
+            }
+          },
+          "frozen": {
+            "flagged": {
+              "k": 155,
+              "n": 299,
+              "rate": 0.5184,
+              "wilson95": [
+                0.4619,
+                0.5744
+              ]
+            },
+            "branches": {
+              "photo": 261,
+              "m4fc": 38
+            }
+          }
+        },
+        "true": {
+          "v1.1": {
+            "flagged": {
+              "k": 124,
+              "n": 289,
+              "rate": 0.4291,
+              "wilson95": [
+                0.3733,
+                0.4867
+              ]
+            },
+            "branches": {
+              "m4fc": 29,
+              "photo": 260
+            }
+          },
+          "frozen": {
+            "flagged": {
+              "k": 136,
+              "n": 289,
+              "rate": 0.4706,
+              "wilson95": [
+                0.4138,
+                0.5281
+              ]
+            },
+            "branches": {
+              "m4fc": 29,
+              "photo": 260
+            }
+          }
+        }
+      },
+      "accuracy": {
+        "out-of-context vs true": {
+          "v1.1": {
+            "k": 425,
+            "n": 588,
+            "rate": 0.7228,
+            "wilson95": [
+              0.6853,
+              0.7574
+            ]
+          },
+          "frozen": {
+            "k": 308,
+            "n": 588,
+            "rate": 0.5238,
+            "wilson95": [
+              0.4834,
+              0.5639
+            ]
+          }
+        },
+        "miscaptioned vs true": {
+          "v1.1": {
+            "k": 333,
+            "n": 578,
+            "rate": 0.5761,
+            "wilson95": [
+              0.5355,
+              0.6158
+            ]
+          },
+          "frozen": {
+            "k": 291,
+            "n": 578,
+            "rate": 0.5035,
+            "wilson95": [
+              0.4628,
+              0.5441
+            ]
+          }
+        }
+      }
+    }
+  }
+}

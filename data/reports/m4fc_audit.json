@@ -1,0 +1,4647 @@
+{
+  "measure": {
+    "generated_by": "python scripts/m4fc_audit.py measure",
+    "seed": 20260901,
+    "bootstrap": 2000,
+    "decisions": {
+      "train_dev": "processed split",
+      "official_test": "aggregate counts only",
+      "sheet_images": "neutral copies",
+      "decided": "2026-10-28"
+    },
+    "definitions": {
+      "reason_codes_docstring": [
+        "media_mismatch      real image, real caption, but they do not belong together",
+        "wrong_image         the image is genuine but described falsely"
+      ],
+      "processed_schema_rows": [
+        "| `media_mismatch` | real image, real caption, wrong pairing | VERITE `out-of-context` |",
+        "| `wrong_image` | genuine image described falsely | VERITE `miscaptioned` |"
+      ],
+      "mapping": {
+        "media_mismatch": [
+          {
+            "dataset": "verite",
+            "label": "out-of-context",
+            "provenance": "specified"
+          }
+        ],
+        "wrong_image": [
+          {
+            "dataset": "verite",
+            "label": "miscaptioned",
+            "provenance": "specified"
+          }
+        ]
+      },
+      "m4fc_mapping": {
+        "false": "content_refuted",
+        "not enough information": "content_unverified",
+        "true": "none"
+      },
+      "dgm4": {
+        "rule_source": "def dgm4_reason_code(label: str | None, meta: dict[str, Any] | None) -> str:\n    if label == DGM4_MEDIA_MISMATCH_LABEL and (meta or {}).get(\"swap_publisher\") == \"same\":\n        return \"media_mismatch\"\n    return UNMAPPED\n",
+        "audit_passed": false,
+        "label": "text_swap"
+      },
+      "fakeddit_rulings": {
+        "2": "unmapped: a subreddit-style shortcut, not an image-text mismatch label"
+      },
+      "unmapped_datasets": [
+        "dgm4",
+        "fakeddit",
+        "fakenewsnet",
+        "isot",
+        "liar",
+        "welfake"
+      ],
+      "evaluation_only": {
+        "averimatec": "95% one class (897 of 945 Refuted): evaluation only, per the brief",
+        "verite": "an evaluation benchmark with no training split: every row is test"
+      },
+      "loader_source": "def reason_code_rows(dataset: str, *, split: str, purpose: str,\n                     root: Path | None = None) -> Iterator[dict[str, Any]]:\n    \"\"\"Rows that may train (purpose='train') or evaluate a reason-code head.\"\"\"\n    if dataset in reason_codes.UNMAPPED_DATASETS:\n        raise SupervisionError(\n            f\"{dataset}: its label scheme carries no reason information; every row is \"\n            \"'unmapped' and none may supervise the reason-code head\")\n    if purpose == \"train\" and reason_codes.evaluation_only(dataset):\n        raise SupervisionError(\n            f\"{dataset} is evaluation-only ({reason_codes.EVALUATION_ONLY[dataset]})\")\n    for row in iter_rows(dataset, split=split, root=root):\n        if not reason_codes.is_supervised(row.get(\"reason_code\")):\n            continue\n        if purpose == \"evaluate\" and row.get(\"weak_supervision\"):\n            continue\n        yield check_reason_row(row, purpose)\n",
+      "rows_carrying_the_codes": {
+        "averimatec": [],
+        "averitec": [],
+        "dgm4": [],
+        "factify2": [],
+        "fakeddit": [],
+        "fakenewsnet": [],
+        "isot": [],
+        "liar": [],
+        "m4fc": [],
+        "mocheg": [],
+        "verite": [
+          {
+            "reason_code": "media_mismatch",
+            "label": "out-of-context",
+            "split": "test",
+            "use": "evaluation_only",
+            "rows": 325
+          },
+          {
+            "reason_code": "wrong_image",
+            "label": "miscaptioned",
+            "split": "test",
+            "use": "evaluation_only",
+            "rows": 338
+          }
+        ],
+        "welfake": []
+      },
+      "train_yield_of_reason_code_rows": {
+        "averimatec": {
+          "refused": "averimatec is evaluation-only (95% one class (897 of 945 Refuted): evaluation only, per the brief)"
+        },
+        "averitec": {
+          "yielded": {
+            "content_refuted": 1742,
+            "none": 849,
+            "content_unverified": 282
+          }
+        },
+        "dgm4": {
+          "refused": "dgm4: its label scheme carries no reason information; every row is 'unmapped' and none may supervise the reason-code head"
+        },
+        "factify2": {
+          "yielded": {
+            "content_unverified": 11900,
+            "none": 11900,
+            "content_refuted": 17
+          }
+        },
+        "fakeddit": {
+          "refused": "fakeddit: its label scheme carries no reason information; every row is 'unmapped' and none may supervise the reason-code head"
+        },
+        "fakenewsnet": {
+          "refused": "fakenewsnet: its label scheme carries no reason information; every row is 'unmapped' and none may supervise the reason-code head"
+        },
+        "isot": {
+          "refused": "isot: its label scheme carries no reason information; every row is 'unmapped' and none may supervise the reason-code head"
+        },
+        "liar": {
+          "refused": "liar: its label scheme carries no reason information; every row is 'unmapped' and none may supervise the reason-code head"
+        },
+        "m4fc": {
+          "yielded": {
+            "content_refuted": 2394,
+            "none": 164,
+            "content_unverified": 15
+          }
+        },
+        "mocheg": {
+          "yielded": {
+            "none": 6917,
+            "content_refuted": 6878,
+            "content_unverified": 4484
+          }
+        },
+        "verite": {
+          "refused": "verite is evaluation-only (an evaluation benchmark with no training split: every row is test)"
+        },
+        "welfake": {
+          "refused": "welfake: its label scheme carries no reason information; every row is 'unmapped' and none may supervise the reason-code head"
+        }
+      },
+      "trainable_rows": {
+        "media_mismatch": 0,
+        "wrong_image": 0
+      },
+      "same_string_elsewhere": "images.WRONG_IMAGE == 'wrong_image' is also an image status: a file that is provably not the authors' image"
+    },
+    "fields": {
+      "raw": {
+        "file": "data/M4FC.json",
+        "rows": 4982,
+        "keys": [
+          "image_path",
+          "image_url",
+          "article_url",
+          "fc_org",
+          "fc_pub_date",
+          "fc_language",
+          "fc_country",
+          "verification_strategy",
+          "verification_tools",
+          "claim",
+          "multilingual_claim",
+          "claim_language",
+          "verdict",
+          "claimant",
+          "claimant_intent",
+          "claimed_date",
+          "claimed_location",
+          "claimed_people",
+          "claimed_things",
+          "claimed_event",
+          "provenance",
+          "source",
+          "date",
+          "location",
+          "motivation",
+          "people",
+          "things",
+          "event",
+          "task_claim_extraction",
+          "task_location_verification",
+          "true_caption",
+          "task_claimant_intent",
+          "task_fake_detection",
+          "task_image_contextualization",
+          "split",
+          "is_ai_generated",
+          "use_true_caption",
+          "negative_geolocations",
+          "coordinates",
+          "negative_coordinates",
+          "is_manipulated_fake",
+          "verdict_coarse",
+          "multilingual_true_caption",
+          "task_verdict_prediction",
+          "wayback_image_url"
+        ],
+        "rows_with_other_key_sets": 0
+      },
+      "validated": {
+        "file": "data/M4FC_human_validated.json",
+        "rows": 434,
+        "same_keys_as_main": true,
+        "read_by_the_pipeline": false
+      },
+      "interim": {
+        "rows": 4982,
+        "keys": [
+          "dataset",
+          "evidence_text",
+          "images",
+          "label",
+          "meta",
+          "official_split",
+          "record_id",
+          "text"
+        ],
+        "meta_keys": [
+          "fc_org",
+          "fc_pub_date"
+        ],
+        "image_ref_keys": [
+          "kind",
+          "ref",
+          "role",
+          "url"
+        ]
+      },
+      "processed": {
+        "rows": 3493,
+        "keys": [
+          "dataset",
+          "record_id",
+          "text",
+          "evidence_text",
+          "label",
+          "reason_code",
+          "modality_evidence",
+          "evaluation_only",
+          "weak_supervision",
+          "image_paths",
+          "images_expected",
+          "images_usable",
+          "image_status",
+          "modality",
+          "usable",
+          "usable_reason",
+          "meta",
+          "split"
+        ],
+        "meta_keys": [
+          "fc_org",
+          "fc_pub_date",
+          "official_split"
+        ]
+      },
+      "survives": {
+        "image_path": "record_id",
+        "claim": "text",
+        "verdict_coarse": "label, and reason_code derived from it",
+        "split": "meta.official_split (dev -> val); split, after reconciliation",
+        "fc_org": "meta.fc_org",
+        "fc_pub_date": "meta.fc_pub_date"
+      },
+      "image_url": "kept in interim (images[].url) for resolution; not a processed field",
+      "dropped": [
+        "image_url",
+        "article_url",
+        "fc_language",
+        "fc_country",
+        "verification_strategy",
+        "verification_tools",
+        "multilingual_claim",
+        "claim_language",
+        "verdict",
+        "claimant",
+        "claimant_intent",
+        "claimed_date",
+        "claimed_location",
+        "claimed_people",
+        "claimed_things",
+        "claimed_event",
+        "provenance",
+        "source",
+        "date",
+        "location",
+        "motivation",
+        "people",
+        "things",
+        "event",
+        "task_claim_extraction",
+        "task_location_verification",
+        "true_caption",
+        "task_claimant_intent",
+        "task_fake_detection",
+        "task_image_contextualization",
+        "is_ai_generated",
+        "use_true_caption",
+        "negative_geolocations",
+        "coordinates",
+        "negative_coordinates",
+        "is_manipulated_fake",
+        "multilingual_true_caption",
+        "task_verdict_prediction",
+        "wayback_image_url"
+      ],
+      "rows_dropped": {
+        "official test, excluded by the register (build_processed.EXCLUDED_SPLITS)": 1489
+      },
+      "value_checks": {
+        "text == claim": {
+          "equal": 3493,
+          "of": 3493
+        },
+        "label == verdict_coarse": {
+          "equal": 3493,
+          "of": 3493
+        },
+        "meta.fc_org == fc_org": {
+          "equal": 3493,
+          "of": 3493
+        },
+        "meta.fc_pub_date == fc_pub_date": {
+          "equal": 3493,
+          "of": 3493
+        },
+        "meta.official_split == split": {
+          "equal": 3493,
+          "of": 3493
+        },
+        "image resolved as the build resolved it": {
+          "equal": 3493,
+          "of": 3493
+        },
+        "image_status as the build recorded it": {
+          "equal": 3493,
+          "of": 3493
+        }
+      },
+      "split": {
+        "crosstab_official_x_processed": {
+          "dev -> val": 499,
+          "test -> not in processed": 1489,
+          "train -> test": 420,
+          "train -> train": 2573,
+          "train -> val": 1
+        },
+        "moved": 421,
+        "moved_into_train": 0,
+        "bounds": {
+          "train": {
+            "rows": 2994,
+            "first": "2015-03-17",
+            "last": "2022-09-22"
+          },
+          "dev": {
+            "rows": 499,
+            "first": "2022-09-22",
+            "last": "2023-01-18"
+          },
+          "test": {
+            "rows": 1489,
+            "first": "2023-01-18",
+            "last": "2024-09-01"
+          }
+        },
+        "outside_the_paper_windows": {
+          "train after the dev cutoff": 0,
+          "dev before the dev cutoff": 0,
+          "dev after the test cutoff": 0,
+          "test before the test cutoff": 0,
+          "test after the paper's end date": 0
+        },
+        "boundary_days": {
+          "2022-09-22": {
+            "dev": 4,
+            "train": 1
+          },
+          "2023-01-18": {
+            "dev": 2,
+            "test": 1
+          }
+        }
+      },
+      "english_claim": {
+        "rows_with_a_claim": 4982,
+        "rows": 4982,
+        "claim_language": {
+          "English": 3175,
+          "Arabic": 614,
+          "Portuguese": 252,
+          "French": 230,
+          "Spanish": 198,
+          "German": 184,
+          "Telugu": 149,
+          "Dutch": 80,
+          "Tamil": 51,
+          "Turkish": 49
+        },
+        "multilingual_claim_absent_when_english": 3175,
+        "claims_with_non_latin_letters": 3,
+        "claims_mostly_non_latin": 1,
+        "mostly_non_latin": [
+          {
+            "record_id": "images/telugu-1971-photo-is-falsely-shared-as-hindu-families-being-thrown-out-of-telangana-by-nizams-in-1948.png",
+            "split": "train",
+            "claim_language": "Telugu",
+            "script": "TELUGU"
+          }
+        ],
+        "non_latin_scripts": {
+          "ARABIC": 1,
+          "DEVANAGARI": 1,
+          "TELUGU": 1
+        },
+        "non_latin_record_ids": [
+          "images/هذه-الصورة-ليست-حقيقية-وتعود-الصورة.png",
+          "images/photo-from-bihar-is-portrayed-as-west-bengal-farmers-expression-of-gratitude-towards-pm-modi.png",
+          "images/telugu-1971-photo-is-falsely-shared-as-hindu-families-being-thrown-out-of-telangana-by-nizams-in-1948.png"
+        ],
+        "language_id": "no language-ID library is installed; Latin-script languages are not told apart"
+      },
+      "fc_pub_date": {
+        "present": 4982,
+        "unparseable": 0,
+        "formats": {
+          "YYYY-MM-DD": 3865,
+          "YYYY-MM-DD HH:MM:SS": 1117
+        }
+      }
+    },
+    "items": {
+      "absent_markers": {
+        "not enough information": 19487,
+        "not specified": 1,
+        "unspecified": 1
+      },
+      "claimed_date": {
+        "shapes": {
+          "absent": 3535,
+          "normalised": 1443,
+          "range": 3,
+          "other": 1
+        },
+        "multi_valued": 50,
+        "examples": [
+          "1918-1920",
+          "1932-1933",
+          "1943; current",
+          "1951-1967"
+        ]
+      },
+      "date": {
+        "shapes": {
+          "normalised": 3785,
+          "absent": 1185,
+          "range": 10,
+          "other": 2
+        },
+        "multi_valued": 504,
+        "examples": [
+          "1858-1877",
+          "1935-1942",
+          "1951-1961",
+          "1964-1972",
+          "1980-1988",
+          "2001-2002",
+          "2008-2014; 2018-2019",
+          "2011-2015",
+          "2012; 2019-04; 2006; 2009-12/201",
+          "2014-2015",
+          "2017-2018",
+          "222 AD"
+        ]
+      },
+      "value_types": {
+        "date": {
+          "str": 4982
+        },
+        "location": {
+          "str": 4982
+        },
+        "people": {
+          "str": 3331,
+          "list": 1651
+        },
+        "things": {
+          "str": 4982
+        },
+        "event": {
+          "str": 4982
+        },
+        "claimed_date": {
+          "str": 4982
+        },
+        "claimed_location": {
+          "str": 4982
+        },
+        "claimed_people": {
+          "str": 4982
+        },
+        "claimed_things": {
+          "str": 4982
+        },
+        "claimed_event": {
+          "str": 4982
+        }
+      },
+      "verdict_x_coarse": {
+        "false (ai-generated) -> false": 168,
+        "false (manipulated/fake) -> false": 1118,
+        "false (out-of-context) -> false": 3376,
+        "mixture -> not enough information": 18,
+        "true -> false": 1,
+        "true -> true": 292,
+        "unverified -> not enough information": 9
+      },
+      "verdict_true_coarse_false": [
+        "images/exibicao-de-imagem-que-equipara-putin-a-hitler-esta-proibida-na-russia.png"
+      ],
+      "task_verdict_prediction_false": {
+        "mixture": 18,
+        "unverified": 9
+      }
+    },
+    "counts": {
+      "official train": {
+        "rows": 2994,
+        "english_claims": 2994,
+        "multilingual_claims": 1085,
+        "synthetic_true_captions": 673,
+        "rows_with_usable_image": 2945,
+        "distinct_sha256": 2945,
+        "verdict": {
+          "false (out-of-context)": 2189,
+          "false (manipulated/fake)": 620,
+          "true": 165,
+          "mixture": 13,
+          "false (ai-generated)": 5,
+          "unverified": 2
+        },
+        "verdict_coarse": {
+          "false": 2814,
+          "true": 165,
+          "not enough information": 15
+        },
+        "balanced_flag": 675,
+        "balanced_flag_by_verdict": {
+          "false (out-of-context)": 666,
+          "false (manipulated/fake)": 7,
+          "true": 2
+        },
+        "balanced_flag_without_caption": 2,
+        "ooc_rows": 2189,
+        "ooc_both_present": {
+          "date": 572,
+          "location": 1487,
+          "people": 600,
+          "things": 1223,
+          "event": 1542
+        },
+        "ooc_rows_with_any_item": 2068,
+        "ooc_both_present_with_usable_image": {
+          "date": 563,
+          "location": 1465,
+          "people": 584,
+          "things": 1204,
+          "event": 1515
+        },
+        "fc_org": {
+          "factly.in": 743,
+          "fatabyyano.net": 412,
+          "pesacheck.org": 273,
+          "indiatoday.in": 264,
+          "snopes.com": 220,
+          "poligrafo.sapo.pt": 173,
+          "leadstories.com": 172,
+          "larepublica.pe": 144,
+          "correctiv.org": 138,
+          "congocheck.net": 130,
+          "dfrac.org": 83,
+          "youturn.in": 49,
+          "knack.be": 47,
+          "dubawa.org": 39,
+          "mythdetector.ge": 39,
+          "tjekdet.dk": 25,
+          "dogrula.org": 23,
+          "verify-sy.com": 15,
+          "211check.org": 5
+        }
+      },
+      "official dev": {
+        "rows": 499,
+        "english_claims": 499,
+        "multilingual_claims": 176,
+        "synthetic_true_captions": 94,
+        "rows_with_usable_image": 496,
+        "distinct_sha256": 496,
+        "verdict": {
+          "false (out-of-context)": 345,
+          "false (manipulated/fake)": 118,
+          "true": 30,
+          "false (ai-generated)": 5,
+          "unverified": 1
+        },
+        "verdict_coarse": {
+          "false": 468,
+          "true": 30,
+          "not enough information": 1
+        },
+        "balanced_flag": 94,
+        "balanced_flag_by_verdict": {
+          "false (out-of-context)": 94
+        },
+        "balanced_flag_without_caption": 0,
+        "ooc_rows": 345,
+        "ooc_both_present": {
+          "date": 127,
+          "location": 247,
+          "people": 86,
+          "things": 178,
+          "event": 227
+        },
+        "ooc_rows_with_any_item": 327,
+        "ooc_both_present_with_usable_image": {
+          "date": 127,
+          "location": 245,
+          "people": 86,
+          "things": 177,
+          "event": 226
+        },
+        "fc_org": {
+          "pesacheck.org": 145,
+          "fatabyyano.net": 72,
+          "factly.in": 61,
+          "congocheck.net": 33,
+          "leadstories.com": 31,
+          "poligrafo.sapo.pt": 31,
+          "dfrac.org": 21,
+          "indiatoday.in": 19,
+          "larepublica.pe": 18,
+          "correctiv.org": 15,
+          "snopes.com": 11,
+          "dogrula.org": 10,
+          "knack.be": 8,
+          "211check.org": 7,
+          "mythdetector.ge": 7,
+          "factcheckcenter.jp": 6,
+          "verify-sy.com": 2,
+          "dubawa.org": 1,
+          "youturn.in": 1
+        }
+      },
+      "official test": {
+        "rows": 1489,
+        "english_claims": 1489,
+        "multilingual_claims": 546,
+        "synthetic_true_captions": 231,
+        "rows_with_usable_image": 1479,
+        "distinct_sha256": 1479,
+        "verdict": {
+          "false (out-of-context)": 842,
+          "false (manipulated/fake)": 380,
+          "false (ai-generated)": 158,
+          "true": 98,
+          "unverified": 6,
+          "mixture": 5
+        },
+        "verdict_coarse": {
+          "false": 1381,
+          "true": 97,
+          "not enough information": 11
+        },
+        "balanced_flag": 231,
+        "balanced_flag_by_verdict": {
+          "false (out-of-context)": 228,
+          "false (manipulated/fake)": 2,
+          "true": 1
+        },
+        "balanced_flag_without_caption": 0,
+        "ooc_rows": 842,
+        "ooc_both_present": {
+          "date": 296,
+          "location": 578,
+          "people": 225,
+          "things": 491,
+          "event": 578
+        },
+        "ooc_rows_with_any_item": 803,
+        "ooc_both_present_with_usable_image": {
+          "date": 292,
+          "location": 572,
+          "people": 223,
+          "things": 486,
+          "event": 571
+        },
+        "fc_org": {
+          "factly.in": 223,
+          "snopes.com": 223,
+          "fatabyyano.net": 174,
+          "pesacheck.org": 143,
+          "leadstories.com": 125,
+          "congocheck.net": 97,
+          "larepublica.pe": 91,
+          "poligrafo.sapo.pt": 80,
+          "correctiv.org": 67,
+          "indiatoday.in": 50,
+          "knack.be": 40,
+          "211check.org": 39,
+          "dubawa.org": 25,
+          "verify-sy.com": 25,
+          "mythdetector.ge": 21,
+          "dogrula.org": 19,
+          "factchecker.gr": 17,
+          "factcheckcenter.jp": 12,
+          "youturn.in": 9,
+          "factchecklab.org": 5,
+          "tjekdet.dk": 4
+        }
+      },
+      "processed train": {
+        "rows": 2573,
+        "english_claims": 2573,
+        "multilingual_claims": 1085,
+        "synthetic_true_captions": 584,
+        "rows_with_usable_image": 2524,
+        "distinct_sha256": 2524,
+        "verdict": {
+          "false (out-of-context)": 1876,
+          "false (manipulated/fake)": 514,
+          "true": 164,
+          "mixture": 13,
+          "false (ai-generated)": 4,
+          "unverified": 2
+        },
+        "verdict_coarse": {
+          "false": 2394,
+          "true": 164,
+          "not enough information": 15
+        },
+        "balanced_flag": 586,
+        "balanced_flag_by_verdict": {
+          "false (out-of-context)": 578,
+          "false (manipulated/fake)": 6,
+          "true": 2
+        },
+        "balanced_flag_without_caption": 2,
+        "ooc_rows": 1876,
+        "ooc_both_present": {
+          "date": 542,
+          "location": 1286,
+          "people": 508,
+          "things": 1063,
+          "event": 1337
+        },
+        "ooc_rows_with_any_item": 1780,
+        "ooc_both_present_with_usable_image": {
+          "date": 533,
+          "location": 1264,
+          "people": 492,
+          "things": 1044,
+          "event": 1310
+        },
+        "fc_org": {
+          "fatabyyano.net": 412,
+          "factly.in": 349,
+          "pesacheck.org": 273,
+          "indiatoday.in": 264,
+          "snopes.com": 193,
+          "poligrafo.sapo.pt": 173,
+          "leadstories.com": 172,
+          "larepublica.pe": 144,
+          "correctiv.org": 138,
+          "congocheck.net": 130,
+          "dfrac.org": 83,
+          "youturn.in": 49,
+          "knack.be": 47,
+          "dubawa.org": 39,
+          "mythdetector.ge": 39,
+          "tjekdet.dk": 25,
+          "dogrula.org": 23,
+          "verify-sy.com": 15,
+          "211check.org": 5
+        }
+      },
+      "processed val": {
+        "rows": 500,
+        "english_claims": 500,
+        "multilingual_claims": 176,
+        "synthetic_true_captions": 94,
+        "rows_with_usable_image": 497,
+        "distinct_sha256": 497,
+        "verdict": {
+          "false (out-of-context)": 345,
+          "false (manipulated/fake)": 118,
+          "true": 31,
+          "false (ai-generated)": 5,
+          "unverified": 1
+        },
+        "verdict_coarse": {
+          "false": 468,
+          "true": 31,
+          "not enough information": 1
+        },
+        "balanced_flag": 94,
+        "balanced_flag_by_verdict": {
+          "false (out-of-context)": 94
+        },
+        "balanced_flag_without_caption": 0,
+        "ooc_rows": 345,
+        "ooc_both_present": {
+          "date": 127,
+          "location": 247,
+          "people": 86,
+          "things": 178,
+          "event": 227
+        },
+        "ooc_rows_with_any_item": 327,
+        "ooc_both_present_with_usable_image": {
+          "date": 127,
+          "location": 245,
+          "people": 86,
+          "things": 177,
+          "event": 226
+        },
+        "fc_org": {
+          "pesacheck.org": 145,
+          "fatabyyano.net": 72,
+          "factly.in": 61,
+          "congocheck.net": 33,
+          "leadstories.com": 31,
+          "poligrafo.sapo.pt": 31,
+          "dfrac.org": 21,
+          "indiatoday.in": 19,
+          "larepublica.pe": 18,
+          "correctiv.org": 15,
+          "snopes.com": 12,
+          "dogrula.org": 10,
+          "knack.be": 8,
+          "211check.org": 7,
+          "mythdetector.ge": 7,
+          "factcheckcenter.jp": 6,
+          "verify-sy.com": 2,
+          "dubawa.org": 1,
+          "youturn.in": 1
+        }
+      },
+      "processed test": {
+        "rows": 420,
+        "english_claims": 420,
+        "multilingual_claims": 0,
+        "synthetic_true_captions": 89,
+        "rows_with_usable_image": 420,
+        "distinct_sha256": 420,
+        "verdict": {
+          "false (out-of-context)": 313,
+          "false (manipulated/fake)": 106,
+          "false (ai-generated)": 1
+        },
+        "verdict_coarse": {
+          "false": 420
+        },
+        "balanced_flag": 89,
+        "balanced_flag_by_verdict": {
+          "false (out-of-context)": 88,
+          "false (manipulated/fake)": 1
+        },
+        "balanced_flag_without_caption": 0,
+        "ooc_rows": 313,
+        "ooc_both_present": {
+          "date": 30,
+          "location": 201,
+          "people": 92,
+          "things": 160,
+          "event": 205
+        },
+        "ooc_rows_with_any_item": 288,
+        "ooc_both_present_with_usable_image": {
+          "date": 30,
+          "location": 201,
+          "people": 92,
+          "things": 160,
+          "event": 205
+        },
+        "fc_org": {
+          "factly.in": 394,
+          "snopes.com": 26
+        }
+      },
+      "all": {
+        "rows": 4982,
+        "english_claims": 4982,
+        "multilingual_claims": 1807,
+        "synthetic_true_captions": 998,
+        "rows_with_usable_image": 4920,
+        "distinct_sha256": 4920,
+        "verdict": {
+          "false (out-of-context)": 3376,
+          "false (manipulated/fake)": 1118,
+          "true": 293,
+          "false (ai-generated)": 168,
+          "mixture": 18,
+          "unverified": 9
+        },
+        "verdict_coarse": {
+          "false": 4663,
+          "true": 292,
+          "not enough information": 27
+        },
+        "balanced_flag": 1000,
+        "balanced_flag_by_verdict": {
+          "false (out-of-context)": 988,
+          "false (manipulated/fake)": 9,
+          "true": 3
+        },
+        "balanced_flag_without_caption": 2,
+        "ooc_rows": 3376,
+        "ooc_both_present": {
+          "date": 995,
+          "location": 2312,
+          "people": 911,
+          "things": 1892,
+          "event": 2347
+        },
+        "ooc_rows_with_any_item": 3198,
+        "ooc_both_present_with_usable_image": {
+          "date": 982,
+          "location": 2282,
+          "people": 893,
+          "things": 1867,
+          "event": 2312
+        },
+        "fc_org": {
+          "factly.in": 1027,
+          "fatabyyano.net": 658,
+          "pesacheck.org": 561,
+          "snopes.com": 454,
+          "indiatoday.in": 333,
+          "leadstories.com": 328,
+          "poligrafo.sapo.pt": 284,
+          "congocheck.net": 260,
+          "larepublica.pe": 253,
+          "correctiv.org": 220,
+          "dfrac.org": 104,
+          "knack.be": 95,
+          "mythdetector.ge": 67,
+          "dubawa.org": 65,
+          "youturn.in": 59,
+          "dogrula.org": 52,
+          "211check.org": 51,
+          "verify-sy.com": 42,
+          "tjekdet.dk": 29,
+          "factcheckcenter.jp": 18,
+          "factchecker.gr": 17,
+          "factchecklab.org": 5
+        }
+      }
+    },
+    "india": {
+      "official train": {
+        "rows": 1139,
+        "english_claims": 1139,
+        "multilingual_claims": 148,
+        "synthetic_true_captions": 266,
+        "rows_with_usable_image": 1095,
+        "distinct_sha256": 1095,
+        "verdict": {
+          "false (out-of-context)": 859,
+          "false (manipulated/fake)": 274,
+          "true": 3,
+          "mixture": 2,
+          "false (ai-generated)": 1
+        },
+        "verdict_coarse": {
+          "false": 1134,
+          "true": 3,
+          "not enough information": 2
+        },
+        "balanced_flag": 267,
+        "balanced_flag_by_verdict": {
+          "false (out-of-context)": 264,
+          "false (manipulated/fake)": 3
+        },
+        "balanced_flag_without_caption": 1,
+        "ooc_rows": 859,
+        "ooc_both_present": {
+          "date": 108,
+          "location": 551,
+          "people": 298,
+          "things": 418,
+          "event": 590
+        },
+        "ooc_rows_with_any_item": 801,
+        "ooc_both_present_with_usable_image": {
+          "date": 100,
+          "location": 531,
+          "people": 284,
+          "things": 401,
+          "event": 566
+        },
+        "fc_org": {
+          "factly.in": 743,
+          "indiatoday.in": 264,
+          "dfrac.org": 83,
+          "youturn.in": 49
+        }
+      },
+      "official dev": {
+        "rows": 102,
+        "english_claims": 102,
+        "multilingual_claims": 6,
+        "synthetic_true_captions": 20,
+        "rows_with_usable_image": 101,
+        "distinct_sha256": 101,
+        "verdict": {
+          "false (out-of-context)": 69,
+          "false (manipulated/fake)": 31,
+          "false (ai-generated)": 2
+        },
+        "verdict_coarse": {
+          "false": 102
+        },
+        "balanced_flag": 20,
+        "balanced_flag_by_verdict": {
+          "false (out-of-context)": 20
+        },
+        "balanced_flag_without_caption": 0,
+        "ooc_rows": 69,
+        "ooc_both_present": {
+          "date": 17,
+          "location": 46,
+          "people": 24,
+          "things": 30,
+          "event": 43
+        },
+        "ooc_rows_with_any_item": 62,
+        "ooc_both_present_with_usable_image": {
+          "date": 17,
+          "location": 45,
+          "people": 24,
+          "things": 29,
+          "event": 43
+        },
+        "fc_org": {
+          "factly.in": 61,
+          "dfrac.org": 21,
+          "indiatoday.in": 19,
+          "youturn.in": 1
+        }
+      },
+      "official test": {
+        "rows": 282,
+        "english_claims": 282,
+        "multilingual_claims": 46,
+        "synthetic_true_captions": 40,
+        "rows_with_usable_image": 275,
+        "distinct_sha256": 275,
+        "verdict": {
+          "false (out-of-context)": 164,
+          "false (manipulated/fake)": 84,
+          "false (ai-generated)": 32,
+          "mixture": 2
+        },
+        "verdict_coarse": {
+          "false": 280,
+          "not enough information": 2
+        },
+        "balanced_flag": 40,
+        "balanced_flag_by_verdict": {
+          "false (out-of-context)": 39,
+          "false (manipulated/fake)": 1
+        },
+        "balanced_flag_without_caption": 0,
+        "ooc_rows": 164,
+        "ooc_both_present": {
+          "date": 35,
+          "location": 86,
+          "people": 70,
+          "things": 81,
+          "event": 113
+        },
+        "ooc_rows_with_any_item": 153,
+        "ooc_both_present_with_usable_image": {
+          "date": 32,
+          "location": 82,
+          "people": 69,
+          "things": 77,
+          "event": 108
+        },
+        "fc_org": {
+          "factly.in": 223,
+          "indiatoday.in": 50,
+          "youturn.in": 9
+        }
+      },
+      "processed train": {
+        "rows": 745,
+        "english_claims": 745,
+        "multilingual_claims": 148,
+        "synthetic_true_captions": 182,
+        "rows_with_usable_image": 701,
+        "distinct_sha256": 701,
+        "verdict": {
+          "false (out-of-context)": 572,
+          "false (manipulated/fake)": 168,
+          "true": 3,
+          "mixture": 2
+        },
+        "verdict_coarse": {
+          "false": 740,
+          "true": 3,
+          "not enough information": 2
+        },
+        "balanced_flag": 183,
+        "balanced_flag_by_verdict": {
+          "false (out-of-context)": 181,
+          "false (manipulated/fake)": 2
+        },
+        "balanced_flag_without_caption": 1,
+        "ooc_rows": 572,
+        "ooc_both_present": {
+          "date": 83,
+          "location": 362,
+          "people": 212,
+          "things": 273,
+          "event": 400
+        },
+        "ooc_rows_with_any_item": 536,
+        "ooc_both_present_with_usable_image": {
+          "date": 75,
+          "location": 342,
+          "people": 198,
+          "things": 256,
+          "event": 376
+        },
+        "fc_org": {
+          "factly.in": 349,
+          "indiatoday.in": 264,
+          "dfrac.org": 83,
+          "youturn.in": 49
+        }
+      },
+      "processed val": {
+        "rows": 102,
+        "english_claims": 102,
+        "multilingual_claims": 6,
+        "synthetic_true_captions": 20,
+        "rows_with_usable_image": 101,
+        "distinct_sha256": 101,
+        "verdict": {
+          "false (out-of-context)": 69,
+          "false (manipulated/fake)": 31,
+          "false (ai-generated)": 2
+        },
+        "verdict_coarse": {
+          "false": 102
+        },
+        "balanced_flag": 20,
+        "balanced_flag_by_verdict": {
+          "false (out-of-context)": 20
+        },
+        "balanced_flag_without_caption": 0,
+        "ooc_rows": 69,
+        "ooc_both_present": {
+          "date": 17,
+          "location": 46,
+          "people": 24,
+          "things": 30,
+          "event": 43
+        },
+        "ooc_rows_with_any_item": 62,
+        "ooc_both_present_with_usable_image": {
+          "date": 17,
+          "location": 45,
+          "people": 24,
+          "things": 29,
+          "event": 43
+        },
+        "fc_org": {
+          "factly.in": 61,
+          "dfrac.org": 21,
+          "indiatoday.in": 19,
+          "youturn.in": 1
+        }
+      },
+      "processed test": {
+        "rows": 394,
+        "english_claims": 394,
+        "multilingual_claims": 0,
+        "synthetic_true_captions": 84,
+        "rows_with_usable_image": 394,
+        "distinct_sha256": 394,
+        "verdict": {
+          "false (out-of-context)": 287,
+          "false (manipulated/fake)": 106,
+          "false (ai-generated)": 1
+        },
+        "verdict_coarse": {
+          "false": 394
+        },
+        "balanced_flag": 84,
+        "balanced_flag_by_verdict": {
+          "false (out-of-context)": 83,
+          "false (manipulated/fake)": 1
+        },
+        "balanced_flag_without_caption": 0,
+        "ooc_rows": 287,
+        "ooc_both_present": {
+          "date": 25,
+          "location": 189,
+          "people": 86,
+          "things": 145,
+          "event": 190
+        },
+        "ooc_rows_with_any_item": 265,
+        "ooc_both_present_with_usable_image": {
+          "date": 25,
+          "location": 189,
+          "people": 86,
+          "things": 145,
+          "event": 190
+        },
+        "fc_org": {
+          "factly.in": 394
+        }
+      },
+      "all": {
+        "rows": 1523,
+        "english_claims": 1523,
+        "multilingual_claims": 200,
+        "synthetic_true_captions": 326,
+        "rows_with_usable_image": 1471,
+        "distinct_sha256": 1471,
+        "verdict": {
+          "false (out-of-context)": 1092,
+          "false (manipulated/fake)": 389,
+          "false (ai-generated)": 35,
+          "mixture": 4,
+          "true": 3
+        },
+        "verdict_coarse": {
+          "false": 1516,
+          "not enough information": 4,
+          "true": 3
+        },
+        "balanced_flag": 327,
+        "balanced_flag_by_verdict": {
+          "false (out-of-context)": 323,
+          "false (manipulated/fake)": 4
+        },
+        "balanced_flag_without_caption": 1,
+        "ooc_rows": 1092,
+        "ooc_both_present": {
+          "date": 160,
+          "location": 683,
+          "people": 392,
+          "things": 529,
+          "event": 746
+        },
+        "ooc_rows_with_any_item": 1016,
+        "ooc_both_present_with_usable_image": {
+          "date": 149,
+          "location": 658,
+          "people": 377,
+          "things": 507,
+          "event": 717
+        },
+        "fc_org": {
+          "factly.in": 1027,
+          "indiatoday.in": 333,
+          "dfrac.org": 104,
+          "youturn.in": 59
+        }
+      }
+    },
+    "human_validated": {
+      "rows": 434,
+      "rows_by_split": {
+        "train": 235,
+        "dev": 38,
+        "test": 161
+      },
+      "normalised_means": "case, spacing and list-vs-';' differences ignored",
+      "fields_differing": {
+        "source": {
+          "raw": {
+            "train": 70,
+            "dev": 10,
+            "test": 0
+          },
+          "normalised": {
+            "train": 70,
+            "dev": 10,
+            "test": 0
+          }
+        },
+        "date": {
+          "raw": {
+            "train": 69,
+            "dev": 10,
+            "test": 0
+          },
+          "normalised": {
+            "train": 69,
+            "dev": 10,
+            "test": 0
+          }
+        },
+        "location": {
+          "raw": {
+            "train": 54,
+            "dev": 8,
+            "test": 0
+          },
+          "normalised": {
+            "train": 54,
+            "dev": 8,
+            "test": 0
+          }
+        },
+        "motivation": {
+          "raw": {
+            "train": 48,
+            "dev": 13,
+            "test": 0
+          },
+          "normalised": {
+            "train": 48,
+            "dev": 13,
+            "test": 0
+          }
+        },
+        "event": {
+          "raw": {
+            "train": 47,
+            "dev": 11,
+            "test": 0
+          },
+          "normalised": {
+            "train": 47,
+            "dev": 11,
+            "test": 0
+          }
+        },
+        "claim": {
+          "raw": {
+            "train": 49,
+            "dev": 5,
+            "test": 0
+          },
+          "normalised": {
+            "train": 49,
+            "dev": 5,
+            "test": 0
+          }
+        },
+        "claimed_event": {
+          "raw": {
+            "train": 36,
+            "dev": 8,
+            "test": 0
+          },
+          "normalised": {
+            "train": 36,
+            "dev": 8,
+            "test": 0
+          }
+        },
+        "claimant": {
+          "raw": {
+            "train": 35,
+            "dev": 8,
+            "test": 0
+          },
+          "normalised": {
+            "train": 35,
+            "dev": 8,
+            "test": 0
+          }
+        },
+        "things": {
+          "raw": {
+            "train": 30,
+            "dev": 8,
+            "test": 0
+          },
+          "normalised": {
+            "train": 30,
+            "dev": 8,
+            "test": 0
+          }
+        },
+        "claimant_intent": {
+          "raw": {
+            "train": 28,
+            "dev": 9,
+            "test": 0
+          },
+          "normalised": {
+            "train": 28,
+            "dev": 9,
+            "test": 0
+          }
+        },
+        "claimed_things": {
+          "raw": {
+            "train": 31,
+            "dev": 6,
+            "test": 0
+          },
+          "normalised": {
+            "train": 31,
+            "dev": 6,
+            "test": 0
+          }
+        },
+        "multilingual_claim": {
+          "raw": {
+            "train": 31,
+            "dev": 6,
+            "test": 0
+          },
+          "normalised": {
+            "train": 31,
+            "dev": 6,
+            "test": 0
+          }
+        },
+        "claimed_location": {
+          "raw": {
+            "train": 31,
+            "dev": 5,
+            "test": 0
+          },
+          "normalised": {
+            "train": 31,
+            "dev": 5,
+            "test": 0
+          }
+        },
+        "claimed_date": {
+          "raw": {
+            "train": 30,
+            "dev": 4,
+            "test": 0
+          },
+          "normalised": {
+            "train": 30,
+            "dev": 4,
+            "test": 0
+          }
+        },
+        "claimed_people": {
+          "raw": {
+            "train": 26,
+            "dev": 6,
+            "test": 0
+          },
+          "normalised": {
+            "train": 26,
+            "dev": 6,
+            "test": 0
+          }
+        },
+        "verdict": {
+          "raw": {
+            "train": 27,
+            "dev": 3,
+            "test": 0
+          },
+          "normalised": {
+            "train": 27,
+            "dev": 3,
+            "test": 0
+          }
+        },
+        "people": {
+          "raw": {
+            "train": 23,
+            "dev": 2,
+            "test": 0
+          },
+          "normalised": {
+            "train": 23,
+            "dev": 2,
+            "test": 0
+          }
+        },
+        "task_claimant_intent": {
+          "raw": {
+            "train": 2,
+            "dev": 0,
+            "test": 0
+          },
+          "normalised": {
+            "train": 2,
+            "dev": 0,
+            "test": 0
+          }
+        },
+        "true_caption": {
+          "raw": {
+            "train": 1,
+            "dev": 0,
+            "test": 0
+          },
+          "normalised": {
+            "train": 1,
+            "dev": 0,
+            "test": 0
+          }
+        }
+      },
+      "verdict_changes": {
+        "false (manipulated/fake) -> not enough information": 8,
+        "false (out-of-context) -> not enough information": 21,
+        "true -> not enough information": 1
+      }
+    },
+    "overlap": {
+      "m4fc_rows_with_usable_image": 4920,
+      "m4fc_distinct_sha256": 4920,
+      "datasets": {
+        "averimatec": {
+          "shared_images_on_disk": 0,
+          "shared_images_in_processed_records": 0,
+          "m4fc_rows": 0,
+          "m4fc_rows_by_official_split": {
+            "train": 0,
+            "dev": 0,
+            "test": 0
+          },
+          "m4fc_rows_by_processed_split": {},
+          "partner_records_by_split": {},
+          "images_by_official_x_partner_split": {},
+          "images_by_processed_x_partner_split": {}
+        },
+        "dgm4": {
+          "shared_images_on_disk": 0,
+          "shared_images_in_processed_records": 0,
+          "m4fc_rows": 0,
+          "m4fc_rows_by_official_split": {
+            "train": 0,
+            "dev": 0,
+            "test": 0
+          },
+          "m4fc_rows_by_processed_split": {},
+          "partner_records_by_split": {},
+          "images_by_official_x_partner_split": {},
+          "images_by_processed_x_partner_split": {}
+        },
+        "factify2": {
+          "shared_images_on_disk": 414,
+          "shared_images_in_processed_records": 414,
+          "m4fc_rows": 414,
+          "m4fc_rows_by_official_split": {
+            "train": 413,
+            "dev": 0,
+            "test": 1
+          },
+          "m4fc_rows_by_processed_split": {
+            "test": 413,
+            "not in processed": 1
+          },
+          "partner_records_by_split": {
+            "test": 414
+          },
+          "images_by_official_x_partner_split": {
+            "train x test": 413,
+            "test x test": 1
+          },
+          "images_by_processed_x_partner_split": {
+            "test x test": 413,
+            "not in processed x test": 1
+          }
+        },
+        "fakeddit": {
+          "shared_images_on_disk": 0,
+          "shared_images_in_processed_records": 0,
+          "m4fc_rows": 0,
+          "m4fc_rows_by_official_split": {
+            "train": 0,
+            "dev": 0,
+            "test": 0
+          },
+          "m4fc_rows_by_processed_split": {},
+          "partner_records_by_split": {},
+          "images_by_official_x_partner_split": {},
+          "images_by_processed_x_partner_split": {}
+        },
+        "mocheg": {
+          "shared_images_on_disk": 7,
+          "shared_images_in_processed_records": 7,
+          "m4fc_rows": 7,
+          "m4fc_rows_by_official_split": {
+            "train": 7,
+            "dev": 0,
+            "test": 0
+          },
+          "m4fc_rows_by_processed_split": {
+            "train": 5,
+            "test": 1,
+            "val": 1
+          },
+          "partner_records_by_split": {
+            "train": 5,
+            "test": 1,
+            "val": 1
+          },
+          "images_by_official_x_partner_split": {
+            "train x train": 5,
+            "train x test": 1,
+            "train x val": 1
+          },
+          "images_by_processed_x_partner_split": {
+            "train x train": 5,
+            "test x test": 1,
+            "val x val": 1
+          }
+        },
+        "verite": {
+          "shared_images_on_disk": 10,
+          "shared_images_in_processed_records": 10,
+          "m4fc_rows": 10,
+          "m4fc_rows_by_official_split": {
+            "train": 10,
+            "dev": 0,
+            "test": 0
+          },
+          "m4fc_rows_by_processed_split": {
+            "test": 10
+          },
+          "partner_records_by_split": {
+            "test": 20
+          },
+          "images_by_official_x_partner_split": {
+            "train x test": 10
+          },
+          "images_by_processed_x_partner_split": {
+            "test x test": 10
+          }
+        }
+      },
+      "text_only_enabled": [
+        "averitec",
+        "fakenewsnet",
+        "isot",
+        "liar",
+        "welfake"
+      ],
+      "drop_list": [
+        {
+          "record_id": "images/venezuela-money-in-gutter.png",
+          "official_split": "train",
+          "processed_split": "test",
+          "sha256": "1439594ddb62",
+          "partner": "verite",
+          "partner_record_ids": [
+            "321",
+            "322"
+          ]
+        },
+        {
+          "record_id": "images/horse-living-in-apartment.png",
+          "official_split": "train",
+          "processed_split": "test",
+          "sha256": "5f2a835590da",
+          "partner": "verite",
+          "partner_record_ids": [
+            "216",
+            "217"
+          ]
+        },
+        {
+          "record_id": "images/taliban-hanging-black-hawk.png",
+          "official_split": "train",
+          "processed_split": "test",
+          "sha256": "6c2416b02561",
+          "partner": "verite",
+          "partner_record_ids": [
+            "51",
+            "52"
+          ]
+        },
+        {
+          "record_id": "images/nieto-democrats-open-borders.png",
+          "official_split": "train",
+          "processed_split": "test",
+          "sha256": "7270e014bdb6",
+          "partner": "verite",
+          "partner_record_ids": [
+            "237",
+            "238"
+          ]
+        },
+        {
+          "record_id": "images/vampire-hunting-kit-from-1800s.png",
+          "official_split": "train",
+          "processed_split": "test",
+          "sha256": "8417eec59eda",
+          "partner": "verite",
+          "partner_record_ids": [
+            "234",
+            "235"
+          ]
+        },
+        {
+          "record_id": "images/5-meter-tall-human-skeleton.png",
+          "official_split": "train",
+          "processed_split": "test",
+          "sha256": "8d5ce0ceae62",
+          "partner": "verite",
+          "partner_record_ids": [
+            "279",
+            "280"
+          ]
+        },
+        {
+          "record_id": "images/trump-military-coup-photo.png",
+          "official_split": "train",
+          "processed_split": "test",
+          "sha256": "b5bfaa9624a1",
+          "partner": "verite",
+          "partner_record_ids": [
+            "81",
+            "82"
+          ]
+        },
+        {
+          "record_id": "images/ancient-mayan-sculpture-batman.png",
+          "official_split": "train",
+          "processed_split": "test",
+          "sha256": "b74ec3e894d4",
+          "partner": "verite",
+          "partner_record_ids": [
+            "306",
+            "307"
+          ]
+        },
+        {
+          "record_id": "images/nyc-sanitation-posters.png",
+          "official_split": "train",
+          "processed_split": "test",
+          "sha256": "c2463926514b",
+          "partner": "verite",
+          "partner_record_ids": [
+            "282",
+            "283"
+          ]
+        },
+        {
+          "record_id": "images/old-barbie-botched-surgeries.png",
+          "official_split": "train",
+          "processed_split": "test",
+          "sha256": "f637bdd01f49",
+          "partner": "verite",
+          "partner_record_ids": [
+            "297",
+            "298"
+          ]
+        }
+      ],
+      "on_disk_only": {
+        "verite": 0,
+        "averimatec": 0
+      },
+      "within_m4fc": {
+        "images_on_two_or_more_rows": 0,
+        "rows_in_them": 0,
+        "copies": {},
+        "official_splits_spanned": {},
+        "processed_splits_spanned": {}
+      },
+      "cross_check_with_duplicates_yaml": {
+        "yaml_m4fc_records": 426,
+        "yaml_groups_with_m4fc": 426,
+        "computed_m4fc_records": 426,
+        "computed_groups": 426,
+        "only_in_yaml": [],
+        "only_computed": []
+      },
+      "moved_rows_by_partners": {
+        "factify2": 409,
+        "verite": 7,
+        "factify2 + verite": 3,
+        "factify2 + mocheg": 1,
+        "mocheg": 1
+      },
+      "moved_rows_by_move": {
+        "train -> test": 420,
+        "train -> val": 1
+      },
+      "fivepils_in_register": false
+    },
+    "shortcuts": {
+      "rows": {
+        "train": 2558,
+        "val": 499
+      },
+      "left_out_not_in_the_verdict_task": {
+        "train": 15,
+        "val": 1
+      },
+      "labels": {
+        "coarse": "verdict_coarse (true / false)",
+        "fine": "verdict (out-of-context / manipulated / AI-generated / true)"
+      },
+      "purity": {
+        "coarse": {
+          "fc_org": [
+            {
+              "group": "fatabyyano.net",
+              "rows": 412,
+              "dominant": "false",
+              "purity": 0.9976,
+              "ci": [
+                0.9927,
+                1.0
+              ],
+              "label_predictive": true,
+              "classes": {
+                "false": 411,
+                "true": 1
+              }
+            },
+            {
+              "group": "factly.in",
+              "rows": 349,
+              "dominant": "false",
+              "purity": 0.9943,
+              "ci": [
+                0.9857,
+                1.0
+              ],
+              "label_predictive": true,
+              "classes": {
+                "false": 347,
+                "true": 2
+              }
+            },
+            {
+              "group": "pesacheck.org",
+              "rows": 271,
+              "dominant": "false",
+              "purity": 1.0,
+              "ci": [
+                1.0,
+                1.0
+              ],
+              "label_predictive": true,
+              "classes": {
+                "false": 271
+              }
+            },
+            {
+              "group": "indiatoday.in",
+              "rows": 262,
+              "dominant": "false",
+              "purity": 0.9962,
+              "ci": [
+                0.9885,
+                1.0
+              ],
+              "label_predictive": true,
+              "classes": {
+                "false": 261,
+                "true": 1
+              }
+            },
+            {
+              "group": "snopes.com",
+              "rows": 192,
+              "dominant": "false",
+              "purity": 0.5312,
+              "ci": [
+                0.5,
+                0.599
+              ],
+              "label_predictive": false,
+              "classes": {
+                "false": 102,
+                "true": 90
+              }
+            },
+            {
+              "group": "leadstories.com",
+              "rows": 172,
+              "dominant": "false",
+              "purity": 1.0,
+              "ci": [
+                1.0,
+                1.0
+              ],
+              "label_predictive": true,
+              "classes": {
+                "false": 172
+              }
+            },
+            {
+              "group": "poligrafo.sapo.pt",
+              "rows": 172,
+              "dominant": "false",
+              "purity": 0.7384,
+              "ci": [
+                0.6686,
+                0.8023
+              ],
+              "label_predictive": false,
+              "classes": {
+                "false": 127,
+                "true": 45
+              }
+            },
+            {
+              "group": "larepublica.pe",
+              "rows": 143,
+              "dominant": "false",
+              "purity": 0.993,
+              "ci": [
+                0.979,
+                1.0
+              ],
+              "label_predictive": true,
+              "classes": {
+                "false": 142,
+                "true": 1
+              }
+            },
+            {
+              "group": "correctiv.org",
+              "rows": 134,
+              "dominant": "false",
+              "purity": 0.9478,
+              "ci": [
+                0.9104,
+                0.9851
+              ],
+              "label_predictive": true,
+              "classes": {
+                "false": 127,
+                "true": 7
+              }
+            },
+            {
+              "group": "congocheck.net",
+              "rows": 129,
+              "dominant": "false",
+              "purity": 0.9767,
+              "ci": [
+                0.9535,
+                1.0
+              ],
+              "label_predictive": true,
+              "classes": {
+                "false": 126,
+                "true": 3
+              }
+            },
+            {
+              "group": "dfrac.org",
+              "rows": 83,
+              "dominant": "false",
+              "purity": 1.0,
+              "ci": [
+                1.0,
+                1.0
+              ],
+              "label_predictive": true,
+              "classes": {
+                "false": 83
+              }
+            },
+            {
+              "group": "youturn.in",
+              "rows": 49,
+              "dominant": "false",
+              "purity": 1.0,
+              "ci": [
+                1.0,
+                1.0
+              ],
+              "label_predictive": true,
+              "classes": {
+                "false": 49
+              }
+            },
+            {
+              "group": "knack.be",
+              "rows": 46,
+              "dominant": "false",
+              "purity": 0.8261,
+              "ci": [
+                0.6957,
+                0.9348
+              ],
+              "label_predictive": false,
+              "classes": {
+                "false": 38,
+                "true": 8
+              }
+            },
+            {
+              "group": "dubawa.org",
+              "rows": 39,
+              "dominant": "false",
+              "purity": 0.9231,
+              "ci": [
+                0.8205,
+                1.0
+              ],
+              "label_predictive": true,
+              "classes": {
+                "false": 36,
+                "true": 3
+              }
+            },
+            {
+              "group": "mythdetector.ge",
+              "rows": 38,
+              "dominant": "false",
+              "purity": 1.0,
+              "ci": [
+                1.0,
+                1.0
+              ],
+              "label_predictive": true,
+              "classes": {
+                "false": 38
+              }
+            },
+            {
+              "group": "tjekdet.dk",
+              "rows": 24,
+              "dominant": "false",
+              "purity": 0.875,
+              "ci": [
+                0.75,
+                1.0
+              ],
+              "label_predictive": false,
+              "classes": {
+                "false": 21,
+                "true": 3
+              }
+            },
+            {
+              "group": "dogrula.org",
+              "rows": 23,
+              "dominant": "false",
+              "purity": 1.0,
+              "ci": [
+                1.0,
+                1.0
+              ],
+              "label_predictive": true,
+              "classes": {
+                "false": 23
+              }
+            },
+            {
+              "group": "verify-sy.com",
+              "rows": 15,
+              "dominant": "false",
+              "purity": 1.0,
+              "ci": [
+                1.0,
+                1.0
+              ],
+              "label_predictive": true,
+              "classes": {
+                "false": 15
+              }
+            },
+            {
+              "group": "211check.org",
+              "rows": 5,
+              "dominant": "false",
+              "purity": 1.0,
+              "ci": [
+                1.0,
+                1.0
+              ],
+              "label_predictive": true,
+              "classes": {
+                "false": 5
+              }
+            }
+          ],
+          "claim_language": [
+            {
+              "group": "English",
+              "rows": 1481,
+              "dominant": "false",
+              "purity": 0.9284,
+              "ci": [
+                0.9156,
+                0.9413
+              ],
+              "label_predictive": true,
+              "classes": {
+                "false": 1375,
+                "true": 106
+              }
+            },
+            {
+              "group": "Arabic",
+              "rows": 368,
+              "dominant": "false",
+              "purity": 0.9973,
+              "ci": [
+                0.9918,
+                1.0
+              ],
+              "label_predictive": true,
+              "classes": {
+                "false": 367,
+                "true": 1
+              }
+            },
+            {
+              "group": "Portuguese",
+              "rows": 153,
+              "dominant": "false",
+              "purity": 0.7386,
+              "ci": [
+                0.6667,
+                0.8039
+              ],
+              "label_predictive": false,
+              "classes": {
+                "false": 113,
+                "true": 40
+              }
+            },
+            {
+              "group": "French",
+              "rows": 121,
+              "dominant": "false",
+              "purity": 0.9835,
+              "ci": [
+                0.9587,
+                1.0
+              ],
+              "label_predictive": true,
+              "classes": {
+                "false": 119,
+                "true": 2
+              }
+            },
+            {
+              "group": "Spanish",
+              "rows": 116,
+              "dominant": "false",
+              "purity": 0.9914,
+              "ci": [
+                0.9741,
+                1.0
+              ],
+              "label_predictive": true,
+              "classes": {
+                "false": 115,
+                "true": 1
+              }
+            },
+            {
+              "group": "German",
+              "rows": 112,
+              "dominant": "false",
+              "purity": 0.9464,
+              "ci": [
+                0.9018,
+                0.9821
+              ],
+              "label_predictive": true,
+              "classes": {
+                "false": 106,
+                "true": 6
+              }
+            },
+            {
+              "group": "Telugu",
+              "rows": 107,
+              "dominant": "false",
+              "purity": 0.9907,
+              "ci": [
+                0.972,
+                1.0
+              ],
+              "label_predictive": true,
+              "classes": {
+                "false": 106,
+                "true": 1
+              }
+            },
+            {
+              "group": "Tamil",
+              "rows": 41,
+              "dominant": "false",
+              "purity": 1.0,
+              "ci": [
+                1.0,
+                1.0
+              ],
+              "label_predictive": true,
+              "classes": {
+                "false": 41
+              }
+            },
+            {
+              "group": "Dutch",
+              "rows": 37,
+              "dominant": "false",
+              "purity": 0.8108,
+              "ci": [
+                0.6757,
+                0.9189
+              ],
+              "label_predictive": false,
+              "classes": {
+                "false": 30,
+                "true": 7
+              }
+            },
+            {
+              "group": "Turkish",
+              "rows": 22,
+              "dominant": "false",
+              "purity": 1.0,
+              "ci": [
+                1.0,
+                1.0
+              ],
+              "label_predictive": true,
+              "classes": {
+                "false": 22
+              }
+            }
+          ],
+          "fc_language": [
+            {
+              "group": "english",
+              "rows": 1282,
+              "dominant": "false",
+              "purity": 0.9259,
+              "ci": [
+                0.9111,
+                0.9392
+              ],
+              "label_predictive": true,
+              "classes": {
+                "false": 1187,
+                "true": 95
+              }
+            },
+            {
+              "group": "arabic",
+              "rows": 427,
+              "dominant": "false",
+              "purity": 0.9977,
+              "ci": [
+                0.993,
+                1.0
+              ],
+              "label_predictive": true,
+              "classes": {
+                "false": 426,
+                "true": 1
+              }
+            },
+            {
+              "group": "portuguese",
+              "rows": 172,
+              "dominant": "false",
+              "purity": 0.7384,
+              "ci": [
+                0.6686,
+                0.8023
+              ],
+              "label_predictive": false,
+              "classes": {
+                "false": 127,
+                "true": 45
+              }
+            },
+            {
+              "group": "spanish",
+              "rows": 143,
+              "dominant": "false",
+              "purity": 0.993,
+              "ci": [
+                0.979,
+                1.0
+              ],
+              "label_predictive": true,
+              "classes": {
+                "false": 142,
+                "true": 1
+              }
+            },
+            {
+              "group": "german",
+              "rows": 134,
+              "dominant": "false",
+              "purity": 0.9478,
+              "ci": [
+                0.9104,
+                0.9776
+              ],
+              "label_predictive": true,
+              "classes": {
+                "false": 127,
+                "true": 7
+              }
+            },
+            {
+              "group": "french",
+              "rows": 129,
+              "dominant": "false",
+              "purity": 0.9767,
+              "ci": [
+                0.9457,
+                1.0
+              ],
+              "label_predictive": true,
+              "classes": {
+                "false": 126,
+                "true": 3
+              }
+            },
+            {
+              "group": "telugu",
+              "rows": 124,
+              "dominant": "false",
+              "purity": 0.9919,
+              "ci": [
+                0.9758,
+                1.0
+              ],
+              "label_predictive": true,
+              "classes": {
+                "false": 123,
+                "true": 1
+              }
+            },
+            {
+              "group": "tamil",
+              "rows": 49,
+              "dominant": "false",
+              "purity": 1.0,
+              "ci": [
+                1.0,
+                1.0
+              ],
+              "label_predictive": true,
+              "classes": {
+                "false": 49
+              }
+            },
+            {
+              "group": "dutch",
+              "rows": 46,
+              "dominant": "false",
+              "purity": 0.8261,
+              "ci": [
+                0.7174,
+                0.9348
+              ],
+              "label_predictive": false,
+              "classes": {
+                "false": 38,
+                "true": 8
+              }
+            },
+            {
+              "group": "danish",
+              "rows": 24,
+              "dominant": "false",
+              "purity": 0.875,
+              "ci": [
+                0.75,
+                1.0
+              ],
+              "label_predictive": false,
+              "classes": {
+                "false": 21,
+                "true": 3
+              }
+            },
+            {
+              "group": "turkish",
+              "rows": 23,
+              "dominant": "false",
+              "purity": 1.0,
+              "ci": [
+                1.0,
+                1.0
+              ],
+              "label_predictive": true,
+              "classes": {
+                "false": 23
+              }
+            },
+            {
+              "group": "kannada",
+              "rows": 5,
+              "dominant": "false",
+              "purity": 1.0,
+              "ci": [
+                1.0,
+                1.0
+              ],
+              "label_predictive": true,
+              "classes": {
+                "false": 5
+              }
+            }
+          ]
+        },
+        "fine": {
+          "fc_org": [
+            {
+              "group": "fatabyyano.net",
+              "rows": 412,
+              "dominant": "false (out-of-context)",
+              "purity": 0.7354,
+              "ci": [
+                0.6917,
+                0.7767
+              ],
+              "label_predictive": false,
+              "classes": {
+                "false (out-of-context)": 303,
+                "false (manipulated/fake)": 106,
+                "false (ai-generated)": 2,
+                "true": 1
+              }
+            },
+            {
+              "group": "factly.in",
+              "rows": 349,
+              "dominant": "false (out-of-context)",
+              "purity": 0.7593,
+              "ci": [
+                0.7163,
+                0.8024
+              ],
+              "label_predictive": false,
+              "classes": {
+                "false (out-of-context)": 265,
+                "false (manipulated/fake)": 82,
+                "true": 2
+              }
+            },
+            {
+              "group": "pesacheck.org",
+              "rows": 271,
+              "dominant": "false (out-of-context)",
+              "purity": 0.7897,
+              "ci": [
+                0.7417,
+                0.8376
+              ],
+              "label_predictive": false,
+              "classes": {
+                "false (out-of-context)": 214,
+                "false (manipulated/fake)": 57
+              }
+            },
+            {
+              "group": "indiatoday.in",
+              "rows": 262,
+              "dominant": "false (out-of-context)",
+              "purity": 0.8015,
+              "ci": [
+                0.7519,
+                0.8511
+              ],
+              "label_predictive": false,
+              "classes": {
+                "false (out-of-context)": 210,
+                "false (manipulated/fake)": 51,
+                "true": 1
+              }
+            },
+            {
+              "group": "snopes.com",
+              "rows": 192,
+              "dominant": "false (out-of-context)",
+              "purity": 0.5052,
+              "ci": [
+                0.4844,
+                0.5729
+              ],
+              "label_predictive": false,
+              "classes": {
+                "false (out-of-context)": 97,
+                "true": 90,
+                "false (manipulated/fake)": 5
+              }
+            },
+            {
+              "group": "leadstories.com",
+              "rows": 172,
+              "dominant": "false (out-of-context)",
+              "purity": 0.7151,
+              "ci": [
+                0.6512,
+                0.7849
+              ],
+              "label_predictive": false,
+              "classes": {
+                "false (out-of-context)": 123,
+                "false (manipulated/fake)": 49
+              }
+            },
+            {
+              "group": "poligrafo.sapo.pt",
+              "rows": 172,
+              "dominant": "false (out-of-context)",
+              "purity": 0.5581,
+              "ci": [
+                0.4826,
+                0.6279
+              ],
+              "label_predictive": false,
+              "classes": {
+                "false (out-of-context)": 96,
+                "true": 45,
+                "false (manipulated/fake)": 31
+              }
+            },
+            {
+              "group": "larepublica.pe",
+              "rows": 143,
+              "dominant": "false (out-of-context)",
+              "purity": 0.8252,
+              "ci": [
+                0.7622,
+                0.8881
+              ],
+              "label_predictive": false,
+              "classes": {
+                "false (out-of-context)": 118,
+                "false (manipulated/fake)": 23,
+                "false (ai-generated)": 1,
+                "true": 1
+              }
+            },
+            {
+              "group": "correctiv.org",
+              "rows": 134,
+              "dominant": "false (out-of-context)",
+              "purity": 0.7985,
+              "ci": [
+                0.7312,
+                0.8657
+              ],
+              "label_predictive": false,
+              "classes": {
+                "false (out-of-context)": 107,
+                "false (manipulated/fake)": 20,
+                "true": 7
+              }
+            },
+            {
+              "group": "congocheck.net",
+              "rows": 129,
+              "dominant": "false (out-of-context)",
+              "purity": 0.7597,
+              "ci": [
+                0.6822,
+                0.8295
+              ],
+              "label_predictive": false,
+              "classes": {
+                "false (out-of-context)": 98,
+                "false (manipulated/fake)": 27,
+                "true": 3,
+                "false (ai-generated)": 1
+              }
+            },
+            {
+              "group": "dfrac.org",
+              "rows": 83,
+              "dominant": "false (out-of-context)",
+              "purity": 0.6867,
+              "ci": [
+                0.5783,
+                0.7831
+              ],
+              "label_predictive": false,
+              "classes": {
+                "false (out-of-context)": 57,
+                "false (manipulated/fake)": 26
+              }
+            },
+            {
+              "group": "youturn.in",
+              "rows": 49,
+              "dominant": "false (out-of-context)",
+              "purity": 0.8163,
+              "ci": [
+                0.6939,
+                0.9184
+              ],
+              "label_predictive": false,
+              "classes": {
+                "false (out-of-context)": 40,
+                "false (manipulated/fake)": 9
+              }
+            },
+            {
+              "group": "knack.be",
+              "rows": 46,
+              "dominant": "false (out-of-context)",
+              "purity": 0.6739,
+              "ci": [
+                0.5217,
+                0.8043
+              ],
+              "label_predictive": false,
+              "classes": {
+                "false (out-of-context)": 31,
+                "true": 8,
+                "false (manipulated/fake)": 7
+              }
+            },
+            {
+              "group": "dubawa.org",
+              "rows": 39,
+              "dominant": "false (out-of-context)",
+              "purity": 0.9231,
+              "ci": [
+                0.8205,
+                1.0
+              ],
+              "label_predictive": true,
+              "classes": {
+                "false (out-of-context)": 36,
+                "true": 3
+              }
+            },
+            {
+              "group": "mythdetector.ge",
+              "rows": 38,
+              "dominant": "false (out-of-context)",
+              "purity": 0.7105,
+              "ci": [
+                0.5789,
+                0.8421
+              ],
+              "label_predictive": false,
+              "classes": {
+                "false (out-of-context)": 27,
+                "false (manipulated/fake)": 11
+              }
+            },
+            {
+              "group": "tjekdet.dk",
+              "rows": 24,
+              "dominant": "false (out-of-context)",
+              "purity": 0.7917,
+              "ci": [
+                0.625,
+                0.9583
+              ],
+              "label_predictive": false,
+              "classes": {
+                "false (out-of-context)": 19,
+                "true": 3,
+                "false (manipulated/fake)": 2
+              }
+            },
+            {
+              "group": "dogrula.org",
+              "rows": 23,
+              "dominant": "false (out-of-context)",
+              "purity": 0.8261,
+              "ci": [
+                0.6522,
+                0.9565
+              ],
+              "label_predictive": false,
+              "classes": {
+                "false (out-of-context)": 19,
+                "false (manipulated/fake)": 4
+              }
+            },
+            {
+              "group": "verify-sy.com",
+              "rows": 15,
+              "dominant": "false (out-of-context)",
+              "purity": 0.8,
+              "ci": [
+                0.6,
+                1.0
+              ],
+              "label_predictive": false,
+              "classes": {
+                "false (out-of-context)": 12,
+                "false (manipulated/fake)": 3
+              }
+            },
+            {
+              "group": "211check.org",
+              "rows": 5,
+              "dominant": "false (out-of-context)",
+              "purity": 0.8,
+              "ci": [
+                0.6,
+                1.0
+              ],
+              "label_predictive": false,
+              "classes": {
+                "false (out-of-context)": 4,
+                "false (manipulated/fake)": 1
+              }
+            }
+          ],
+          "claim_language": [
+            {
+              "group": "English",
+              "rows": 1481,
+              "dominant": "false (out-of-context)",
+              "purity": 0.7387,
+              "ci": [
+                0.7164,
+                0.7596
+              ],
+              "label_predictive": false,
+              "classes": {
+                "false (out-of-context)": 1094,
+                "false (manipulated/fake)": 281,
+                "true": 106
+              }
+            },
+            {
+              "group": "Arabic",
+              "rows": 368,
+              "dominant": "false (out-of-context)",
+              "purity": 0.7201,
+              "ci": [
+                0.6766,
+                0.7636
+              ],
+              "label_predictive": false,
+              "classes": {
+                "false (out-of-context)": 265,
+                "false (manipulated/fake)": 100,
+                "false (ai-generated)": 2,
+                "true": 1
+              }
+            },
+            {
+              "group": "Portuguese",
+              "rows": 153,
+              "dominant": "false (out-of-context)",
+              "purity": 0.5425,
+              "ci": [
+                0.4704,
+                0.6275
+              ],
+              "label_predictive": false,
+              "classes": {
+                "false (out-of-context)": 83,
+                "true": 40,
+                "false (manipulated/fake)": 30
+              }
+            },
+            {
+              "group": "French",
+              "rows": 121,
+              "dominant": "false (out-of-context)",
+              "purity": 0.7521,
+              "ci": [
+                0.6694,
+                0.8264
+              ],
+              "label_predictive": false,
+              "classes": {
+                "false (out-of-context)": 91,
+                "false (manipulated/fake)": 27,
+                "true": 2,
+                "false (ai-generated)": 1
+              }
+            },
+            {
+              "group": "Spanish",
+              "rows": 116,
+              "dominant": "false (out-of-context)",
+              "purity": 0.8448,
+              "ci": [
+                0.7759,
+                0.9052
+              ],
+              "label_predictive": false,
+              "classes": {
+                "false (out-of-context)": 98,
+                "false (manipulated/fake)": 16,
+                "false (ai-generated)": 1,
+                "true": 1
+              }
+            },
+            {
+              "group": "German",
+              "rows": 112,
+              "dominant": "false (out-of-context)",
+              "purity": 0.7768,
+              "ci": [
+                0.6964,
+                0.8484
+              ],
+              "label_predictive": false,
+              "classes": {
+                "false (out-of-context)": 87,
+                "false (manipulated/fake)": 19,
+                "true": 6
+              }
+            },
+            {
+              "group": "Telugu",
+              "rows": 107,
+              "dominant": "false (out-of-context)",
+              "purity": 0.7664,
+              "ci": [
+                0.6822,
+                0.8411
+              ],
+              "label_predictive": false,
+              "classes": {
+                "false (out-of-context)": 82,
+                "false (manipulated/fake)": 24,
+                "true": 1
+              }
+            },
+            {
+              "group": "Tamil",
+              "rows": 41,
+              "dominant": "false (out-of-context)",
+              "purity": 0.7805,
+              "ci": [
+                0.6585,
+                0.9024
+              ],
+              "label_predictive": false,
+              "classes": {
+                "false (out-of-context)": 32,
+                "false (manipulated/fake)": 9
+              }
+            },
+            {
+              "group": "Dutch",
+              "rows": 37,
+              "dominant": "false (out-of-context)",
+              "purity": 0.7027,
+              "ci": [
+                0.5405,
+                0.8378
+              ],
+              "label_predictive": false,
+              "classes": {
+                "false (out-of-context)": 26,
+                "true": 7,
+                "false (manipulated/fake)": 4
+              }
+            },
+            {
+              "group": "Turkish",
+              "rows": 22,
+              "dominant": "false (out-of-context)",
+              "purity": 0.8182,
+              "ci": [
+                0.6364,
+                0.9545
+              ],
+              "label_predictive": false,
+              "classes": {
+                "false (out-of-context)": 18,
+                "false (manipulated/fake)": 4
+              }
+            }
+          ],
+          "fc_language": [
+            {
+              "group": "english",
+              "rows": 1282,
+              "dominant": "false (out-of-context)",
+              "purity": 0.7254,
+              "ci": [
+                0.7012,
+                0.7496
+              ],
+              "label_predictive": false,
+              "classes": {
+                "false (out-of-context)": 930,
+                "false (manipulated/fake)": 257,
+                "true": 95
+              }
+            },
+            {
+              "group": "arabic",
+              "rows": 427,
+              "dominant": "false (out-of-context)",
+              "purity": 0.7377,
+              "ci": [
+                0.6979,
+                0.7799
+              ],
+              "label_predictive": false,
+              "classes": {
+                "false (out-of-context)": 315,
+                "false (manipulated/fake)": 109,
+                "false (ai-generated)": 2,
+                "true": 1
+              }
+            },
+            {
+              "group": "portuguese",
+              "rows": 172,
+              "dominant": "false (out-of-context)",
+              "purity": 0.5581,
+              "ci": [
+                0.4826,
+                0.6279
+              ],
+              "label_predictive": false,
+              "classes": {
+                "false (out-of-context)": 96,
+                "true": 45,
+                "false (manipulated/fake)": 31
+              }
+            },
+            {
+              "group": "spanish",
+              "rows": 143,
+              "dominant": "false (out-of-context)",
+              "purity": 0.8252,
+              "ci": [
+                0.7622,
+                0.8811
+              ],
+              "label_predictive": false,
+              "classes": {
+                "false (out-of-context)": 118,
+                "false (manipulated/fake)": 23,
+                "false (ai-generated)": 1,
+                "true": 1
+              }
+            },
+            {
+              "group": "german",
+              "rows": 134,
+              "dominant": "false (out-of-context)",
+              "purity": 0.7985,
+              "ci": [
+                0.7239,
+                0.8582
+              ],
+              "label_predictive": false,
+              "classes": {
+                "false (out-of-context)": 107,
+                "false (manipulated/fake)": 20,
+                "true": 7
+              }
+            },
+            {
+              "group": "french",
+              "rows": 129,
+              "dominant": "false (out-of-context)",
+              "purity": 0.7597,
+              "ci": [
+                0.6822,
+                0.8295
+              ],
+              "label_predictive": false,
+              "classes": {
+                "false (out-of-context)": 98,
+                "false (manipulated/fake)": 27,
+                "true": 3,
+                "false (ai-generated)": 1
+              }
+            },
+            {
+              "group": "telugu",
+              "rows": 124,
+              "dominant": "false (out-of-context)",
+              "purity": 0.7903,
+              "ci": [
+                0.7177,
+                0.8629
+              ],
+              "label_predictive": false,
+              "classes": {
+                "false (out-of-context)": 98,
+                "false (manipulated/fake)": 25,
+                "true": 1
+              }
+            },
+            {
+              "group": "tamil",
+              "rows": 49,
+              "dominant": "false (out-of-context)",
+              "purity": 0.8163,
+              "ci": [
+                0.7143,
+                0.9184
+              ],
+              "label_predictive": false,
+              "classes": {
+                "false (out-of-context)": 40,
+                "false (manipulated/fake)": 9
+              }
+            },
+            {
+              "group": "dutch",
+              "rows": 46,
+              "dominant": "false (out-of-context)",
+              "purity": 0.6739,
+              "ci": [
+                0.5435,
+                0.8043
+              ],
+              "label_predictive": false,
+              "classes": {
+                "false (out-of-context)": 31,
+                "true": 8,
+                "false (manipulated/fake)": 7
+              }
+            },
+            {
+              "group": "danish",
+              "rows": 24,
+              "dominant": "false (out-of-context)",
+              "purity": 0.7917,
+              "ci": [
+                0.625,
+                0.9583
+              ],
+              "label_predictive": false,
+              "classes": {
+                "false (out-of-context)": 19,
+                "true": 3,
+                "false (manipulated/fake)": 2
+              }
+            },
+            {
+              "group": "turkish",
+              "rows": 23,
+              "dominant": "false (out-of-context)",
+              "purity": 0.8261,
+              "ci": [
+                0.6522,
+                0.9565
+              ],
+              "label_predictive": false,
+              "classes": {
+                "false (out-of-context)": 19,
+                "false (manipulated/fake)": 4
+              }
+            },
+            {
+              "group": "kannada",
+              "rows": 5,
+              "dominant": "false (out-of-context)",
+              "purity": 1.0,
+              "ci": [
+                1.0,
+                1.0
+              ],
+              "label_predictive": true,
+              "classes": {
+                "false (out-of-context)": 5
+              }
+            }
+          ]
+        }
+      },
+      "lookup": {
+        "coarse": {
+          "fc_org": {
+            "unseen_groups_in_val": 6,
+            "rows": 499,
+            "classes": [
+              "false",
+              "true"
+            ],
+            "majority_predicts": "false",
+            "model": {
+              "accuracy": {
+                "value": 0.9379,
+                "ci": [
+                  0.9158,
+                  0.9579
+                ]
+              },
+              "macro_f1": {
+                "value": 0.484,
+                "ci": [
+                  0.478,
+                  0.4893
+                ]
+              },
+              "per_class": {
+                "false": {
+                  "support": 468,
+                  "precision": {
+                    "value": 0.9379,
+                    "ci": [
+                      0.9158,
+                      0.9579
+                    ]
+                  },
+                  "recall": {
+                    "value": 1.0,
+                    "ci": [
+                      1.0,
+                      1.0
+                    ]
+                  },
+                  "f1": {
+                    "value": 0.9679,
+                    "ci": [
+                      0.9561,
+                      0.9785
+                    ]
+                  }
+                },
+                "true": {
+                  "support": 31,
+                  "precision": {
+                    "value": 0.0,
+                    "ci": [
+                      0.0,
+                      0.0
+                    ]
+                  },
+                  "recall": {
+                    "value": 0.0,
+                    "ci": [
+                      0.0,
+                      0.0
+                    ]
+                  },
+                  "f1": {
+                    "value": 0.0,
+                    "ci": [
+                      0.0,
+                      0.0
+                    ]
+                  }
+                }
+              }
+            },
+            "majority": {
+              "accuracy": {
+                "value": 0.9379,
+                "ci": [
+                  0.9158,
+                  0.9579
+                ]
+              },
+              "macro_f1": {
+                "value": 0.484,
+                "ci": [
+                  0.478,
+                  0.4893
+                ]
+              },
+              "per_class": {
+                "false": {
+                  "support": 468,
+                  "precision": {
+                    "value": 0.9379,
+                    "ci": [
+                      0.9158,
+                      0.9579
+                    ]
+                  },
+                  "recall": {
+                    "value": 1.0,
+                    "ci": [
+                      1.0,
+                      1.0
+                    ]
+                  },
+                  "f1": {
+                    "value": 0.9679,
+                    "ci": [
+                      0.9561,
+                      0.9785
+                    ]
+                  }
+                },
+                "true": {
+                  "support": 31,
+                  "precision": {
+                    "value": 0.0,
+                    "ci": [
+                      0.0,
+                      0.0
+                    ]
+                  },
+                  "recall": {
+                    "value": 0.0,
+                    "ci": [
+                      0.0,
+                      0.0
+                    ]
+                  },
+                  "f1": {
+                    "value": 0.0,
+                    "ci": [
+                      0.0,
+                      0.0
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "claim_language": {
+            "unseen_groups_in_val": 0,
+            "rows": 499,
+            "classes": [
+              "false",
+              "true"
+            ],
+            "majority_predicts": "false",
+            "model": {
+              "accuracy": {
+                "value": 0.9379,
+                "ci": [
+                  0.9158,
+                  0.9579
+                ]
+              },
+              "macro_f1": {
+                "value": 0.484,
+                "ci": [
+                  0.478,
+                  0.4893
+                ]
+              },
+              "per_class": {
+                "false": {
+                  "support": 468,
+                  "precision": {
+                    "value": 0.9379,
+                    "ci": [
+                      0.9158,
+                      0.9579
+                    ]
+                  },
+                  "recall": {
+                    "value": 1.0,
+                    "ci": [
+                      1.0,
+                      1.0
+                    ]
+                  },
+                  "f1": {
+                    "value": 0.9679,
+                    "ci": [
+                      0.9561,
+                      0.9785
+                    ]
+                  }
+                },
+                "true": {
+                  "support": 31,
+                  "precision": {
+                    "value": 0.0,
+                    "ci": [
+                      0.0,
+                      0.0
+                    ]
+                  },
+                  "recall": {
+                    "value": 0.0,
+                    "ci": [
+                      0.0,
+                      0.0
+                    ]
+                  },
+                  "f1": {
+                    "value": 0.0,
+                    "ci": [
+                      0.0,
+                      0.0
+                    ]
+                  }
+                }
+              }
+            },
+            "majority": {
+              "accuracy": {
+                "value": 0.9379,
+                "ci": [
+                  0.9158,
+                  0.9579
+                ]
+              },
+              "macro_f1": {
+                "value": 0.484,
+                "ci": [
+                  0.478,
+                  0.4893
+                ]
+              },
+              "per_class": {
+                "false": {
+                  "support": 468,
+                  "precision": {
+                    "value": 0.9379,
+                    "ci": [
+                      0.9158,
+                      0.9579
+                    ]
+                  },
+                  "recall": {
+                    "value": 1.0,
+                    "ci": [
+                      1.0,
+                      1.0
+                    ]
+                  },
+                  "f1": {
+                    "value": 0.9679,
+                    "ci": [
+                      0.9561,
+                      0.9785
+                    ]
+                  }
+                },
+                "true": {
+                  "support": 31,
+                  "precision": {
+                    "value": 0.0,
+                    "ci": [
+                      0.0,
+                      0.0
+                    ]
+                  },
+                  "recall": {
+                    "value": 0.0,
+                    "ci": [
+                      0.0,
+                      0.0
+                    ]
+                  },
+                  "f1": {
+                    "value": 0.0,
+                    "ci": [
+                      0.0,
+                      0.0
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "fine": {
+          "fc_org": {
+            "unseen_groups_in_val": 6,
+            "rows": 499,
+            "classes": [
+              "false (ai-generated)",
+              "false (manipulated/fake)",
+              "false (out-of-context)",
+              "true"
+            ],
+            "majority_predicts": "false (out-of-context)",
+            "model": {
+              "accuracy": {
+                "value": 0.6914,
+                "ci": [
+                  0.6513,
+                  0.7295
+                ]
+              },
+              "macro_f1": {
+                "value": 0.2044,
+                "ci": [
+                  0.1972,
+                  0.2112
+                ]
+              },
+              "per_class": {
+                "false (ai-generated)": {
+                  "support": 5,
+                  "precision": {
+                    "value": 0.0,
+                    "ci": [
+                      0.0,
+                      0.0
+                    ]
+                  },
+                  "recall": {
+                    "value": 0.0,
+                    "ci": [
+                      0.0,
+                      0.0
+                    ]
+                  },
+                  "f1": {
+                    "value": 0.0,
+                    "ci": [
+                      0.0,
+                      0.0
+                    ]
+                  }
+                },
+                "false (manipulated/fake)": {
+                  "support": 118,
+                  "precision": {
+                    "value": 0.0,
+                    "ci": [
+                      0.0,
+                      0.0
+                    ]
+                  },
+                  "recall": {
+                    "value": 0.0,
+                    "ci": [
+                      0.0,
+                      0.0
+                    ]
+                  },
+                  "f1": {
+                    "value": 0.0,
+                    "ci": [
+                      0.0,
+                      0.0
+                    ]
+                  }
+                },
+                "false (out-of-context)": {
+                  "support": 345,
+                  "precision": {
+                    "value": 0.6914,
+                    "ci": [
+                      0.6513,
+                      0.7295
+                    ]
+                  },
+                  "recall": {
+                    "value": 1.0,
+                    "ci": [
+                      1.0,
+                      1.0
+                    ]
+                  },
+                  "f1": {
+                    "value": 0.8175,
+                    "ci": [
+                      0.7888,
+                      0.8436
+                    ]
+                  }
+                },
+                "true": {
+                  "support": 31,
+                  "precision": {
+                    "value": 0.0,
+                    "ci": [
+                      0.0,
+                      0.0
+                    ]
+                  },
+                  "recall": {
+                    "value": 0.0,
+                    "ci": [
+                      0.0,
+                      0.0
+                    ]
+                  },
+                  "f1": {
+                    "value": 0.0,
+                    "ci": [
+                      0.0,
+                      0.0
+                    ]
+                  }
+                }
+              }
+            },
+            "majority": {
+              "accuracy": {
+                "value": 0.6914,
+                "ci": [
+                  0.6513,
+                  0.7295
+                ]
+              },
+              "macro_f1": {
+                "value": 0.2044,
+                "ci": [
+                  0.1972,
+                  0.2112
+                ]
+              },
+              "per_class": {
+                "false (ai-generated)": {
+                  "support": 5,
+                  "precision": {
+                    "value": 0.0,
+                    "ci": [
+                      0.0,
+                      0.0
+                    ]
+                  },
+                  "recall": {
+                    "value": 0.0,
+                    "ci": [
+                      0.0,
+                      0.0
+                    ]
+                  },
+                  "f1": {
+                    "value": 0.0,
+                    "ci": [
+                      0.0,
+                      0.0
+                    ]
+                  }
+                },
+                "false (manipulated/fake)": {
+                  "support": 118,
+                  "precision": {
+                    "value": 0.0,
+                    "ci": [
+                      0.0,
+                      0.0
+                    ]
+                  },
+                  "recall": {
+                    "value": 0.0,
+                    "ci": [
+                      0.0,
+                      0.0
+                    ]
+                  },
+                  "f1": {
+                    "value": 0.0,
+                    "ci": [
+                      0.0,
+                      0.0
+                    ]
+                  }
+                },
+                "false (out-of-context)": {
+                  "support": 345,
+                  "precision": {
+                    "value": 0.6914,
+                    "ci": [
+                      0.6513,
+                      0.7295
+                    ]
+                  },
+                  "recall": {
+                    "value": 1.0,
+                    "ci": [
+                      1.0,
+                      1.0
+                    ]
+                  },
+                  "f1": {
+                    "value": 0.8175,
+                    "ci": [
+                      0.7888,
+                      0.8436
+                    ]
+                  }
+                },
+                "true": {
+                  "support": 31,
+                  "precision": {
+                    "value": 0.0,
+                    "ci": [
+                      0.0,
+                      0.0
+                    ]
+                  },
+                  "recall": {
+                    "value": 0.0,
+                    "ci": [
+                      0.0,
+                      0.0
+                    ]
+                  },
+                  "f1": {
+                    "value": 0.0,
+                    "ci": [
+                      0.0,
+                      0.0
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "claim_language": {
+            "unseen_groups_in_val": 0,
+            "rows": 499,
+            "classes": [
+              "false (ai-generated)",
+              "false (manipulated/fake)",
+              "false (out-of-context)",
+              "true"
+            ],
+            "majority_predicts": "false (out-of-context)",
+            "model": {
+              "accuracy": {
+                "value": 0.6914,
+                "ci": [
+                  0.6513,
+                  0.7295
+                ]
+              },
+              "macro_f1": {
+                "value": 0.2044,
+                "ci": [
+                  0.1972,
+                  0.2112
+                ]
+              },
+              "per_class": {
+                "false (ai-generated)": {
+                  "support": 5,
+                  "precision": {
+                    "value": 0.0,
+                    "ci": [
+                      0.0,
+                      0.0
+                    ]
+                  },
+                  "recall": {
+                    "value": 0.0,
+                    "ci": [
+                      0.0,
+                      0.0
+                    ]
+                  },
+                  "f1": {
+                    "value": 0.0,
+                    "ci": [
+                      0.0,
+                      0.0
+                    ]
+                  }
+                },
+                "false (manipulated/fake)": {
+                  "support": 118,
+                  "precision": {
+                    "value": 0.0,
+                    "ci": [
+                      0.0,
+                      0.0
+                    ]
+                  },
+                  "recall": {
+                    "value": 0.0,
+                    "ci": [
+                      0.0,
+                      0.0
+                    ]
+                  },
+                  "f1": {
+                    "value": 0.0,
+                    "ci": [
+                      0.0,
+                      0.0
+                    ]
+                  }
+                },
+                "false (out-of-context)": {
+                  "support": 345,
+                  "precision": {
+                    "value": 0.6914,
+                    "ci": [
+                      0.6513,
+                      0.7295
+                    ]
+                  },
+                  "recall": {
+                    "value": 1.0,
+                    "ci": [
+                      1.0,
+                      1.0
+                    ]
+                  },
+                  "f1": {
+                    "value": 0.8175,
+                    "ci": [
+                      0.7888,
+                      0.8436
+                    ]
+                  }
+                },
+                "true": {
+                  "support": 31,
+                  "precision": {
+                    "value": 0.0,
+                    "ci": [
+                      0.0,
+                      0.0
+                    ]
+                  },
+                  "recall": {
+                    "value": 0.0,
+                    "ci": [
+                      0.0,
+                      0.0
+                    ]
+                  },
+                  "f1": {
+                    "value": 0.0,
+                    "ci": [
+                      0.0,
+                      0.0
+                    ]
+                  }
+                }
+              }
+            },
+            "majority": {
+              "accuracy": {
+                "value": 0.6914,
+                "ci": [
+                  0.6513,
+                  0.7295
+                ]
+              },
+              "macro_f1": {
+                "value": 0.2044,
+                "ci": [
+                  0.1972,
+                  0.2112
+                ]
+              },
+              "per_class": {
+                "false (ai-generated)": {
+                  "support": 5,
+                  "precision": {
+                    "value": 0.0,
+                    "ci": [
+                      0.0,
+                      0.0
+                    ]
+                  },
+                  "recall": {
+                    "value": 0.0,
+                    "ci": [
+                      0.0,
+                      0.0
+                    ]
+                  },
+                  "f1": {
+                    "value": 0.0,
+                    "ci": [
+                      0.0,
+                      0.0
+                    ]
+                  }
+                },
+                "false (manipulated/fake)": {
+                  "support": 118,
+                  "precision": {
+                    "value": 0.0,
+                    "ci": [
+                      0.0,
+                      0.0
+                    ]
+                  },
+                  "recall": {
+                    "value": 0.0,
+                    "ci": [
+                      0.0,
+                      0.0
+                    ]
+                  },
+                  "f1": {
+                    "value": 0.0,
+                    "ci": [
+                      0.0,
+                      0.0
+                    ]
+                  }
+                },
+                "false (out-of-context)": {
+                  "support": 345,
+                  "precision": {
+                    "value": 0.6914,
+                    "ci": [
+                      0.6513,
+                      0.7295
+                    ]
+                  },
+                  "recall": {
+                    "value": 1.0,
+                    "ci": [
+                      1.0,
+                      1.0
+                    ]
+                  },
+                  "f1": {
+                    "value": 0.8175,
+                    "ci": [
+                      0.7888,
+                      0.8436
+                    ]
+                  }
+                },
+                "true": {
+                  "support": 31,
+                  "precision": {
+                    "value": 0.0,
+                    "ci": [
+                      0.0,
+                      0.0
+                    ]
+                  },
+                  "recall": {
+                    "value": 0.0,
+                    "ci": [
+                      0.0,
+                      0.0
+                    ]
+                  },
+                  "f1": {
+                    "value": 0.0,
+                    "ci": [
+                      0.0,
+                      0.0
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "text": {
+        "coarse": {
+          "train_rows": 2558,
+          "features": 6301,
+          "fit": {
+            "converged": true,
+            "iterations": 36,
+            "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH"
+          },
+          "settings": {
+            "tokens": "fakeddit_classes.tokens: words [a-z0-9'] + bigrams",
+            "min_df": 2,
+            "idf": "smoothed",
+            "tf": "sublinear",
+            "rows": "L2-normalised",
+            "classifier": "multinomial, class-balanced",
+            "C": 1.0
+          },
+          "train_classes": {
+            "false": 2394,
+            "true": 164
+          },
+          "val_classes": {
+            "false": 468,
+            "true": 31
+          },
+          "rows": 499,
+          "classes": [
+            "false",
+            "true"
+          ],
+          "majority_predicts": "false",
+          "model": {
+            "accuracy": {
+              "value": 0.9279,
+              "ci": [
+                0.9058,
+                0.9499
+              ]
+            },
+            "macro_f1": {
+              "value": 0.6904,
+              "ci": [
+                0.6054,
+                0.7695
+              ]
+            },
+            "per_class": {
+              "false": {
+                "support": 468,
+                "precision": {
+                  "value": 0.9615,
+                  "ci": [
+                    0.9437,
+                    0.9785
+                  ]
+                },
+                "recall": {
+                  "value": 0.9615,
+                  "ci": [
+                    0.9435,
+                    0.9787
+                  ]
+                },
+                "f1": {
+                  "value": 0.9615,
+                  "ci": [
+                    0.9487,
+                    0.9735
+                  ]
+                }
+              },
+              "true": {
+                "support": 31,
+                "precision": {
+                  "value": 0.4194,
+                  "ci": [
+                    0.25,
+                    0.6071
+                  ]
+                },
+                "recall": {
+                  "value": 0.4194,
+                  "ci": [
+                    0.2414,
+                    0.5926
+                  ]
+                },
+                "f1": {
+                  "value": 0.4194,
+                  "ci": [
+                    0.2545,
+                    0.5676
+                  ]
+                }
+              }
+            }
+          },
+          "majority": {
+            "accuracy": {
+              "value": 0.9379,
+              "ci": [
+                0.9158,
+                0.9579
+              ]
+            },
+            "macro_f1": {
+              "value": 0.484,
+              "ci": [
+                0.478,
+                0.4893
+              ]
+            },
+            "per_class": {
+              "false": {
+                "support": 468,
+                "precision": {
+                  "value": 0.9379,
+                  "ci": [
+                    0.9158,
+                    0.9579
+                  ]
+                },
+                "recall": {
+                  "value": 1.0,
+                  "ci": [
+                    1.0,
+                    1.0
+                  ]
+                },
+                "f1": {
+                  "value": 0.9679,
+                  "ci": [
+                    0.9561,
+                    0.9785
+                  ]
+                }
+              },
+              "true": {
+                "support": 31,
+                "precision": {
+                  "value": 0.0,
+                  "ci": [
+                    0.0,
+                    0.0
+                  ]
+                },
+                "recall": {
+                  "value": 0.0,
+                  "ci": [
+                    0.0,
+                    0.0
+                  ]
+                },
+                "f1": {
+                  "value": 0.0,
+                  "ci": [
+                    0.0,
+                    0.0
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "fine": {
+          "train_rows": 2558,
+          "features": 6301,
+          "fit": {
+            "converged": true,
+            "iterations": 64,
+            "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH"
+          },
+          "settings": {
+            "tokens": "fakeddit_classes.tokens: words [a-z0-9'] + bigrams",
+            "min_df": 2,
+            "idf": "smoothed",
+            "tf": "sublinear",
+            "rows": "L2-normalised",
+            "classifier": "multinomial, class-balanced",
+            "C": 1.0
+          },
+          "train_classes": {
+            "false (out-of-context)": 1876,
+            "false (manipulated/fake)": 514,
+            "true": 164,
+            "false (ai-generated)": 4
+          },
+          "val_classes": {
+            "false (out-of-context)": 345,
+            "false (manipulated/fake)": 118,
+            "true": 31,
+            "false (ai-generated)": 5
+          },
+          "rows": 499,
+          "classes": [
+            "false (ai-generated)",
+            "false (manipulated/fake)",
+            "false (out-of-context)",
+            "true"
+          ],
+          "majority_predicts": "false (out-of-context)",
+          "model": {
+            "accuracy": {
+              "value": 0.7214,
+              "ci": [
+                0.6814,
+                0.7615
+              ]
+            },
+            "macro_f1": {
+              "value": 0.4462,
+              "ci": [
+                0.3962,
+                0.4938
+              ]
+            },
+            "per_class": {
+              "false (ai-generated)": {
+                "support": 5,
+                "precision": {
+                  "value": 0.0,
+                  "ci": [
+                    0.0,
+                    0.0
+                  ]
+                },
+                "recall": {
+                  "value": 0.0,
+                  "ci": [
+                    0.0,
+                    0.0
+                  ]
+                },
+                "f1": {
+                  "value": 0.0,
+                  "ci": [
+                    0.0,
+                    0.0
+                  ]
+                }
+              },
+              "false (manipulated/fake)": {
+                "support": 118,
+                "precision": {
+                  "value": 0.5231,
+                  "ci": [
+                    0.4322,
+                    0.6066
+                  ]
+                },
+                "recall": {
+                  "value": 0.5763,
+                  "ci": [
+                    0.4862,
+                    0.6667
+                  ]
+                },
+                "f1": {
+                  "value": 0.5484,
+                  "ci": [
+                    0.4715,
+                    0.6202
+                  ]
+                }
+              },
+              "false (out-of-context)": {
+                "support": 345,
+                "precision": {
+                  "value": 0.8254,
+                  "ci": [
+                    0.784,
+                    0.8631
+                  ]
+                },
+                "recall": {
+                  "value": 0.8087,
+                  "ci": [
+                    0.767,
+                    0.8516
+                  ]
+                },
+                "f1": {
+                  "value": 0.817,
+                  "ci": [
+                    0.7841,
+                    0.8474
+                  ]
+                }
+              },
+              "true": {
+                "support": 31,
+                "precision": {
+                  "value": 0.4194,
+                  "ci": [
+                    0.25,
+                    0.6098
+                  ]
+                },
+                "recall": {
+                  "value": 0.4194,
+                  "ci": [
+                    0.25,
+                    0.5862
+                  ]
+                },
+                "f1": {
+                  "value": 0.4194,
+                  "ci": [
+                    0.258,
+                    0.5714
+                  ]
+                }
+              }
+            }
+          },
+          "majority": {
+            "accuracy": {
+              "value": 0.6914,
+              "ci": [
+                0.6513,
+                0.7295
+              ]
+            },
+            "macro_f1": {
+              "value": 0.2044,
+              "ci": [
+                0.1972,
+                0.2112
+              ]
+            },
+            "per_class": {
+              "false (ai-generated)": {
+                "support": 5,
+                "precision": {
+                  "value": 0.0,
+                  "ci": [
+                    0.0,
+                    0.0
+                  ]
+                },
+                "recall": {
+                  "value": 0.0,
+                  "ci": [
+                    0.0,
+                    0.0
+                  ]
+                },
+                "f1": {
+                  "value": 0.0,
+                  "ci": [
+                    0.0,
+                    0.0
+                  ]
+                }
+              },
+              "false (manipulated/fake)": {
+                "support": 118,
+                "precision": {
+                  "value": 0.0,
+                  "ci": [
+                    0.0,
+                    0.0
+                  ]
+                },
+                "recall": {
+                  "value": 0.0,
+                  "ci": [
+                    0.0,
+                    0.0
+                  ]
+                },
+                "f1": {
+                  "value": 0.0,
+                  "ci": [
+                    0.0,
+                    0.0
+                  ]
+                }
+              },
+              "false (out-of-context)": {
+                "support": 345,
+                "precision": {
+                  "value": 0.6914,
+                  "ci": [
+                    0.6513,
+                    0.7295
+                  ]
+                },
+                "recall": {
+                  "value": 1.0,
+                  "ci": [
+                    1.0,
+                    1.0
+                  ]
+                },
+                "f1": {
+                  "value": 0.8175,
+                  "ci": [
+                    0.7888,
+                    0.8436
+                  ]
+                }
+              },
+              "true": {
+                "support": 31,
+                "precision": {
+                  "value": 0.0,
+                  "ci": [
+                    0.0,
+                    0.0
+                  ]
+                },
+                "recall": {
+                  "value": 0.0,
+                  "ci": [
+                    0.0,
+                    0.0
+                  ]
+                },
+                "f1": {
+                  "value": 0.0,
+                  "ci": [
+                    0.0,
+                    0.0
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "synthetic_vs_real": {
+        "rule": "synthetic_true: true_caption of a row flagged use_true_caption; real_false: claim of a false row not flagged (the balanced setting's two sides)",
+        "train_rows": 2394,
+        "features": 6322,
+        "fit": {
+          "converged": true,
+          "iterations": 33,
+          "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH"
+        },
+        "settings": {
+          "tokens": "fakeddit_classes.tokens: words [a-z0-9'] + bigrams",
+          "min_df": 2,
+          "idf": "smoothed",
+          "tf": "sublinear",
+          "rows": "L2-normalised",
+          "classifier": "multinomial, class-balanced",
+          "C": 1.0
+        },
+        "train_classes": {
+          "real_false": 1810,
+          "synthetic_true": 584
+        },
+        "val_classes": {
+          "real_false": 374,
+          "synthetic_true": 94
+        },
+        "rows": 468,
+        "classes": [
+          "real_false",
+          "synthetic_true"
+        ],
+        "majority_predicts": "real_false",
+        "model": {
+          "accuracy": {
+            "value": 0.9359,
+            "ci": [
+              0.9124,
+              0.9573
+            ]
+          },
+          "macro_f1": {
+            "value": 0.906,
+            "ci": [
+              0.8697,
+              0.9359
+            ]
+          },
+          "per_class": {
+            "real_false": {
+              "support": 374,
+              "precision": {
+                "value": 0.9804,
+                "ci": [
+                  0.9645,
+                  0.9943
+                ]
+              },
+              "recall": {
+                "value": 0.9385,
+                "ci": [
+                  0.9132,
+                  0.9626
+                ]
+              },
+              "f1": {
+                "value": 0.959,
+                "ci": [
+                  0.943,
+                  0.973
+                ]
+              }
+            },
+            "synthetic_true": {
+              "support": 94,
+              "precision": {
+                "value": 0.7909,
+                "ci": [
+                  0.7094,
+                  0.8632
+                ]
+              },
+              "recall": {
+                "value": 0.9255,
+                "ci": [
+                  0.8658,
+                  0.9767
+                ]
+              },
+              "f1": {
+                "value": 0.8529,
+                "ci": [
+                  0.7931,
+                  0.8996
+                ]
+              }
+            }
+          }
+        },
+        "majority": {
+          "accuracy": {
+            "value": 0.7991,
+            "ci": [
+              0.7628,
+              0.8355
+            ]
+          },
+          "macro_f1": {
+            "value": 0.4442,
+            "ci": [
+              0.4327,
+              0.4552
+            ]
+          },
+          "per_class": {
+            "real_false": {
+              "support": 374,
+              "precision": {
+                "value": 0.7991,
+                "ci": [
+                  0.7628,
+                  0.8355
+                ]
+              },
+              "recall": {
+                "value": 1.0,
+                "ci": [
+                  1.0,
+                  1.0
+                ]
+              },
+              "f1": {
+                "value": 0.8884,
+                "ci": [
+                  0.8655,
+                  0.9104
+                ]
+              }
+            },
+            "synthetic_true": {
+              "support": 94,
+              "precision": {
+                "value": 0.0,
+                "ci": [
+                  0.0,
+                  0.0
+                ]
+              },
+              "recall": {
+                "value": 0.0,
+                "ci": [
+                  0.0,
+                  0.0
+                ]
+              },
+              "f1": {
+                "value": 0.0,
+                "ci": [
+                  0.0,
+                  0.0
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "sheet": {
+      "eligible_rows_by_org": {
+        "fatabyyano.net": 298,
+        "factly.in": 244,
+        "pesacheck.org": 204,
+        "indiatoday.in": 201,
+        "larepublica.pe": 115,
+        "leadstories.com": 112,
+        "correctiv.org": 102,
+        "congocheck.net": 91,
+        "poligrafo.sapo.pt": 91,
+        "snopes.com": 89,
+        "dfrac.org": 53,
+        "dubawa.org": 32,
+        "knack.be": 29,
+        "mythdetector.ge": 26,
+        "dogrula.org": 18,
+        "tjekdet.dk": 18,
+        "verify-sy.com": 12,
+        "youturn.in": 5,
+        "211check.org": 4
+      },
+      "instances_by_org": {
+        "fatabyyano.net": 8,
+        "factly.in": 7,
+        "indiatoday.in": 6,
+        "pesacheck.org": 6,
+        "larepublica.pe": 4,
+        "leadstories.com": 4,
+        "congocheck.net": 3,
+        "correctiv.org": 3,
+        "poligrafo.sapo.pt": 3,
+        "snopes.com": 3,
+        "dfrac.org": 2,
+        "dubawa.org": 2,
+        "knack.be": 2,
+        "mythdetector.ge": 2,
+        "211check.org": 1,
+        "dogrula.org": 1,
+        "tjekdet.dk": 1,
+        "verify-sy.com": 1,
+        "youturn.in": 1
+      },
+      "instances": 60,
+      "sheet_rows": 156,
+      "rows_by_item": {
+        "date": 17,
+        "location": 44,
+        "people": 14,
+        "things": 37,
+        "event": 44
+      },
+      "instances_in_human_validated": 8,
+      "sheet": "data/interim/m4fc_audit/review/m4fc_ooc_items.csv",
+      "images": "data/interim/m4fc_audit/review/images"
+    },
+    "open_issues": {
+      "processed_test_rows": 420,
+      "processed_test_rows_before_the_test_cutoff": 420,
+      "processed_test_dates": [
+        "2019-01-03",
+        "2022-02-13"
+      ],
+      "processed_val_rows_before_the_dev_cutoff": 1,
+      "slugs_stating_a_finding": {
+        "all": 1532,
+        "processed_train": 684,
+        "processed_train_rows": 2573,
+        "words": [
+          "doctored",
+          "edited",
+          "fabricated",
+          "fake",
+          "false",
+          "falsely",
+          "hoax",
+          "manipulated",
+          "misattributed",
+          "misleading",
+          "morphed",
+          "old",
+          "photoshopped",
+          "unrelated",
+          "not related",
+          "passed off",
+          "ai generated",
+          "digitally altered"
+        ]
+      }
+    }
+  },
+  "evidence": {
+    "queries_run": 200,
+    "of": 200,
+    "k": 20,
+    "entity_top": 5,
+    "bm25_sign": "SQLite FTS5 bm25(): lower is a better match; values are negative",
+    "all": {
+      "queries": 200,
+      "with_a_hit": 200,
+      "hit_counts": {
+        "0": 0,
+        "1-4": 0,
+        "5-9": 0,
+        "10-19": 0,
+        "20": 200
+      },
+      "top1_bm25": {
+        "min": -81.239,
+        "p10": -51.298,
+        "p25": -43.996,
+        "median": -35.239,
+        "p75": -28.12,
+        "p90": -22.609,
+        "max": -14.987
+      },
+      "claims_with_entities": {
+        "1+": 185,
+        "2+": 132,
+        "none": 15
+      },
+      "entity_matches_top5": {
+        "1+": 160,
+        "2+": 95
+      },
+      "entities_by_type": {
+        "LOC": {
+          "entities": 148,
+          "matched": 116
+        },
+        "MISC": {
+          "entities": 88,
+          "matched": 62
+        },
+        "ORG": {
+          "entities": 60,
+          "matched": 41
+        },
+        "PER": {
+          "entities": 114,
+          "matched": 80
+        }
+      },
+      "after_as_of": 0,
+      "queries_with_a_fact_check_domain_hit": 7,
+      "queries_with_an_own_org_hit": 3,
+      "median_search_seconds": 94.05
+    },
+    "india": {
+      "queries": 48,
+      "with_a_hit": 48,
+      "hit_counts": {
+        "0": 0,
+        "1-4": 0,
+        "5-9": 0,
+        "10-19": 0,
+        "20": 48
+      },
+      "top1_bm25": {
+        "min": -65.06,
+        "p10": -54.679,
+        "p25": -45.476,
+        "median": -37.328,
+        "p75": -29.009,
+        "p90": -23.463,
+        "max": -18.197
+      },
+      "claims_with_entities": {
+        "1+": 47,
+        "2+": 34,
+        "none": 1
+      },
+      "entity_matches_top5": {
+        "1+": 44,
+        "2+": 27
+      },
+      "entities_by_type": {
+        "LOC": {
+          "entities": 32,
+          "matched": 27
+        },
+        "MISC": {
+          "entities": 22,
+          "matched": 13
+        },
+        "ORG": {
+          "entities": 23,
+          "matched": 20
+        },
+        "PER": {
+          "entities": 37,
+          "matched": 27
+        }
+      },
+      "after_as_of": 0,
+      "queries_with_a_fact_check_domain_hit": 4,
+      "queries_with_an_own_org_hit": 1,
+      "median_search_seconds": 93.69
+    }
+  }
+}
